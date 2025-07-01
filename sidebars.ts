@@ -44,7 +44,8 @@ const sidebars: SidebarsConfig = {
         "http/strict-transport-security",
         "http/upgrade",
         "http/http-redirections",
-        "http/http-request-methods",
+        "http/http-request-methods-1",
+        // "http/http-request-methods-2", // 必讀
         // "http/http-content-negotiation", // 必讀
         // "http/http-authentication", // 必讀
         // "http/beyond-cors", // 必讀
