@@ -53,11 +53,11 @@ const sidebars: SidebarsConfig = {
         // "http/cross-origin-resource-sharing", // 必讀
         // "http/http-caching-1", // 必讀，想放後面
         // "http/http-caching-2", // 必讀，想放後面
-        // "http/content-security-policy-1", // 必讀，想放後面
-        // "http/content-security-policy-2", // 必讀，想放後面
         // "http/http-response-status-codes", // 感覺可拆
         // "http/link", // 概念不難，但又可以順便把 <link> 精熟
         // "http/clear-site-data", // 感覺可以水一篇
+        // "http/content-security-policy-1", // 必讀，想放後面
+        // "http/content-security-policy-2", // 必讀，想放後面
         // "http/http-2", // 必讀，想放後面
         // "http/http-version-negotiation", // 不一定要納入30篇，這個偏難
         // "http/http-3", // 不一定要納入30篇，這個偏難

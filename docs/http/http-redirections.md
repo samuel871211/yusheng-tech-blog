@@ -153,7 +153,7 @@ A request-body-header name is a header name that is a byte-case-insensitive matc
 `Content-Type`
 ```
 
-- 我的建議，根據不同情況，建議使用 [303](#303-see-other) 跟 [307](#307-temporary-redirect)
+- 我的建議，根據不同情況使用 [303](#303-see-other) 跟 [307](#307-temporary-redirect)
 
 新增以下 NodeJS 程式碼
 
