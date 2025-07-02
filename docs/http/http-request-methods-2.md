@@ -13,7 +13,7 @@ last_update:
 
 在學習 HTTP Header 的過程，我會把 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/OPTIONS) 跟 [RFC 文件](https://www.rfc-editor.org/rfc/rfc9110.html#name-options) 一起對照著看。概念上是 MDN 會照著 RFC 的規範來撰寫 "面向開發者好閱讀" 的技術文章，並且提供程式範例，但偶爾也會遇到兩邊 Spec 不一致的問題。
 
-我這次剛好遇到 [RFC 規範](<(https://www.rfc-editor.org/rfc/rfc9110.html#name-options)>)說 `OPTIONS` 請求可以搭配 Request Body，原文是
+我這次剛好遇到 [RFC 規範](https://www.rfc-editor.org/rfc/rfc9110.html#name-options)說 `OPTIONS` 請求可以搭配 Request Body，原文是
 
 ```
 A client that generates an OPTIONS request containing content MUST send a valid Content-Type header field describing the representation media type. Note that this specification does not define any use for such content.
