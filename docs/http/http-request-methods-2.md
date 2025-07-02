@@ -1,15 +1,45 @@
 ---
 title: HTTP Request Methods (下篇)
 description: HTTP Request Methods (下篇)
+last_update:
+  date: "2025-07-02T08:00:00+08:00"
 ---
 
 ## OPTIONS
 
+絕大部分的應用場景都在 CORS 的 Preflight Request，會在未來的篇章 [cross-origin-resource-sharing](../http/cross-origin-resource-sharing.md) 介紹到
+
+### 小插曲
+
+在學習 HTTP Header 的過程，我會把 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/OPTIONS) 跟 [RFC 文件](https://www.rfc-editor.org/rfc/rfc9110.html#name-options) 一起對照著看。概念上是 MDN 會照著 RFC 的規範來撰寫 "面向開發者好閱讀" 的技術文章，並且提供程式範例，但偶爾也會遇到兩邊 Spec 不一致的問題。
+
+我這次剛好遇到 [RFC 規範](<(https://www.rfc-editor.org/rfc/rfc9110.html#name-options)>)說 `OPTIONS` 請求可以搭配 Request Body，原文是
+
+```
+A client that generates an OPTIONS request containing content MUST send a valid Content-Type header field describing the representation media type. Note that this specification does not define any use for such content.
+```
+
+但 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/OPTIONS) 卻說不能帶 Request Body，所以就順手發了一個 [PR](https://github.com/mdn/content/pull/40146)，也順利在一天後 Merge 了。算是深入研究 HTTP，偶爾能獲得的一個開源貢獻小成就（？
+
 ## TRACE
 
-### RAW HTTP Request and Response
+### 簡介
 
-我個人認為這是最快可以讓我理解這個 HTTP Request Method 在幹嘛的方式XD
+- 實務上，由於 Client 到 Origin Server 中間會經過各種節點，例如 CDN, Web Server, Proxy，每一層理論上都有能力去修改 HTTP Request, Response，TRACE 請求的設計初衷就是為了測試，讓 Client 有能力知道 Request, Response 在傳輸過程究竟被異動了哪些
+- 承上，引用 [RFC9110 #TRACE](https://httpwg.org/specs/rfc9110.html#TRACE) 的描述：
+
+```
+TRACE allows the client to see what is being received at the other end of the request chain and use that data for testing or diagnostic information.
+```
+
+- Request body is not allowed
+- Request headers 要盡量把可能洩露機敏資訊的 Headers 移除，例如 cookies
+- Origin Server 要把整個 RAW HTTP Reuqest 都寫入 Response Body，並且把可能洩露機敏資訊的 Headers 移除，例如 cookies
+- 承上述兩點，為何要特別提到 `把可能洩露機敏資訊的 Headers 移除`，原因是有發生過資安漏洞，可參考 [xst-cross-site-tracing](#xst-cross-site-tracing)
+- Response.Headers.Content-Type 必須是 `message/http`
+- 現今，大部分 Server 都不支援 `TRACE` 了，此時可回傳 `405 Method Not Allowed`
+
+### RAW HTTP Request and Response
 
 RAW HTTP Request
 
@@ -34,21 +64,6 @@ Host: example.com
 User-Agent: curl/8.7.1
 Accept: */*
 ```
-
-### 簡介
-
-- 實務上，由於 Client 到 Origin Server 中間會經過各種節點，例如 CDN, Web Server, Proxy，每一層理論上都有能力去修改 HTTP Request, Response，TRACE 請求的設計初衷就是為了測試，讓 Client 有能力知道 Request, Response 在傳輸過程究竟被異動了哪些．引用 [RFC9110 #TRACE](https://httpwg.org/specs/rfc9110.html#TRACE) 的描述
-
-```
-TRACE allows the client to see what is being received at the other end of the request chain and use that data for testing or diagnostic information.
-```
-
-- Request body is not allowed
-- Request headers 要盡量把可能洩露機敏資訊的 Headers 移除，例如 cookies
-- Origin Server 要把整個 RAW HTTP Reuqest 都寫入 Response Body，並且把可能洩露機敏資訊的 Headers 移除，例如 cookies
-- 承上述兩點，為何要特別提到 `把可能洩露機敏資訊的 Headers 移除`，原因是有發生過資安漏洞，可參考 [xst-cross-site-tracing](#xst-cross-site-tracing)
-- Response.Headers.Content-Type 必須是 `message/http`
-- 現今，大部分 Server 都不支援 `TRACE` 了，此時可回傳 `405 Method Not Allowed`
 
 ### Apache 環境設定
 
@@ -75,8 +90,7 @@ sudo brew services start httpd
 安裝且啟動後，瀏覽器輸入 http://localhost/ ，有看到畫面就代表成功了！
 
 Windows XAMPP 會看到 Dashboard 頁面
-
-<!-- todo-yus 補圖 -->
+![xampp-dashboard](../../static/img/xampp-dashboard.jpg)
 
 Mac 會看到 It works!
 ![unix-apache-index](../../static/img/unix-apache-index.jpg)
@@ -92,7 +106,6 @@ Raw HTTP Request
 > Host: localhost
 > User-Agent: curl/8.7.1
 > Accept: */*
->
 ```
 
 Raw HTTP Response，可以看到 `Content-Type: message/http`，以及 body 包含整包 RAW HTTP Request
@@ -112,21 +125,23 @@ Accept: */*
 
 ### Max-Forwards
 
-格式
+格式：
 
 ```
 Max-Forwards: <number>
 Max-Forwards: 10
 ```
 
-- 這個 Request Header 會跟 `TRACE` Method 搭配使用
-- 每經過一個節點（CDN, Proxy, Web Server），節點就要把 `Max-Forwards` 的值減 1
+規則：
+
+- 這個 Request Header 會跟 `TRACE` 或是 `OPTIONS` Method 搭配使用
+- 每經過一個節點（例如：CDN, Proxy, Web Server），節點就要把 `Max-Forwards` 的值減 1
 - 節點收到 `Max-Forwards: 0` 的時候，就要把當下的 RAW HTTP Request 寫進 HTTP Response Body 並且回傳
-- 承上，如果 `Max-Forwards` 的值大於 0，且 HTTP Request 已經傳送到 Origin Server，此時會連同當下的 `Max-Forwards` 也一起寫進 HTTP Response Body 並且回傳
+- 承上，如果 `Max-Forwards` 的值 >= 0，且 HTTP Request 已經傳送到 Origin Server，此時就會把當下的 RAW HTTP Request 寫進 HTTP Response Body 並且回傳
 
 有了基本概念，我們來嘗試看看 `curl -X TRACE -H "Max-Forwards: 1" http://localhost -v`
 
-因為 Apache 後面沒有節點了，所以直接回傳 `Max-Forwards: 1`，符合預期
+RAW Response Body
 
 ```
 TRACE / HTTP/1.1
@@ -136,15 +151,16 @@ Accept: */*
 Max-Forwards: 1
 ```
 
+因為 Apache 後面沒有節點了，所以直接回傳 `Max-Forwards: 1`，符合預期。但接下來會需要讓 Apache 當中間結點，所以需要設定 `httpd.conf`
+
 ### httpd.conf 設定
 
 Windows XAMPP，在 Control Panel 可以打開
-
-<!-- todo-yus 補圖 -->
+![xampp-config](../../static/img/xampp-config.jpg)
 
 Mac 的話，輸入 `vim /opt/homebrew/etc/httpd/httpd.conf`
 
-加入以下程式碼
+加入以下程式碼，將請求反向代理到 http://localhost:5000/ ，也就是我們的 NodeJS HTTP Server
 
 httpd.conf
 
@@ -168,9 +184,121 @@ LoadModule proxy_http_module lib/httpd/modules/mod_proxy_http.so
 </VirtualHost>
 ```
 
-修改完以後重啟 `sudo brew services restart httpd`
+修改完以後重啟 `sudo brew services restart httpd`，接著實作 NodeJS HTTP Server 的部分
 
 ### NodeJS TRACE 實作
+
+有了 TRACE 的基本概念，要實作也不難。接下來的範例，我們會以 NodeJS HTTP Server 當作 Origin Server，也就是不管 `Max-Forwards` 是多少，它都會直接把 RAW HTTP Request 寫入 HTTP Response Body
+
+```ts
+// Act as a Origin Server
+if (req.method === "TRACE") {
+  console.log(req.headers);
+  const startLine = `TRACE ${req.url} HTTP/1.1\r\n`;
+  const reqHeadersToRawHTTP = Object.entries(req.headers)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join("\r\n");
+  const body = startLine + reqHeadersToRawHTTP + "\r\n\r\n";
+  res.setHeader("Content-Type", "message/http");
+  res.end(body);
+  return;
+}
+```
+
+### Max-Forwards 測試
+
+測試 `curl -X TRACE -H "Max-Forwards: 1" http://localhost -v`
+
+RAW HTTP Request
+
+```
+> TRACE / HTTP/1.1
+> Host: localhost
+> User-Agent: curl/8.13.0
+> Accept: */*
+> Max-Forwards: 1
+```
+
+RAW HTTP Response
+
+```
+TRACE / HTTP/1.1
+host: localhost
+user-agent: curl/8.13.0
+accept: */*
+max-forwards: 0
+x-forwarded-for: ::1
+x-forwarded-host: localhost
+x-forwarded-server: localhost
+connection: Keep-Alive
+```
+
+可以看到 Apache 在 Request Headers 加了這些
+
+```
+x-forwarded-for: ::1
+x-forwarded-host: localhost
+x-forwarded-server: localhost
+connection: Keep-Alive
+```
+
+繼續測試 `curl -X TRACE -H "Max-Forwards: 0" http://localhost -v`，理論上 NodeJS 這邊不會收到請求
+
+RAW HTTP Request
+
+```
+> TRACE / HTTP/1.1
+> Host: localhost
+> User-Agent: curl/8.13.0
+> Accept: */*
+> Max-Forwards: 0
+```
+
+RAW HTTP Response（這次 Apache 就直接回傳了，沒有再繼續反向代理，所以也少了 x-forwarded-\* 那些 Headers）
+
+```
+TRACE / HTTP/1.1
+Host: localhost
+User-Agent: curl/8.13.0
+Accept: */*
+Max-Forwards: 0
+```
+
+繼續測試 `curl -X TRACE -H "Max-Forwards: -1" http://localhost -v`，看看 Apache 有沒有做錯誤邊界處理XD
+
+RAW HTTP Response（Apache 果然也是成熟的 Web Server，這種錯誤邊界都有包含到）
+
+```
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>400 Proxy Error</title>
+</head><body>
+<h1>Proxy Error</h1>
+<p>Your browser sent a request that this server could not understand.<br />
+The proxy server could not handle the request<p>Reason: <strong>Max-Forwards request header could not be parsed</strong></p></p>
+<hr>
+<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+</body></html>
+```
+
+繼續測試 `curl -X TRACE -H "Max-Forwards: 0" -d "Hello World" -http://localhost -v`
+
+RAW HTTP Response（再次讚嘆 Apache 的錯誤邊界處理）
+
+```
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>413 Request Entity Too Large</title>
+</head><body>
+<h1>Request Entity Too Large</h1>
+The requested resource does not allow request data with TRACE requests, or the amount of data provided in
+the request exceeds the capacity limit.
+<hr>
+<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+</body></html>
+```
+
+關於 `Max-Forwards` 的測試到這邊～接下來的主題跳比較快，會介紹一個由 `TRACE` 引起的資安漏洞
 
 ## XST (Cross Site Tracing)
 
@@ -221,6 +349,11 @@ The getAllResponseHeaders() method provides access to all response headers as a 
 ```
 
 - 到了 2025 年，瀏覽器的 CORS 機制已經算相對完善，XST 這個攻擊手法基本上已經很難成立
+- 但也因為這個資安漏洞，所以 `TRACE` 請求已經沒有什麼 Origin Server 會實作了
+
+## 小結
+
+沒想到一個 `TRACE` 請求就可以寫這麼多故事，雖然它在 2025 年已經沒啥使用場景了，但從 [xst](#xst-cross-site-tracing) 這個資安漏洞，也可以看到瀏覽器安全性的演進歷史，對於了解 CORS 的設計初衷，有非常大的幫助。從攻擊的手法，去了解要怎麼防範，我覺得是一個非常好，且記憶會非常深刻的學習方式。希望各位有學到新東西呦～
 
 ## 參考資料
 
