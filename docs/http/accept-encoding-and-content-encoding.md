@@ -1,6 +1,6 @@
 ---
-title: Content-Encoding And Accept-Encoding
-description: Content-Encoding And Accept-Encoding
+title: Accept-Encoding and Content-Encoding
+description: Accept-Encoding and Content-Encoding
 last_update:
   date: "2025-05-03T08:00:00+08:00"
 ---

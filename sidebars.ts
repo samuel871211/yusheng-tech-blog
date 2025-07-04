@@ -32,7 +32,7 @@ const sidebars: SidebarsConfig = {
         "http/content-type-and-mime-type",
         "http/server-sent-events",
         "http/transfer-encoding",
-        "http/content-and-accept-encoding",
+        "http/accept-encoding-and-content-encoding",
         "http/sec-fetch",
         "http/iframe-security",
         "http/http-range-requests",
