@@ -47,10 +47,10 @@ const sidebars: SidebarsConfig = {
         "http/http-request-methods-1",
         "http/http-request-methods-2",
         "http/http-content-negotiation",
-        // "http/http-authentication", // 必讀
+        "http/http-authentication",
+        // "http/cross-origin-resource-sharing", // 必讀
         // "http/beyond-cors", // 必讀
         // "http/http-message-integrity", // 必讀
-        // "http/cross-origin-resource-sharing", // 必讀
         // "http/http-caching-1", // 必讀，想放後面
         // "http/http-caching-2", // 必讀，想放後面
         // "http/link", // 概念不難，但又可以順便把 <link> 精熟
