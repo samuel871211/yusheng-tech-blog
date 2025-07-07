@@ -72,6 +72,11 @@ const config: Config = {
   themes: ["@docusaurus/theme-mermaid"],
 
   themeConfig: {
+    docs: {
+      sidebar: {
+        hideable: true,
+      },
+    },
     image: "favicon/android-chrome-512x512.png",
     navbar: {
       title: "Yusheng's Tech Blog",
