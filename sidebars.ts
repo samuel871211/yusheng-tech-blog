@@ -48,7 +48,8 @@ const sidebars: SidebarsConfig = {
         "http/http-request-methods-2",
         "http/http-content-negotiation",
         "http/http-authentication",
-        "http/cross-origin-resource-sharing", // 必讀
+        "http/cross-origin-resource-sharing-1",
+        "http/cross-origin-resource-sharing-2",
         // "http/beyond-cors", // 必讀
         // "http/http-message-integrity", // 必讀
         // "http/http-caching-1", // 必讀，想放後面
