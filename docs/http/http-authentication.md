@@ -7,7 +7,7 @@ last_update:
 
 ## Nginx HTTP Basic Auth
 
-我們先從成熟的 Web Server 來學習 HTTP Basic Auth 的 Round Trip，以 windows 系統為例
+我們先從成熟的 Web Server 來學習 HTTP Basic Auth 的 Round Trip，以 Windows 系統為例
 
 1. 下載 [Nginx Stable Version](https://nginx.org/en/download.html)
 
@@ -92,6 +92,8 @@ nginx -s reload
 13. 瀏覽器打開 http://localhost/closedB ，應該會直接看到 `Welcome to nginx!`
     ![welcome-to-nginx](../../static/img/welcome-to-nginx.jpg)
 
+### Nginx HTTP Basic Auth 小結
+
 恭喜你完成了 Nginx HTTP Basic Auth 的測試～在這個範例，我們定義兩組不同的 `auth_basic`，對應到不同的 `WWW-Authenticate: Basic realm=${auth_basic}`，瀏覽器會根據不同的 `realm`，讓使用者輸入帳密登入
 
 如果直接用瀏覽器的視窗瀏覽頁面，而不是透過 `fetch` 或是其他 HTTP Client 的話，瀏覽器本身會有一個 "儲存 Basic Auth 登入後帳密的功能"，所以我們才有辦法在 http://localhost/ 輸入過帳密後，直接訪問具有同一組 `realm` 的 http://localhost/closedA
@@ -170,7 +172,7 @@ sequenceDiagram
 - `Authorization` => `Proxy-Authorization`
 - `WWW-Authenticate` => `Proxy-Authenticate`
 
-由於 Nginx 原生好像沒有支援，所以用比較老牌的 Apache 來試試看，以 windows 系統為例
+由於 Nginx 原生好像沒有支援，所以用比較老牌的 Apache 來試試看，以 Windows 系統為例
 
 1. 使用之前安裝過的 [XAMPP](../http/http-request-methods-2.md#xampp-for-windows)
 

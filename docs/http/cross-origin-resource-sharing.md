@@ -45,61 +45,56 @@ http5001Server.on("request", function requestListener(req, res) {
     <tr>
       <th>Header Name</th>
       <th>Header Type</th>
-      <th>Explain</th>
+      <!-- <th>Explain</th> -->
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>Access-Control-Allow-Origin</td>
       <td>Response</td>
-      <td>Explain</td>
+      <!-- <th>-</th> -->
     </tr>
     <tr>
       <td>Access-Control-Allow-Headers</td>
       <td>Response</td>
-      <td>Explain</td>
+      <!-- <th>-</th> -->
     </tr>
     <tr>
       <td>Access-Control-Allow-Methods</td>
       <td>Response</td>
-      <td>Explain</td>
+      <!-- <th>-</th> -->
     </tr>
     <tr>
       <td>Access-Control-Allow-Credentials</td>
       <td>Response</td>
-      <td>Explain</td>
+      <!-- <td>Explain</td> -->
     </tr>
     <tr>
       <td>Access-Control-Max-Age</td>
       <td>Response</td>
-      <td>Explain</td>
+      <!-- <td>Explain</td> -->
     </tr>
     <tr>
       <td>Access-Control-Expose-Headers</td>
       <td>Response</td>
-      <td>Explain</td>
+      <!-- <td>Explain</td> -->
     </tr>
     <tr>
       <td>Access-Control-Request-Method</td>
       <td>Request</td>
-      <td>Explain</td>
+      <!-- <td>Explain</td> -->
     </tr>
     <tr>
       <td>Access-Control-Request-Headers</td>
       <td>Request</td>
-      <td>Explain</td>
+      <!-- <td>Explain</td> -->
     </tr>
   </tbody>
 </table>
 
 ## Preflight Request + Redirection
 
-<!-- todo https://claude.ai/chat/97fdfe20-8ec6-45a8-acec-71a86339d2b9 -->
-
-## Access-Control-Max-Age 能 cache 哪些 CORS Headers
-
-<!-- todo 測試 -->
-<!-- that is, the information contained in the Access-Control-Allow-Methods and Access-Control-Allow-Headers headers -->
+<!-- todo-yus https://claude.ai/chat/97fdfe20-8ec6-45a8-acec-71a86339d2b9 -->
 
 ## CORS-safelisted request header & Access-Control-Allow-Headers
 
@@ -275,7 +270,7 @@ User agents should allow both to be cleared together with HTTP cookies and simil
 
 - HTTP cookies => 就是指 `cookie` Request Header
 - TLS client certificates => 已超出 HTTP 的範疇，本篇文章不討論
-- authentication entries =>
+- authentication entries => 可參考 [Nginx HTTP Basic Auth 小結](../http/http-authentication.md#nginx-http-basic-auth-小結)
 
 ### cookie
 
@@ -320,10 +315,91 @@ fetch("http://localhost:5001/access-control-allow-headers", {
 
 另外補充，`CSRF` 是無法透過 `Access-Control-Allow-Credentials` 來保護的喔！
 
-- `CSRF` 是需要在 HTTP Request 階段就透過 `CSRF Token` 來過濾跨域請求
+- `CSRF` 是需要在 HTTP Request 階段，Server 透過 `CSRF Token` 來過濾跨域請求
 - `Access-Control-Allow-Credentials` 則是瀏覽器的安全機制，HTTP Request 包含 `cookie` 且 HTTP Response 沒設定 `Access-Control-Allow-Credentials` 的話，就禁止 JavaScript 讀取 HTTP Response
 
 ### authentication entries
+
+測試流程稍微複雜一點，但大部分流程都跟 [Nginx HTTP Basic Auth](../http/http-authentication.md#nginx-http-basic-auth) 一樣
+
+1. 本機安裝 nginx，windows 系統可參考上面的連結，Mac 可使用
+
+```zsh
+brew install nginx
+brew services start nginx
+```
+
+2. 進到 `nginx.conf`，新增以下設定
+
+```conf
+server {
+  # 統一在 server 層級加上 CORS header
+  add_header Access-Control-Allow-Origin "http://localhost:5000";
+  add_header Access-Control-Allow-Credentials "true";
+  add_header Access-Control-Allow-Methods "GET, PUT, OPTIONS";
+
+  location = / {
+    # 處理 OPTIONS 請求
+    if ($request_method = 'OPTIONS') {
+      return 204;
+    }
+
+    ## Basic Auth
+    auth_basic "Restricted Area";
+    auth_basic_user_file htpasswd;
+
+    # 不使用 return 是因為 return always 執行，即便 Basic Auth 沒通過
+    # 不使用 root, index, try_files 是因為 nginx serve 靜態檔案會限制 request method（GET, HEAD...）
+    # 故使用 proxy_pass，自己架一個後端來回傳自定義內容
+    proxy_pass http://localhost:5001;
+  }
+}
+```
+
+3. 跟 `nginx.conf` 同一層資料夾，新增 htpasswd 檔案，可參考上面的連結
+
+4. `http5001Server` 新增以下區塊
+
+```ts
+// nginx basic auth proxy pass
+if (req.url === "/") {
+  res.setHeader("Content-Type", "text/plain");
+  res.end("200 OK");
+  return;
+}
+```
+
+5. 重整 nginx
+
+```
+nginx -s reload # Windows
+brew services restart nginx # Mac
+```
+
+6. 瀏覽器打開 http://localhost/ ，Mac 的話是 http://localhost:8080/ ，輸入帳密成功登入
+
+7. 瀏覽器打開 http://localhost:5000/ ，F12 > Console 戳看看，`Authorization: Basic` 真的有被送出了！
+
+```js
+fetch("http://localhost:8080/", { credentials: "include" }).then(res => res.text()).then(text => console.log(text))
+
+// result
+200 OK
+```
+
+![access-control-allow-credentials-basic-auth](../../static/img/access-control-allow-credentials-basic-auth.jpg)
+
+8. 承上一步驟，改成用 PUT Method 戳看看，也有成功送出～
+
+```js
+fetch("http://localhost:8080/", { method: "PUT", credentials: "include" }).then(res => res.text()).then(text => console.log(text))
+
+// result
+200 OK
+```
+
+![access-control-allow-credentials-options](../../static/img/access-control-allow-credentials-options.jpg)
+![access-control-allow-credentials-put](../../static/img/access-control-allow-credentials-put.jpg)
 
 ## 跳過 Preflight Request? Access-Control-Max-Age 實際測試
 
@@ -331,6 +407,100 @@ fetch("http://localhost:5001/access-control-allow-headers", {
 
 ```
 Indicates the number of seconds (5 by default) the information provided by the `Access-Control-Allow-Methods` and `Access-Control-Allow-Headers` headers can be cached.
+```
+
+我們在 `http5001Server` 新增以下區塊
+
+```ts
+if (req.url === "/access-control-max-age") {
+  // 印出 req.method，確認瀏覽器真的有跳過 OPTIONS 請求
+  console.log(req.method);
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "access-control-allow-origin": "http://localhost:5000",
+      "access-control-allow-methods": "PUT",
+      "access-control-allow-headers": "authorization",
+    });
+    res.end();
+    return;
+  }
+  res.writeHead(200, {
+    "access-control-allow-origin": "http://localhost:5000",
+    "access-control-allow-methods": "PUT",
+    "access-control-allow-headers": "authorization",
+  });
+  res.end();
+  return;
+}
+```
+
+瀏覽器打開 http://localhost:5000/ ，F12 > Console 戳看看
+
+```js
+fetch("http://localhost:5001/access-control-max-age", { method: "PUT", headers: { Authorization: "Basic 123" } }).then(res =>
+  fetch("http://localhost:5001/access-control-max-age", { method: "DELETE", headers: { Authorization: "Basic 123" } });
+);
+```
+
+Server 印出的 log 如下，由於第二次是 DELETE Method，不在快取內，所以會觸發 Preflight Request
+
+```
+OPTIONS
+PUT
+OPTIONS
+```
+
+接著嘗試快取機制
+
+```js
+fetch("http://localhost:5001/access-control-max-age", { method: "PUT", headers: { Authorization: "Basic 123" } }).then(res =>
+  fetch("http://localhost:5001/access-control-max-age", { method: "PUT", headers: { Authorization: "Basic 123" } });
+);
+```
+
+Server 印出的 log 如下，由於第二次 HTTP Request 的 method 跟 header 都在快取，所以不會觸發 Preflight Request
+
+```
+OPTIONS
+PUT
+PUT
+```
+
+我們可以整理成 Sequence Diagram
+
+<!-- todo 調整 -->
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Server
+
+    title Access-Control-Max-Age
+
+    Note over Browser, Server: First Fetch Request
+
+    Browser->>Server: OPTIONS /path/to/resource HTTP/1.1<br/>Access-Control-Request-Method: PUT<br/>Access-Control-Request-Headers: Authorization
+
+    Server->>Browser: HTTP/1.1 204 No Content<br/>Access-Control-Allow-Origin: http://localhost:5000<br/>Access-Control-Allow-Headers: Authorization<br/>Access-Control-Allow-Methods: PUT
+
+    Note over Browser: Cache<br/>Access-Control-Allow-Headers<br/>Access-Control-Allow-Methods<br/>for 5 seconds
+
+    Browser->>Server: PUT /path/to/resource HTTP/1.1<br/>Authorization: Basic xxx<br/><br/>Request Body
+
+    Server->>Browser: HTTP/1.1 200 OK<br/>Access-Control-Allow-Origin: http://localhost:5000<br/>Access-Control-Allow-Headers: Authorization<br/>Access-Control-Allow-Methods: PUT<br/><br/>Response Body
+
+    Note over Browser, Server: Second Fetch Request
+
+    alt Cache Not Expire &&<br/>Headers Satisfy Access-Control-Allow-Headers &&<br/>Method Satisfies Access-Control-Allow-Methods
+        Browser->>Server: Send Actual Request Directly
+        %% Browser->>Server: PUT /path/to/resource HTTP/1.1<br/>Authorization: Basic xxx<br/><br/>Request Body
+        %% Server->>Browser: HTTP/1.1 200 OK<br/>Access-Control-Allow-Origin: http://localhost:5000<br/>Access-Control-Allow-Headers: Authorization<br/>Access-Control-Allow-Methods: PUT<br/><br/>Response Body
+    else Cache Expires ||<br/>Headers Not Satisfy Access-Control-Allow-Headers ||<br/>Method Not Satisfies Access-Control-Allow-Methods
+        Browser->>Server: Send Preflight Request First
+        %% Browser->>Server: PUT /path/to/resource HTTP/1.1<br/>Authorization: Basic xxx<br/><br/>Request Body
+        %% Server->>Browser: HTTP/1.1 200 OK<br/>Access-Control-Allow-Origin: http://localhost:5000<br/>Access-Control-Allow-Headers: Authorization<br/>Access-Control-Allow-Methods: PUT<br/><br/>Response Body
+    end
+
 ```
 
 ### 參考資料
