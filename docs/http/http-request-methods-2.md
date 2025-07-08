@@ -7,7 +7,7 @@ last_update:
 
 ## OPTIONS
 
-絕大部分的應用場景都在 CORS 的 Preflight Request，會在未來的篇章 [cross-origin-resource-sharing](../http/cross-origin-resource-sharing.md) 介紹到
+絕大部分的應用場景都在 CORS 的 Preflight Request，會在未來的篇章 [cross-origin-resource-sharing](../http/cross-origin-resource-sharing-1.md) 介紹到
 
 ### 小插曲
 

@@ -1,6 +1,8 @@
 ---
 title: Cross-Origin Resource Sharing (CORS) 上篇
 description: Cross-Origin Resource Sharing (CORS) 上篇
+last_update:
+  date: "2025-07-08T08:00:00+08:00"
 ---
 
 ## 行前準備
