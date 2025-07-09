@@ -19,6 +19,7 @@ description: beyond CORS
 <!-- - https://github.com/mdn/content/pull/40123 -->
 <!-- - https://chromium.googlesource.com/chromium/src/+/master/services/network/cross_origin_read_blocking_explainer.md -->
 
+- https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CORP
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Cross-Origin_Resource_Policy
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Resource-Policy
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Embedder-Policy

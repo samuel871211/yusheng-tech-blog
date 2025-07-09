@@ -81,6 +81,7 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "web-tech",
       items: [
+        // "web-tech/xml",
         // "web-tech/web-rtc",
         "web-tech/binary-data-in-javascript",
       ],
