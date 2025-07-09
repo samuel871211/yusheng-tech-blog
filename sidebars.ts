@@ -50,7 +50,7 @@ const sidebars: SidebarsConfig = {
         "http/http-authentication",
         "http/cross-origin-resource-sharing-1",
         "http/cross-origin-resource-sharing-2",
-        // "http/beyond-cors", // 必讀
+        "http/beyond-cors",
         // "http/http-message-integrity", // 必讀
         // "http/http-caching-1", // 必讀，想放後面
         // "http/http-caching-2", // 必讀，想放後面
@@ -83,6 +83,7 @@ const sidebars: SidebarsConfig = {
       items: [
         // "web-tech/xml",
         // "web-tech/web-rtc",
+        // "wen-tech/subresource-integrity",
         "web-tech/binary-data-in-javascript",
       ],
     },
