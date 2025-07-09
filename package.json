@@ -27,7 +27,7 @@
     "build": "Build the static files of your website for production. See https://docusaurus.io/docs/deployment",
     "swizzle": "https://docusaurus.io/docs/swizzling",
     "deploy": "Deploy your site to GitHub Pages. See https://docusaurus.io/docs/deployment#deploy",
-    "deploy-firebase": "Deploy your site to Firebase Hosting. Note that you should run `npm i -g firebase` first.",
+    "deploy-firebase": "Deploy your site to Firebase Hosting. Note that you should run `npm i -g firebase-tools` first.",
     "clear": "Clear a Docusaurus site's generated assets, caches and build artifacts. See https://docusaurus.io/docs/migration#run-the-clear-command",
     "serve": "Test your build locally before deploying it for production. See https://docusaurus.io/docs/deployment#testing-build-locally",
     "write-translations": "https://docusaurus.io/docs/cli#docusaurus-write-translations-sitedir",
