@@ -50,7 +50,8 @@ const sidebars: SidebarsConfig = {
         "http/http-authentication",
         "http/cross-origin-resource-sharing-1",
         "http/cross-origin-resource-sharing-2",
-        "http/beyond-cors",
+        "http/beyond-cors-1",
+        "http/beyond-cors-2",
         // "http/http-message-integrity", // 必讀
         // "http/http-caching-1", // 必讀，想放後面
         // "http/http-caching-2", // 必讀，想放後面

@@ -1,6 +1,6 @@
 ---
-title: beyond CORS
-description: beyond CORS
+title: beyond CORS (上篇)
+description: beyond CORS (上篇)
 ---
 
 ## 行前準備
@@ -84,10 +84,10 @@ sequenceDiagram
 ### 一石二鳥
 
 - CORP 的誕生，也順便解決了另一個問題，就是保護自家網站的資源不被跨域的網站引用
-- 這邊的資源，通常是指透過 `<img>` 或是 `<script>` 載入的圖片跟 JavaScript
+- 這邊的資源，通常是指透過 `<img>` 或是 `<script>` 載入的資源
 - 如果是 HTML 類型的資源，不想要被跨域的網站透過 `<iframe>` 載入，則無法透過 CORP 防範，請參考我寫過的 [iframe-security](../http/iframe-security.md)
 
-### 實作環節
+### CORP 實作環節
 
 http5000Server
 
@@ -222,17 +222,114 @@ img, link, script, video, audio 的 response body 都無法讀取
 
 ## Cross-Origin-Embedder-Policy (COEP)
 
-## Cross-Origin-Opener-Policy (COOP)
+### COEP vs CORP
 
-<!-- ### Cross-Origin Read Blocking（CORB） -->
+如果以買水果的概念來比喻的話
+
+- COEP 的概念是 => 我只買沒有農藥的水果
+- CORP 的概念是 => 商家的水果決定要賣給誰
+- 雙方都要同意才會成交
+
+我把 COEP 跟 CORP 的概念以及交乘情境都列出來，方便大家用圖表的方式去理解
+
+```mermaid
+sequenceDiagram
+  participant a.example.com
+  participant b.example.com
+
+  Note Over a.example.com, b.example.com: Case1: CORP `same-site`
+
+  a.example.com ->> b.example.com: Can I load your image?
+  a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
+
+  b.example.com ->> a.example.com: Sure, I allow same-site or cross-origin
+  b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-site | cross-origin<br/>Content-Type: image/png
+
+  Note Over a.example.com, b.example.com: Case2: CORP `same-origin`
+
+  a.example.com ->> b.example.com: Can I load your image?
+  a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
+
+  b.example.com ->> a.example.com: Sorry, we are not same-origin
+  b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-origin<br/>Content-Type: image/png
+
+  Note Over a.example.com: Browser ignore the response body because of CORP
+
+  Note Over a.example.com, b.example.com: Case 3-1: COEP `require-corp`
+
+  Note Over a.example.com: COEP: require-corp
+
+  a.example.com ->> b.example.com: I want to load your image only if you say so
+  a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
+
+  b.example.com ->> a.example.com: Sure, I allow same-site or cross-origin
+  b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-site | cross-origin<br/>Content-Type: image/png
+
+  Note Over a.example.com, b.example.com: Case 3-2: COEP `require-corp`
+
+  Note Over a.example.com: COEP: require-corp
+
+  a.example.com ->> b.example.com: I want to load your image only if you say so
+  a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
+
+  b.example.com ->> a.example.com: Sorry, we are not same-origin
+  b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-origin<br/>Content-Type: image/png
+
+  Note Over a.example.com: Browser ignore the response body because of CORP
+
+  Note Over a.example.com, b.example.com: Case 3-3: COEP `require-corp`
+
+  Note Over a.example.com: COEP: require-corp
+
+  a.example.com ->> b.example.com: I want to load your image only if you say so
+  a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
+
+  b.example.com ->> a.example.com: I don't have CORP Header...
+  b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Content-Type: image/png
+
+  Note Over a.example.com: Browser ignore the response body because of COEP
+
+  Note Over a.example.com, b.example.com: Case 4-1: COEP `credentialless`
+
+  Note Over a.example.com: COEP: credentialless
+
+  a.example.com ->> b.example.com: I want to load your image without sending credentials
+  a.example.com ->> b.example.com: <img src="https://b.example.com/image.png" />
+
+  b.example.com ->> a.example.com: Sorry, we are not same-origin
+  b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-origin<br/>Content-Type: image/png
+
+  Note Over a.example.com: Browser ignore the response body because of CORP
+
+  Note Over a.example.com, b.example.com: Case 4-2: COEP `credentialless`
+
+  Note Over a.example.com: COEP: credentialless
+
+  a.example.com ->> b.example.com: I want to load your image without sending credentials
+  a.example.com ->> b.example.com: <img src="https://b.example.com/image.png" />
+
+  b.example.com ->> a.example.com: Sure, I allow same-site or cross-origin
+  b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-site | cross-origin<br/>Content-Type: image/png
+
+  Note Over a.example.com, b.example.com: Case 4-3: COEP `credentialless`
+
+  Note Over a.example.com: COEP: credentialless
+
+  a.example.com ->> b.example.com: I want to load your image without sending credentials
+  a.example.com ->> b.example.com: <img src="https://b.example.com/image.png" />
+
+  b.example.com ->> a.example.com: I don't have CORP Header...
+  b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Content-Type: image/png
+```
+
+P.S. Case 3-3 Browser ignore the response body because of COEP 的情境，會看到以下錯誤訊息
+![coep-block-corp-not-set](../../static/img/coep-block-corp-not-set.jpg)
+
+## 小結
+
+CORP 跟 COEP，實務上我沒看到有網站使用過，但它們也是瀏覽器安全性演進的一環．另外還有 COOP，會在 [未來的章節](../http/beyond-cors-2.md) 跟大家分享～
 
 ## 參考資料
-
-<!-- - https://www.chromium.org/Home/chromium-security/corb-for-developers/ -->
-<!-- - https://github.com/nodejs/undici/pull/1461/files -->
-<!-- - https://github.com/whatwg/fetch/pull/1441 -->
-<!-- - https://github.com/mdn/content/pull/40123 -->
-<!-- - https://chromium.googlesource.com/chromium/src/+/master/services/network/cross_origin_read_blocking_explainer.md -->
 
 - https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/CORP
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Cross-Origin_Resource_Policy
