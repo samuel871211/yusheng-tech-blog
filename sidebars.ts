@@ -51,9 +51,9 @@ const sidebars: SidebarsConfig = {
         "http/cross-origin-resource-sharing-1",
         "http/cross-origin-resource-sharing-2",
         "http/beyond-cors-1",
-        // "http/beyond-cors-2", // 超難，不太想學
-        // "http/http-caching-1", // 必讀，想放後面 28
-        // "http/http-caching-2", // 必讀，想放後面 29
+        // "http/http-caching-1", // 必讀 28
+        // "http/http-caching-2", // 必讀 29
+        // "http/http-conditional-request" // 必讀 30
         // "http/http-message-integrity", // 必讀
         // "http/timing-allow-origin", // 必讀
         // "http/link", // 概念不難，但又可以順便把 <link> 精熟
@@ -63,6 +63,7 @@ const sidebars: SidebarsConfig = {
         // "http/http-2", // 必讀，想放後面
         // "http/http-version-negotiation", // 不一定要納入30篇，這個偏難
         // "http/http-3", // 不一定要納入30篇，這個偏難
+        // "http/beyond-cors-2", // 超難，想放後面
         // "http/integrity-policy", // 不一定要納入30篇，很新的技術
         // "http/http-response-status-codes", // 感覺可拆，放最後，因為會跟很多主題重複
         // "http/end",

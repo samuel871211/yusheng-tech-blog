@@ -3,7 +3,7 @@ title: HTTP caching (上篇)
 description: HTTP caching (上篇)
 ---
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching
@@ -12,7 +12,6 @@ description: HTTP caching (上篇)
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
-- https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Clear-Site-Data
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Pragma
-- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/412
-- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/428
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Age
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/304
