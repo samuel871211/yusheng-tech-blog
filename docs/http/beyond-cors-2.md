@@ -19,6 +19,7 @@ description: beyond CORS (下篇)
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Resource-Policy
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Embedder-Policy
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Opener-Policy
+- https://html.spec.whatwg.org/multipage/browsers.html#cross-origin-opener-policies
 - https://datatracker.ietf.org/doc/html/rfc7034#section-2.3.2
 - https://www.w3.org/TR/CSP2/#directive-frame-ancestors
 - https://aszx87410.github.io/beyond-xss/ch4/cors-attack/
