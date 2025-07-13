@@ -15,3 +15,4 @@ description: HTTP caching (下篇)
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Pragma
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Age
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/304
+- https://www.rfc-editor.org/rfc/rfc9111.html
