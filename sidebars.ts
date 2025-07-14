@@ -52,7 +52,7 @@ const sidebars: SidebarsConfig = {
         "http/cross-origin-resource-sharing-2",
         "http/beyond-cors-1",
         "http/http-caching-1",
-        // "http/http-caching-2", // 必讀 29
+        "http/http-caching-2",
         // "http/http-conditional-request" // 必讀 30
         // "http/http-message-integrity", // 必讀
         // "http/timing-allow-origin", // 必讀
