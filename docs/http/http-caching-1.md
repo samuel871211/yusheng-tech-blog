@@ -303,12 +303,14 @@ sequenceDiagram
   Browser ->> Origin Server: GET /image.jpg HTTP/1.1<br/>Cache-Control: max-age=0
   Origin Server ->> Browser: HTTP/1.1 304 Not Modified<br/>Cache-Control: public, max-age=60, immutable
 
-  Note Over Browser, Origin Server: fetch
+  Note Over Browser, Origin Server: fetch /image.jpg With Enable Cache
 
   Note Over Browser: Cache is fresh, return directly
 ```
 
-<!-- todo 時序圖 -->
+## 小結
+
+本篇把 Cache 相關的 Headers 都講解過一輪，也實作了 Browser => Origin Server 的 Cache 機制．但實務上，通常會有很多中間層，例如 Web Server, CDN 等等，這些中間層都扮演著重要的 Cache 角色，分擔 Origin Server 的流量，讓 HTTP Reqeust 在中間層就處理掉．下一篇，會帶大家實作看看 Browser => Nginx => Origin Server 的架構～
 
 ## 參考資料
 
