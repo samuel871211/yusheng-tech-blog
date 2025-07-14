@@ -56,6 +56,47 @@ last_update:
       <td>Response</td>
       <td>Age: 24</td>
     </tr>
+    <!-- todo 看一下 RFC -->
+    <tr>
+      <td>If-Range</td>
+      <td>Request</td>
+      <td>
+        <div>If-Range: Last-Modified</div>
+        <div>If-Range: ETag</div>
+      </td>
+    </tr>
+    <tr>
+      <td>If-Modified-Since</td>
+      <td>Request</td>
+      <td>
+        <div>If-Modified-Since: Last-Modified</div>
+        <div>Conditional Request, 跟 GET, HEAD 一起使用，用來更新快取</div>
+      </td>
+    </tr>
+    <tr>
+      <td>If-None-Match</td>
+      <td>Request</td>
+      <td>
+        <div>If-None-Match: ETag</div>
+        <div>Conditional Request，用來更新快取/創建資源</div>
+      </td>
+    </tr>
+    <tr>
+      <td>If-Unmodified-Since</td>
+      <td>Request</td>
+      <td>
+        <div>If-Modified-Since: Last-Modified</div>
+        <div>Conditional Request, 跟 PUT 一起使用，確保更新資源不會有衝突</div>
+      </td>
+    </tr>
+    <tr>
+      <td>If-Match</td>
+      <td>Request</td>
+      <td>
+        <div>If-Match: ETag</div>
+        <div>Conditional Request, 用來更新資源</div>
+      </td>
+    </tr>
   </tbody>
 </table>
 
@@ -231,7 +272,11 @@ function entitytag(entity) {
   </tbody>
 </table>
 
-### 觀察 Chrome 的行為
+## Conditional Requests
+
+<!-- todo 感覺要先解釋 conditional request -->
+
+## 觀察 Chrome 的行為
 
 隨便打開一個網頁，F12 > Network > Disable Cache 打勾，實際發送的是 `Cache-Control: no-cache`
 
@@ -242,6 +287,15 @@ function entitytag(entity) {
 ![chrome-enable-cache-max-age-0](../../static/img/chrome-enable-cache-max-age-0.jpg)
 
 ## Browser => Origin Server 實作環節
+
+### Last-Modified + If-Modified-Since
+
+<!-- todo https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching#if-modified-since -->
+
+### ETag + If-None-Match
+
+<!-- todo 加上 conditional request -->
+<!-- todo https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching#etagif-none-match -->
 
 先測試一個 Browser => Origin Server 的情境，使用 NodeJS HTTP Server + [send](https://www.npmjs.com/package/send) 套件實作
 
@@ -316,7 +370,9 @@ sequenceDiagram
 
 ## 參考資料
 
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Conditional_requests
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching
+
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Expires
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Last-Modified
@@ -324,8 +380,20 @@ sequenceDiagram
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Vary
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Pragma
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Age
+<!-- todo -->
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Range
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Match
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Modified-Since
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-None-Match
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Unmodified-Since
+
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/304
+<!-- todo -->
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/412
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/428
+
 - https://www.rfc-editor.org/rfc/rfc9111.html
+
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_key
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_path
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache

@@ -29,6 +29,8 @@ http {
 
 ## must-revalidate 實測
 
+<!-- todo 加上 conditional request -->
+
 由於 [send](https://www.npmjs.com/package/send) 沒有支援很精細的 [Cache-Control directives](../http/http-caching-1.md#directives)，所以我們自行設定
 
 ```ts
@@ -58,7 +60,7 @@ brew services restart nginx # Mac
 
 瀏覽器打開 http://localhost:8080/example.txt ，由於我們設定 `Cache-Control: public, max-age=5, must-revalidate`，代表 cache 只要存在 nginx 超過 5 秒，再次請求就會打到 Origin Server，我們可以控制重整頁面的秒數來觀察
 
-- 第 1 個請求會打到 Origin Server，因為 nginx 一開始還沒有 cache
+- 第 1 個請求會打到 Origin Server，因為 nginx 一開始還沒有 cache，這個 304 是 Origin Server 回傳的
 - 後面第 2 ~ 5 個請求直接在 nginx 這層就回傳 304，因為都在 5 秒內
 - 第 6 個請求會打到 Origin Server，因為 cache 已經存在超過 5 秒
 
@@ -66,18 +68,44 @@ brew services restart nginx # Mac
 
 ### must-revalidate 小結
 
+<!-- todo -->
+<!-- 研究為何 -->
+<!-- https://claude.ai/chat/3fd15153-6006-4b2a-82c5-2d0776b2bc35 -->
+<!-- ```
+If caching is enabled, the header fields “If-Modified-Since”, “If-Unmodified-Since”, “If-None-Match”, “If-Match”, “Range”, and “If-Range” from the original request are not passed to the proxied server.
+``` -->
+
 ```mermaid
 sequenceDiagram
   participant Browser
   participant Nginx
   participant NodeJS
 
-  Note over Browser, Nginx: First HTTP Round Trip
+  Note over Browser, NodeJS: 1st HTTP Round Trip
+
+  Browser ->> Nginx: GET /example.txt HTTP/1.1<br/>Cache-Control: max-age=0
+  Note over Nginx: No Cache Found
+  Nginx ->> NodeJS: proxy_pass
+  NodeJS ->> Nginx: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=5, must-revalidate<br/><br/>helloworld
+  Nginx ->> Browser: proxy_pass
+
+  Note over Browser, NodeJS: 2nd ~ 5nd HTTP Round Trip
+
+  Note over Browser, NodeJS: 6nd HTTP Round Trip
+
 ```
 
 <!-- todo-yus -->
 
 ### 研究 Nginx Proxy Cache 存了什麼資料
+
+## If-Match
+
+<!-- todo-yus 研究有誰支援 -->
+
+## If-Unmodified-Since
+
+<!-- todo-yus 研究有誰支援 -->
 
 ## 參考資料
 
@@ -94,3 +122,4 @@ sequenceDiagram
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_key
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_path
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache
+- https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header
