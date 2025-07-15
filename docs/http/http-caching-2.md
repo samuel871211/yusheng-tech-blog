@@ -35,6 +35,10 @@ httpServer.on("request", function requestListener(req, res) {
         maxAge: 5000,
         immutable: true,
       });
+      sendStream.on("end", () => {
+        console.log("Response headers:", JSON.stringify(res.getHeaders()));
+        console.log("Status code:", res.statusCode);
+      });
       sendStream.pipe(res);
       return;
     }
@@ -134,33 +138,95 @@ http {
 sequenceDiagram
   participant Browser
   participant Nginx
-  participant NodeJS
+  participant Origin Server
 
-  Note over Browser, NodeJS: 1st HTTP Round Trip
+  Note over Browser, Origin Server: 1st HTTP Round Trip
 
   Browser ->> Nginx: GET /image.jpg?case=1&v=2 HTTP/1.1
   Note over Browser, Nginx: No Cache Found
-  Nginx ->> NodeJS: GET /image.jpg?case=1&v=2 HTTP/1.1
-  NodeJS ->> Nginx: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Mon, 14 Jul 2025 00:32:52 GMT<br/>Content-Length: 1374458<br/>Content-Type: image/jpeg<br/><br/>binary data...
+  Nginx ->> Origin Server: GET /image.jpg?case=1&v=2 HTTP/1.1
+  Origin Server ->> Nginx: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Mon, 14 Jul 2025 00:32:52 GMT<br/>Content-Length: 1374458<br/>Content-Type: image/jpeg<br/><br/>binary data...
   Note over  Nginx: Set Proxy Cache
   Nginx ->> Browser: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Mon, 14 Jul 2025 00:32:52 GMT<br/>Content-Length: 1374458<br/>Content-Type: image/jpeg<br/><br/>binary data...
   Note over Browser: Set Browser Cache
 
-  Note over Browser, NodeJS: 2nd ~ 4nd HTTP Round Trip
+  Note over Browser, Origin Server: 2nd ~ 4nd HTTP Round Trip
 
   Browser ->> Nginx: GET /image.jpg?case=1&v=2 HTTP/1.1<br/>Cache-Control: max-age=0<br/>If-Modified-Since: Mon, 14 Jul 2025 00:32:52 GMT
   Note over  Nginx: Check Proxy Cache Is Still Fresh
   Nginx ->> Browser: HTTP/1.1 304 Not Modified<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Mon, 14 Jul 2025 00:32:52 GMT
   Note over Browser: Update Browser Cache
 
-  Note over Browser, NodeJS: 5nd HTTP Round Trip
+  Note over Browser, Origin Server: 5nd HTTP Round Trip
 
   Browser ->> Nginx: GET /image.jpg?case=1&v=2 HTTP/1.1<br/>Cache-Control: max-age=0<br/>If-Modified-Since: Mon, 14 Jul 2025 00:32:52 GMT
   Note over  Nginx: Check Proxy Cache Is Stale
-  Nginx ->> NodeJS: GET /image.jpg?case=1&v=2 HTTP/1.1<br/>Cache-Control: max-age=0
-  NodeJS ->> Nginx: HTTP/1.1 304 Not Modified<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Mon, 14 Jul 2025 00:32:52 GMT
+  Nginx ->> Origin Server: GET /image.jpg?case=1&v=2 HTTP/1.1<br/>Cache-Control: max-age=0
+  Origin Server ->> Nginx: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=5, immutable<br/>Content-Length: 1374458<br/>Content-Type: image/jpeg<br/><br/>binary data...
   Note over  Nginx: Update Proxy Cache
   Nginx ->> Browser: HTTP/1.1 304 Not Modified<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Mon, 14 Jul 2025 00:32:52 GMT
+  Note over Browser: Update Browser Cache
+```
+
+眼尖的小夥伴應該有發現，第 5 個請求的 Nginx => Origin Server 這段，`If-Modified-Since` 被拿掉了。這部分我查閱了官方文件的描述，確實有說到這個行為：
+
+https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header
+
+```
+If caching is enabled, the header fields “If-Modified-Since”, “If-Unmodified-Since”, “If-None-Match”, “If-Match”, “Range”, and “If-Range” from the original request are not passed to the proxied server.
+```
+
+https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_revalidate
+
+```
+Enables revalidation of expired cache items using conditional requests with the “If-Modified-Since” and “If-None-Match” header fields.
+```
+
+等於說 Nginx 就是直接跟 Origin Server 請求新的 resource，拿到 200 以後，再拿 Nginx Proxy Cache 的 `Last-Modified` 跟 response 的 `Last-Modified` 去比對，如果一致，就回傳 304，非常聰明的策略，把 public cache 的優勢發揮得淋漓盡致
+
+但其實第 5 個請求可以再優化，如果要讓第 5 個請求的 Nginx => Origin Server 這段也走 Conditional Request，可以把 `proxy_cache_revalidate` 這個模組也打開，好處是如果 Origin Server 的 resource 沒變，Origin Server 可以直接回傳 304，就可以省下很多流量的傳輸
+
+## proxy_cache_revalidate 設定
+
+調整 nginx 的設定，並重啟
+
+```conf
+location / {
+    proxy_cache my_5000_cache;
+    proxy_cache_revalidate on;
+    proxy_pass http://localhost:5000;
+}
+```
+
+瀏覽器打開 http://localhost/image.jpg?case=1&v=10 ，5 秒後再重整一次
+![200+304](../../static/img/200+304.jpg)
+
+將這兩次的請求畫成時序圖，可以看到第二個請求的 Origin Server ->> Nginx 這一段從 200 變成 304，大幅減少傳輸的資料量
+
+```mermaid
+sequenceDiagram
+  participant Browser
+  participant Nginx
+  participant Origin Server
+
+  Note over Browser, Origin Server: 1st HTTP Round Trip
+
+  Browser ->> Nginx: GET /image.jpg?case=1&v=10 HTTP/1.1
+  Note over Browser, Nginx: No Cache Found
+  Nginx ->> Origin Server: GET /image.jpg?case=1&v=10 HTTP/1.1
+  Origin Server ->> Nginx: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Thu, 27 Feb 2025 14:07:46 GMT<br/>Content-Length: 1374458<br/>Content-Type: image/jpeg<br/><br/>binary data...
+  Note over  Nginx: Set Proxy Cache
+  Nginx ->> Browser: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Thu, 27 Feb 2025 14:07:46 GMT<br/>Content-Length: 1374458<br/>Content-Type: image/jpeg<br/><br/>binary data...
+  Note over Browser: Set Browser Cache
+
+  Note over Browser, Origin Server: 2nd HTTP Round Trip
+
+  Browser ->> Nginx: GET /image.jpg?case=1&v=10 HTTP/1.1<br/>Cache-Control: max-age=0<br/>If-Modified-Since: Thu, 27 Feb 2025 14:07:46 GMT
+  Note over  Nginx: Check Proxy Cache Is Stale
+  Nginx ->> Origin Server: GET /image.jpg?case=1&v=10 HTTP/1.1<br/>Cache-Control: max-age=0<br/>If-Modified-Since: Thu, 27 Feb 2025 14:07:46 GMT
+  Origin Server ->> Nginx: HTTP/1.1 304 Not Modified<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Thu, 27 Feb 2025 14:07:46 GMT
+  Note over  Nginx: Update Proxy Cache
+  Nginx ->> Browser: HTTP/1.1 304 Not Modified<br/>Cache-Control: public, max-age=5, immutable<br/>Last-Modified: Thu, 27 Feb 2025 14:07:46 GMT
   Note over Browser: Update Browser Cache
 ```
 
