@@ -2,12 +2,12 @@
 title: HTTP caching (上篇)
 description: HTTP caching (上篇)
 last_update:
-  date: "2025-07-14T08:00:00+08:00"
+  date: "2025-07-15T08:00:00+08:00"
 ---
 
 ## 大綱
 
-底下網羅關於 HTTP Caching 的 Headers，會在接下來的段落陸續介紹到
+底下網羅關於 HTTP Caching, HTTP Conditional Request 的 Headers，會在接下來的段落陸續介紹到
 
 <table>
   <thead>
@@ -26,12 +26,12 @@ last_update:
     <tr>
       <td>Expires</td>
       <td>Response</td>
-      <td>❌HTTP/1.0 就有的，逐漸被 Cache-Control 取代</td>
+      <td>❌ HTTP/1.0 就有的，逐漸被 Cache-Control 取代</td>
     </tr>
     <tr>
       <td>Last-Modified</td>
       <td>Response</td>
-      <td>Last-Modified: Sat, 12 Jul 2025 07:20:17 GMT</td>
+      <td>📗 Last-Modified: Sat, 12 Jul 2025 07:20:17 GMT</td>
     </tr>
     <tr>
       <td>ETag</td>
@@ -42,59 +42,63 @@ last_update:
       <td>Vary</td>
       <td>Response</td>
       <td>
-        <div>哪些 Request Header 會影響到 Response Body 的生成</div>
-        <div>Vary: Accept-Encoding, Origin</div>
+        <div>📗 Vary: Accept-Encoding, Origin</div>
+        <div>✅ 哪些 Request Header 會影響到 Response Body 的生成</div>
       </td>
     </tr>
     <tr>
       <td>Pragma</td>
       <td>Request/Response</td>
-      <td>❌Deprecated</td>
+      <td>❌ Deprecated</td>
     </tr>
     <tr>
       <td>Age</td>
       <td>Response</td>
-      <td>Age: 24</td>
+      <td>📗 Age: 24</td>
     </tr>
-    <!-- todo 看一下 RFC -->
     <tr>
       <td>If-Range</td>
       <td>Request</td>
       <td>
-        <div>If-Range: Last-Modified</div>
-        <div>If-Range: ETag</div>
+        <div>📗 If-Range: Strong ETag</div>
+        <div>📗 If-Range: Last-Modified</div>
+        <div>✅ Must be use with [Range](../http/http-range-requests.md) Request Header</div>
       </td>
     </tr>
     <tr>
       <td>If-Modified-Since</td>
       <td>Request</td>
       <td>
-        <div>If-Modified-Since: Last-Modified</div>
-        <div>Conditional Request, 跟 GET, HEAD 一起使用，用來更新快取</div>
+        <div>📗 If-Modified-Since: Last-Modified</div>
+        <div>✅ Conditional Request，主要用來更新快取</div>
       </td>
     </tr>
     <tr>
       <td>If-None-Match</td>
       <td>Request</td>
       <td>
-        <div>If-None-Match: ETag</div>
-        <div>Conditional Request，用來更新快取/創建資源</div>
+        <div>📗 If-None-Match: Strong ETag | Weak ETag</div>
+        <div>👶 Weak Comparison</div>
+        <div>✅ Conditional Request，主要用來更新快取</div>
+        <div>✅ If-None-Match 的優先度 > If-Modified-Since</div>
       </td>
     </tr>
     <tr>
       <td>If-Unmodified-Since</td>
       <td>Request</td>
       <td>
-        <div>If-Modified-Since: Last-Modified</div>
-        <div>Conditional Request, 跟 PUT 一起使用，確保更新資源不會有衝突</div>
+        <div>📗 If-Modified-Since: Last-Modified</div>
+        <div>✅ Conditional Request，主要用來更新資源</div>
       </td>
     </tr>
     <tr>
       <td>If-Match</td>
       <td>Request</td>
       <td>
-        <div>If-Match: ETag</div>
-        <div>Conditional Request, 用來更新資源</div>
+        <div>📗 If-Match: Strong ETag</div>
+        <div>💪 Strong Comparison</div>
+        <div>✅ Conditional Request，主要用來更新資源</div>
+        <div>✅ If-Match 的優先度 > If-Unmodified-Since</div>
       </td>
     </tr>
   </tbody>
@@ -161,6 +165,15 @@ function entitytag(entity) {
 
 ## Cache-Control
 
+- 用來控制 cache 的各種行為
+- cache 存放位置（public, private）
+- 是否允許 cache（no-cache, no-store）
+- cache 有效期控制（max-age, s-maxage）
+- cache 過期後的行為 （must-revalidate, proxy-revalidate, stale-while-revalidate）
+- cache 可否被轉換（no-transform）
+- cache 優化策略（only-if-cached, immutable）
+- 其他很少用到的（must-understand）
+
 ### Directives
 
 <table>
@@ -191,12 +204,12 @@ function entitytag(entity) {
     </tr>
     <tr>
       <td>no-cache</td>
-      <td>同➡️</td>
+      <td>同 ➡️</td>
       <td>可被 cache，但是每次都需跟 origin server 驗證</td>
     </tr>
     <tr>
       <td>no-store</td>
-      <td>同➡️</td>
+      <td>同 ➡️</td>
       <td>禁止任何形式的 cache</td>
     </tr>
     <tr>
@@ -224,7 +237,7 @@ function entitytag(entity) {
     </tr>
     <tr>
       <td>no-transform</td>
-      <td>同➡️</td>
+      <td>同 ➡️</td>
       <td>禁止中間層把 response body 做轉換</td>
     </tr>
     <tr>
@@ -272,11 +285,7 @@ function entitytag(entity) {
   </tbody>
 </table>
 
-## Conditional Requests
-
-<!-- todo 感覺要先解釋 conditional request -->
-
-## 觀察 Chrome 的行為
+## 小插曲，觀察 Chrome Disable Cache 的行為
 
 隨便打開一個網頁，F12 > Network > Disable Cache 打勾，實際發送的是 `Cache-Control: no-cache`
 
@@ -286,93 +295,22 @@ function entitytag(entity) {
 
 ![chrome-enable-cache-max-age-0](../../static/img/chrome-enable-cache-max-age-0.jpg)
 
-## Browser => Origin Server 實作環節
+## Conditional Requests
 
-### Last-Modified + If-Modified-Since
-
-<!-- todo https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching#if-modified-since -->
-
-### ETag + If-None-Match
-
-<!-- todo 加上 conditional request -->
-<!-- todo https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching#etagif-none-match -->
-
-先測試一個 Browser => Origin Server 的情境，使用 NodeJS HTTP Server + [send](https://www.npmjs.com/package/send) 套件實作
-
-1. index.ts
-
-```ts
-import send from "send";
-import httpServer from "../httpServer";
-
-httpServer.on("request", function requestListener(req, res) {
-  if (req.url === "/image.jpg") {
-    console.log(req.url);
-    return send(req, String(req.url), {
-      root: __dirname,
-      cacheControl: true,
-      etag: true,
-      immutable: true,
-      lastModified: true,
-      maxAge: 60000,
-    }).pipe(res);
-  }
-});
-```
-
-2. 在 index.ts 同一層，準備一個 image.jpg 檔案
-
-瀏覽器打開 http://localhost:5000/image.jpg ，在 Disable Cache 勾選/不勾選的情況，各重整五次
-
-可以看到 304 Not Modified 的平均響應毫秒比較快，且資料傳輸量小很多，因為不需要傳送 response body
-![200-vs-304](../../static/img/200-vs-304.jpg)
-
-再來比較 200 跟 304 的 response headers，304 由於沒有 response body，所以也就沒有 `Content-*` 的 response headers
-![200-has-content-headers](../../static/img/200-has-content-headers.jpg)
-![304-no-content-headers](../../static/img/304-no-content-headers.jpg)
-
-要注意！實際上 HTTP Request 都有到達 Origin Server，這個 304 是 Origin Server 回傳的。如果要避免 HTTP Request，直接使用 Browser Cache 的話，可以把 Disable Cache 不勾選，並且在 F12 > Console 輸入
-
-```js
-fetch("http://localhost:5000/image.jpg");
-```
-
-就會看到 200 OK (from disk cache)，原因是 [fetch 預設的 cache 模式](https://developer.mozilla.org/en-US/docs/Web/API/RequestInit#default)
-![200-from-disk-cache](../../static/img/200-from-disk-cache.jpg)
-
-### Browser => Origin Server 小結
-
-分別把上面三種請求模式，整理成時序圖
-
-```mermaid
-sequenceDiagram
-  participant Browser
-  participant Origin Server
-
-  Note Over Browser, Origin Server: Open Browser Tab With Disable Cache
-
-  Browser ->> Origin Server: GET /image.jpg HTTP/1.1<br/>Cache-Control: no-cache
-  Origin Server ->> Browser: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=60, immutable<br/>Content-Length: 1374458<br/>Content-Type: image/jpeg<br/><br/>binary data...
-
-  Note Over Browser, Origin Server: Open Browser Tab With Enable Cache
-
-  Browser ->> Origin Server: GET /image.jpg HTTP/1.1<br/>Cache-Control: max-age=0
-  Origin Server ->> Browser: HTTP/1.1 304 Not Modified<br/>Cache-Control: public, max-age=60, immutable
-
-  Note Over Browser, Origin Server: fetch /image.jpg With Enable Cache
-
-  Note Over Browser: Cache is fresh, return directly
-```
+- `If-*` 開頭的 Request Headers
+- `If-*` 條件為 `true`，則執行對應的 HTTP Method 操作
+- `If-Range` + `Range` 用來發起 Conditional Range Request，`true` 回傳對應的 Range，`false` 回傳整個 resource
+- `If-None-Match` + `If-Modified-Since` 通常會一起使用，用來更新快取
+- `If-Match` + `If-Unmodified-Since` 通常會一起使用，用來更新資源，若 `If-*` 條件為 `false`，則回傳 412 Precondition Failed
 
 ## 小結
 
-本篇把 Cache 相關的 Headers 都講解過一輪，也實作了 Browser => Origin Server 的 Cache 機制．但實務上，通常會有很多中間層，例如 Web Server, CDN 等等，這些中間層都扮演著重要的 Cache 角色，分擔 Origin Server 的流量，讓 HTTP Reqeust 在中間層就處理掉．下一篇，會帶大家實作看看 Browser => Nginx => Origin Server 的架構～
+HTTP Caching 跟 HTTP Conditional Requests 是兩個密不可分的概念．在第一個篇章，我們先有一個概觀，把這個主題會用到的 Headers 都介紹過一輪，接下來我們就會進到實作的環節～
 
 ## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Conditional_requests
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching
-
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Expires
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Last-Modified
@@ -380,20 +318,15 @@ sequenceDiagram
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Vary
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Pragma
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Age
-<!-- todo -->
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Range
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Match
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Modified-Since
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-None-Match
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/If-Unmodified-Since
-
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/304
-<!-- todo -->
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/412
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/428
-
 - https://www.rfc-editor.org/rfc/rfc9111.html
-
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_key
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_path
 - https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache
