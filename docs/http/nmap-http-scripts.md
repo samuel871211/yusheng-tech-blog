@@ -9,7 +9,7 @@ last_update:
 
 ### 本機 NodeJS http server 環境設定
 
-nmap 有一份超大的字典，維護每個 port 對應的服務是什麼，可參考 [Github 原始碼](https://github.com/nmap/nmap/blob/master/nmap-services)．總之，我們需要把 port 開在 80, 443 或 8080，nmap 才會正確識別這是 HTTP 服務
+nmap 有一份超大的字典，維護每個 port 對應的服務是什麼，可參考 [Github 原始碼](https://github.com/nmap/nmap/blob/master/nmap-services)。總之，我們需要把 port 開在 80, 443 或 8080，nmap 才會正確識別這是 HTTP 服務
 
 使用 NodeJS 在 80 port 開一個 http server
 

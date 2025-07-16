@@ -259,7 +259,7 @@ RAW HTTP Response
 
 ## 小結
 
-本篇文章，帶大家探索 Browser --> Nginx --> Origin Server 的架構，多了一層中間層，可以保護 Origin Server，讓請求在 Nginx 這層就被擋下，也學習了 Nginx 跟 proxy_cache 相關的 module 設定．接著，會帶大家實作 `ETag` 跟 `If-None-Match`～
+本篇文章，帶大家探索 Browser --> Nginx --> Origin Server 的架構，多了一層中間層，可以保護 Origin Server，讓請求在 Nginx 這層就被擋下，也學習了 Nginx 跟 proxy_cache 相關的 module 設定。接著，會帶大家實作 `ETag` 跟 `If-None-Match`～
 
 ## 參考資料
 

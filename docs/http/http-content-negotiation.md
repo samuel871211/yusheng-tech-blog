@@ -161,10 +161,6 @@ When sent by a server in a response, Accept provides information about which con
 
 可參考先前寫過的 [accept-encoding-and-content-encoding](../http/accept-encoding-and-content-encoding.md)，這也是 Content-Negotiation 的一環，不過本篇文章不會提到
 
-## Vary
-
-<!-- todo-yus 可稍微提到，但重點在 cache 的時候講 -->
-
 ## Accept-Language & Content-Language
 
 - `Accept-Language` 是 Request Header，瀏覽器也會自動帶上。以 Chrome V138 為例：
@@ -172,6 +168,8 @@ When sent by a server in a response, Accept provides information about which con
 ```
 Accept-Language: zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7
 ```
+
+## Accept-Language & Content-Language 實務
 
 - 實務上，若有支援多語系的網站，會提供切換語系的功能，`Accept-Language` 則是作為預設的語系
 - 承上，以 [console.cloud.google.com](https://console.cloud.google.com/) 為例，有提供切換語系的功能

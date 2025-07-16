@@ -2,7 +2,7 @@
 title: HTTP caching (第一篇)
 description: HTTP caching (第一篇)
 last_update:
-  date: "2025-07-15T08:00:00+08:00"
+  date: "2025-07-16T08:00:00+08:00"
 ---
 
 ## 大綱
@@ -43,7 +43,7 @@ last_update:
       <td>Response</td>
       <td>
         <div>📗 Vary: Accept-Encoding, Origin</div>
-        <div>✅ 哪些 Request Header 會影響到 Response Body 的生成</div>
+        <div>[Vary](../http/http-caching-3.md#vary)</div>
       </td>
     </tr>
     <tr>
@@ -305,7 +305,7 @@ function entitytag(entity) {
 
 ## 小結
 
-HTTP Caching 跟 HTTP Conditional Requests 是兩個密不可分的概念．在第一個篇章，我們先有一個概觀，把這個主題會用到的 Headers 都介紹過一輪，接下來我們就會進到實作的環節～
+HTTP Caching 跟 HTTP Conditional Requests 是兩個密不可分的概念。在第一個篇章，我們先有一個概觀，把這個主題會用到的 Headers 都介紹過一輪，接下來我們就會進到實作的環節～
 
 ## 參考資料
 

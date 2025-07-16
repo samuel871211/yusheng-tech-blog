@@ -351,7 +351,7 @@ sequenceDiagram
 
 ### CONNECT 小結
 
-HTTP Request Method CONNECT 我認為比較難理解，原因是它需要對 TCP 有一定程度的理解，最好也要熟悉 [NodeJS Net 模組](https://nodejs.org/api/net.html)．本篇章我盡量只講到 HTTP 的傳輸，對於 TCP 層連線的建立跟關閉都沒提到，這會在未來的篇章 [TCP-Finite-State-Machine](../tcp/tcp-finite-state-machine.md) 跟大家詳細解釋，希望大家對 CONNECT 有初步的認識．
+HTTP Request Method CONNECT 我認為比較難理解，原因是它需要對 TCP 有一定程度的理解，最好也要熟悉 [NodeJS Net 模組](https://nodejs.org/api/net.html)。本篇章我盡量只講到 HTTP 的傳輸，對於 TCP 層連線的建立跟關閉都沒提到，這會在未來的篇章 [TCP-Finite-State-Machine](../tcp/tcp-finite-state-machine.md) 跟大家詳細解釋，希望大家對 CONNECT 有初步的認識。
 
 ## 小結
 

@@ -193,7 +193,7 @@ https://datatracker.ietf.org/doc/html/rfc9112#section-6.3-2.3
 If a message is received with both a Transfer-Encoding and a Content-Length header field, the Transfer-Encoding overrides the Content-Length.
 ```
 
-簡單來說，不允許兩個 header 一起設置，但當兩個 header 同時設置時，接收方可選擇回傳錯誤訊息，或是把 `Content-Length` 捨棄，咱們的 Chrome 瀏覽器選擇了後者．
+簡單來說，不允許兩個 header 一起設置，但當兩個 header 同時設置時，接收方可選擇回傳錯誤訊息，或是把 `Content-Length` 捨棄，咱們的 Chrome 瀏覽器選擇了後者。
 
 ### 使用 curl 觀察 raw HTTP Response Body
 
@@ -342,7 +342,7 @@ if (req.url === "/case6") {
 
 ![transfer-encoding-with-connection-closed](../../static/img/transfer-encoding-with-connection-closed.jpg)
 
-因為 `Connection: closed` 指的是在這次 HTTP 來回的傳輸完畢之後，才關閉 TCP Connection，並不是 Response Header 傳輸完畢之後就直接關閉了，這兩者之間是有差異的．
+因為 `Connection: closed` 指的是在這次 HTTP 來回的傳輸完畢之後，才關閉 TCP Connection，並不是 Response Header 傳輸完畢之後就直接關閉了，這兩者之間是有差異的。
 
 ### 跟 Server Sent Events 的差別
 
