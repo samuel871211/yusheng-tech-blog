@@ -1,6 +1,6 @@
 ---
-title: HTTP caching (上篇)
-description: HTTP caching (上篇)
+title: HTTP caching (第一篇)
+description: HTTP caching (第一篇)
 last_update:
   date: "2025-07-15T08:00:00+08:00"
 ---

@@ -1,9 +1,11 @@
 ---
-title: HTTP caching (下篇)
-description: HTTP caching (下篇)
+title: HTTP caching (第二篇)
+description: HTTP caching (第二篇)
+last_update:
+  date: "2025-07-16T08:00:00+08:00"
 ---
 
-## Browser => Origin Server 實作環節
+## Browser --> Origin Server 實作環節
 
 我們使用 NodeJS HTTP Server 來實作
 
@@ -47,7 +49,7 @@ httpServer.on("request", function requestListener(req, res) {
 });
 ```
 
-2. 在 index.ts 同一層，準備一個 image.jpg 檔案
+2. 在 index.ts 同一層，準備一個 image.jpg 檔案跟 example.txt 檔案
 
 瀏覽器打開 http://localhost:5000/image.jpg?case=1 ，在 Disable Cache 勾選/不勾選的情況，各重整五次
 
@@ -93,7 +95,7 @@ sequenceDiagram
 
 ## Nginx Proxy Cache 設定
 
-實務上，通常會有很多中間層，例如 Web Server, CDN 等等，這些中間層都扮演著重要的 Cache 角色，分擔 Origin Server 的流量，讓 HTTP Reqeust 在中間層就處理掉，所以我們接下來要把架構升級成 Browser => Nginx => Origin Server
+實務上，通常會有很多中間層，例如 Web Server, CDN 等等，這些中間層都扮演著重要的 Cache 角色，分擔 Origin Server 的流量，讓 HTTP Reqeust 在中間層就處理掉，所以我們接下來要把架構升級成 Browser --> Nginx --> Origin Server
 
 在 nginx.conf 新增以下設定（以 Mac M系列晶片 + homebrew 為例）
 
@@ -168,7 +170,7 @@ sequenceDiagram
   Note over Browser: Update Browser Cache
 ```
 
-眼尖的小夥伴應該有發現，第 5 個請求的 Nginx => Origin Server 這段，`If-Modified-Since` 被拿掉了。這部分我查閱了官方文件的描述，確實有說到這個行為：
+眼尖的小夥伴應該有發現，第 5 個請求的 Nginx --> Origin Server 這段，`If-Modified-Since` 被拿掉了。這部分我查閱了官方文件的描述，確實有說到這個行為：
 
 https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header
 
@@ -184,7 +186,7 @@ Enables revalidation of expired cache items using conditional requests with the 
 
 等於說 Nginx 就是直接跟 Origin Server 請求新的 resource，拿到 200 以後，再拿 Nginx Proxy Cache 的 `Last-Modified` 跟 response 的 `Last-Modified` 去比對，如果一致，就回傳 304，非常聰明的策略，把 public cache 的優勢發揮得淋漓盡致
 
-但其實第 5 個請求可以再優化，如果要讓第 5 個請求的 Nginx => Origin Server 這段也走 Conditional Request，可以把 `proxy_cache_revalidate` 這個模組也打開，好處是如果 Origin Server 的 resource 沒變，Origin Server 可以直接回傳 304，就可以省下很多流量的傳輸
+但其實第 5 個請求可以再優化，如果要讓第 5 個請求的 Nginx --> Origin Server 這段也走 Conditional Request，可以把 `proxy_cache_revalidate` 這個模組也打開，好處是如果 Origin Server 的 resource 沒變，Origin Server 可以直接回傳 304，就可以省下很多流量的傳輸
 
 ## proxy_cache_revalidate 設定
 
@@ -230,29 +232,34 @@ sequenceDiagram
   Note over Browser: Update Browser Cache
 ```
 
-### ETag + If-None-Match
+## 研究 Nginx Proxy Cache 存了什麼資料
 
-<!-- todo 加上 conditional request -->
-<!-- todo https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching#etagif-none-match -->
+先用瀏覽器請求 http://localhost:8080/example.txt ，再打開 nginx/my_5000_cache 資料夾，會看到以下資料
+![nginx-cache](../../static/img/nginx-cache.jpg)
 
-<!-- todo -->
-<!-- 研究為何 -->
-<!-- https://claude.ai/chat/3fd15153-6006-4b2a-82c5-2d0776b2bc35 -->
-<!-- ```
-If caching is enabled, the header fields “If-Modified-Since”, “If-Unmodified-Since”, “If-None-Match”, “If-Match”, “Range”, and “If-Range” from the original request are not passed to the proxied server.
-``` -->
+首先是檔名，根據 [Nginx 官方文件](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_key) 的描述
 
-### 研究 Nginx Proxy Cache 存了什麼資料
+```
+Sets the path and other parameters of a cache. Cache data are stored in files. The file name in a cache is a result of applying the MD5 function to the cache key.
 
-<!-- todo-yus -->
+Default: proxy_cache_key $scheme$proxy_host$request_uri;
+```
 
-## If-Match
+若拿 `http://localhost:5000/example.txt` 去做 MD5 Hash，確實會得到 `0fb71471e2abd056431997d9a3034949`
 
-<!-- todo-yus 研究有誰支援 -->
+再來是檔案內容，格式可被拆解成以下
 
-## If-Unmodified-Since
+```
+第一行看不懂，可能是什麼 binary data
+KEY: $scheme$proxy_host$request_uri
+RAW HTTP Response
+```
 
-<!-- todo-yus 研究有誰支援 -->
+其實也沒什麼魔法，就是把整個 RAW HTTP Response 存起來，用完整的 URL 當作 KEY，就是這麼樸實無華且高效
+
+## 小結
+
+本篇文章，帶大家探索 Browser --> Nginx --> Origin Server 的架構，多了一層中間層，可以保護 Origin Server，讓請求在 Nginx 這層就被擋下，也學習了 Nginx 跟 proxy_cache 相關的 module 設定．接著，會帶大家實作 `ETag` 跟 `If-None-Match`～
 
 ## 參考資料
 
