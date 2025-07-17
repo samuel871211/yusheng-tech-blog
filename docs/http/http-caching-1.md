@@ -135,7 +135,7 @@ function stattag(stat) {
 
 - 通常是把 file content 拿去 hash，方法沒有規定
 - 同樣的 Strong ETag，可以確保 file content 完全一致
-- Strong ETag 的生成，效能較 Weak ETag 較差
+- Strong ETag 的生成，效能比 Weak ETag 更差
 
 看看 [NodeJS etag](https://github.com/jshttp/etag/blob/master/index.js) 的實作，實作上也是非常樸實無華
 
