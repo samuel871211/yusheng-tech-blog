@@ -111,7 +111,7 @@ const sidebars: SidebarsConfig = {
       label: "protocols",
       items: [
         "protocols/mqtt",
-        // "protocols/ftp",
+        "protocols/ftp",
         // "protocols/smtp"
       ],
     },
