@@ -53,7 +53,8 @@ const sidebars: SidebarsConfig = {
         "http/beyond-cors-1",
         "http/http-caching-1",
         "http/http-caching-2",
-        "http/http-caching-3", // 30 篇
+        "http/http-caching-3",
+        "http/articles-30-end",
         // "http/http-message-integrity", // 必讀
         // "http/timing-allow-origin", // 必讀
         // "http/link", // 概念不難，但又可以順便把 <link> 精熟

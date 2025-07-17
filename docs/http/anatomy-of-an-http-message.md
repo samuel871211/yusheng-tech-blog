@@ -2,7 +2,7 @@
 title: 深入解說 HTTP message
 description: Anatomy of an HTTP message
 last_update:
-  date: "2025-06-17T08:00:00+08:00"
+  date: "2025-03-09T08:00:00+08:00"
 ---
 
 HTTP 簡單來說就是一個文本（字串）傳輸的協議，就像小學的時候，學校會教書信格式:

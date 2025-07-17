@@ -84,20 +84,20 @@ const config: Config = {
         alt: "Logo",
         src: "favicon/android-chrome-512x512.png",
       },
-      // items: [
-      //   {
-      //     type: 'docSidebar',
-      //     sidebarId: 'tutorialSidebar',
-      //     position: 'left',
-      //     label: 'Tutorial',
-      //   },
-      //   {to: '/blog', label: 'Blog', position: 'left'},
-      //   {
-      //     href: 'https://github.com/facebook/docusaurus',
-      //     label: 'GitHub',
-      //     position: 'right',
-      //   },
-      // ],
+      items: [
+        // {
+        //   type: 'docSidebar',
+        //   sidebarId: 'tutorialSidebar',
+        //   position: 'left',
+        //   label: 'Tutorial',
+        // },
+        // {to: '/blog', label: 'Blog', position: 'left'},
+        {
+          href: "https://github.com/samuel871211/yusheng-tech-blog",
+          label: "GitHub",
+          position: "right",
+        },
+      ],
     },
     footer: {
       style: "dark",
@@ -148,7 +148,7 @@ const config: Config = {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
     },
-  } satisfies Preset.ThemeConfig,
+  },
 };
 
 export default config;
