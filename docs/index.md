@@ -16,8 +16,8 @@ last_update:
 - 舊的網址：https://learn-http-with-nodejs.web.app/
 - 轉換原因：
 
-  我很感謝我在 2025 的過年，看了胡立大大的 [Beyond XSS：探索網頁前端資安宇宙](https://aszx87410.github.io/beyond-xss/)，開啟了我對前端資安領域的高度興趣，也開啟了我的白帽駭客學習之路。
+  我很感謝我在 2025 的過年，看了 Huli 大大的 [Beyond XSS：探索網頁前端資安宇宙](https://aszx87410.github.io/beyond-xss/)，開啟了我對前端資安領域的高度興趣，也開啟了我的白帽駭客學習之路。
 
-  起初都是透過企業的 Email 私下回報資安漏洞，但我發現效率不佳，跟客服來回溝通的成本，以及無法掌握企業修補資安漏洞的進度。後來我順著 [胡立大大的文章](https://aszx87410.github.io/beyond-xss/)，得知了 [Hitcon Zeroday](https://zeroday.hitcon.org/) 這個組織，可以用來回報資安漏洞，於是我開始轉用它。看到自己累積的 [漏洞列表](https://zeroday.hitcon.org/user/cat1528985/vulnerability) 逐步成長，心中雖有喜悅，但也在挖掘漏洞的過程中，意識到自己的知識、經驗不足。
+  起初都是透過企業的 Email 私下回報資安漏洞，但我發現效率不佳，跟客服來回溝通的成本，以及無法掌握企業修補資安漏洞的進度。後來我順著 [Huli 大大的文章](https://aszx87410.github.io/beyond-xss/)，得知了 [Hitcon Zeroday](https://zeroday.hitcon.org/) 這個組織，可以用來回報資安漏洞，於是我開始轉用它。看到自己累積的 [漏洞列表](https://zeroday.hitcon.org/user/cat1528985/vulnerability) 逐步成長，心中雖有喜悅，但也在挖掘漏洞的過程中，意識到自己的知識、經驗不足。
 
   "紅隊資安領域很廣，滲透測試是一門專精的領域，這些都是我缺乏的知識、技能"，隨著我越深入資安領域，我在 2025/05 開始意識到這些事情。從 `learn-http-with-nodejs` 轉型到 `yusheng-tech-blog`，也是因為我想要把自己的技能樹往紅隊資安領域發展，所以我要學習的內容就不只是 HTTP，這只能算是一個基礎知識而已。
