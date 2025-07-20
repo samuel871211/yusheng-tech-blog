@@ -1,6 +1,8 @@
 ---
 title: FTP
 description: FTP
+last_update:
+  date: "2025-07-20T08:00:00+08:00"
 ---
 
 ## FileZilla Client + Server
@@ -80,7 +82,7 @@ FileZilla Server 預設就是使用 FTPS，並且 FTPS 還有兩種模式
 
 ## 登入流程的 Command 跟 Reply
 
-從 FileZilla Client 連線登入後，會看到以下 log（右鍵勾選 "Show detailed log" 的情況）
+登入成功
 
 ```
 Status:      	Resolving address of localhost
@@ -104,52 +106,331 @@ Response: 	257 "/" is current directory.
 Status:      	Directory listing of "/" successful
 ```
 
-| Command | Description            |
-| ------- | ---------------------- |
-| 全名    | File Transfer Protocol |
-| 介紹    | 明文傳輸               |
+登入失敗
 
-AUTH TLS
-USER yusheng
-PASS \*\*\*
-PWD
+```
+Status: 	Disconnected from server
+Status: 	Resolving address of localhost
+Status: 	Connecting to [::1]:21...
+Status: 	Connection established, waiting for welcome message...
+Response: 	220-FileZilla Server 1.10.4
+Response: 	220 Please visit https://filezilla-project.org/
+Command:	AUTH TLS
+Response:	234 Using authentication type TLS.
+Status: 	Initializing TLS...
+Status: 	TLS connection established.
+Command:	USER yusheng
+Response:	331 Please, specify the password.
+Command:	PASS ****
+Response: 	530 Login incorrect.
+Error:      	Critical error: Could not connect to server
+```
 
-220
-234
-331
-230
-257
+| Command      | Description             |
+| ------------ | ----------------------- |
+| AUTH TLS     | -                       |
+| USER yusheng | -                       |
+| PASS \*\*\*  | -                       |
+| PWD          | Print Working Directory |
+
+| Reply Code | Description                     |
+| ---------- | ------------------------------- |
+| 220        | Service ready for new user      |
+| 234        | Security data exchange complete |
+| 331        | User name okay, need password   |
+| 230        | User logged in, proceed         |
+| 257        | "PATHNAME" created              |
+| 530        | Not logged in                   |
 
 ## 訪問目錄的 Command 跟 Reply
 
+```
+Status:      	Retrieving directory listing of "/daily"...
+Command:	CWD daily
+Response:	250 CWD command successful
+Command:	PWD
+Response:	257 "/daily" is current directory.
+Command:	TYPE I
+Response:	200 Type set to I
+Command:	EPSV
+Response:	229 Entering Extended Passive Mode (|||51430|)
+Command:	MLSD
+Response:	150 Starting data transfer.
+Response:	226 Operation successful
+Status:      	Directory listing of "/daily" successful
+```
+
+從這邊可以看到，FTP Commands 的傳輸跟 Data 的傳輸是分兩個 Port 的，Server 會提供一個 Port 給 Client 連，使用的是 [Passive Mode](#active-mode-vs-passive-mode)
+
+| Command   | Description                       |
+| --------- | --------------------------------- |
+| CWD daily | Change Working Directory to daily |
+| TYPE I    | Type Binary/Image                 |
+| EPSV      | Extended Passive Mode             |
+| MLSD      | Machine Listing Directory         |
+
+| Reply Code | Description                                     |
+| ---------- | ----------------------------------------------- |
+| 250        | Requested file action okay, completed           |
+| 200        | Command okay                                    |
+| 229        | Entering passive mode                           |
+| 150        | File status okay; about to open data connection |
+| 226        | Closing data connection                         |
+
+## FTP 架構圖
+
+參考 [RFC 959](https://www.rfc-editor.org/rfc/rfc959.html) 的架構圖
+
+```
+                                            -------------
+                                            |/---------\|
+                                            ||   User  ||    --------
+                                            ||Interface|<--->| User |
+                                            |\----^----/|    --------
+                  ----------                |     |     |
+                  |/------\|  FTP Commands  |/----V----\|
+                  ||Server|<---------------->|   User  ||
+                  ||  PI  ||   FTP Replies  ||    PI   ||
+                  |\--^---/|                |\----^----/|
+                  |   |    |                |     |     |
+      --------    |/--V---\|      Data      |/----V----\|    --------
+      | File |<--->|Server|<---------------->|  User   |<--->| File |
+      |System|    || DTP  ||   Connection   ||   DTP   ||    |System|
+      --------    |\------/|                |\---------/|    --------
+                  ----------                -------------
+
+                  Server-FTP                   USER-FTP
+```
+
+| Terminology | Description                                                                                                                   |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| PI          | Protocol Interpreter，可以想像成 FTP 的大腦，<br/>負責收發 FTP Commands 跟 FTP Replies，<br/>並且將這些 Commands 傳遞給 DTP。 |
+| DTP         | Data Transfer Protocol，實際檔案傳輸的通道。                                                                                  |
+| USER-FTP    | FTP Client（FileZilla Client）                                                                                                |
+| Server-FTP  | FTP Server（FileZilla Server）                                                                                                |
+
 ## 上傳檔案的 Command 跟 Reply
+
+```
+Status:      	Starting upload of C:\Users\xxx\Desktop\yyy\zzz\file.md
+Command:	EPSV
+Response:	229 Entering Extended Passive Mode (|||54803|)
+Command:	STOR file.md
+Response:	150 Starting data transfer.
+Response:	226 Operation successful
+Status:      	File transfer successful, transferred 0 B in 1 second
+Status:      	Retrieving directory listing of "/daily"...
+Command:	EPSV
+Response:	229 Entering Extended Passive Mode (|||54805|)
+Command:	MLSD
+Response:	150 Starting data transfer.
+Response:	226 Operation successful
+Status:      	Directory listing of "/daily" successful
+```
+
+| Command      | Description    |
+| ------------ | -------------- |
+| STOR file.md | STORE 上傳檔案 |
+
+## 新增檔案的 Command 跟 Reply
+
+同 [上傳檔案](#上傳檔案的-command-跟-reply)，使用 `STOR` 來新增檔案
+
+## 刪除檔案的 Command 跟 Reply
+
+```
+Status:      	Deleting "/xxx/file.md"
+Command:	DELE file.md
+Response:      	250 File deleted successfully.
+```
+
+| Command      | Description     |
+| ------------ | --------------- |
+| DELE file.md | DELETE 刪除檔案 |
 
 ## 下載檔案的 Command 跟 Reply
 
+```
+Status:      	Starting download of /xxx/yyy/zzz/tsconfig.json
+Command:	EPSV
+Response:      	229 Entering Extended Passive Mode (|||55623|)
+Command:	RETR tsconfig.json
+Response:      	150 About to start data transfer.
+Response:      	226 Operation successful
+Status:      	File transfer successful, transferred 440 B in 1 second
+```
+
+| Command            | Description            |
+| ------------------ | ---------------------- |
+| RETR tsconfig.json | Retrieve tsconfig.json |
+
+## 查看檔案內容的 Command 跟 Reply
+
+同 [下載檔案](#下載檔案的-command-跟-reply)，使用 `RETR` 來取得檔案內容
+
+## 新增資料夾的 Command 跟 Reply
+
+```
+Status:      	Creating directory '/xxx/0719test'...
+Command:	CWD /xxx
+Response:      	250 CWD command successful
+Command:	MKD 0719test
+Response:      	257 "/xxx/0719test" created successfully.
+```
+
+| Command      | Description             |
+| ------------ | ----------------------- |
+| MKD 0719test | Make Directory 0719test |
+
+## 刪除資料夾的 Command 跟 Reply
+
+其實就是用迴圈去 [刪除檔案](#刪除檔案的-command-跟-reply)，最後再搭配 `RMD` 刪除資料夾本身
+
+```
+Status:      	Retrieving directory listing of "/xxx/0719test"...
+Command:	CWD /xxx/0719test
+Response:      	250 CWD command successful
+Command:	EPSV
+Response:	229 Entering Extended Passive Mode (|||57528|)
+Command:	MLSD
+Response:      	150 Starting data transfer.
+Response:      	226 Operation successful
+Status:      	Directory listing of "/xxx/0719test" successful
+Status:      	Deleting 3 files from "/xxx/0719test"
+Command:	DELE 1
+Response:      	250 File deleted successfully.
+Command:	DELE 2
+Response:      	250 File deleted successfully.
+Command:	DELE 3
+Response:      	250 File deleted successfully.
+Command:	CWD /xxx
+Response:	250 CWD command successful
+Command:	RMD 0719test
+Response:      	250 Directory deleted successfully.
+Status:      	Retrieving directory listing of "/xxx"...
+Command:	EPSV
+Response:	229 Entering Extended Passive Mode (|||57530|)
+Command:	MLSD
+Response:      	150 About to start data transfer.
+Response:      	226 Operation successful
+Status:      	Directory listing of "/xxx" successful
+```
+
+| Command | Description      |
+| ------- | ---------------- |
+| RMD     | Remove Directory |
+
+## 移動檔案到不同資料夾的 Command 跟 Reply
+
+```
+Status:      	Renaming '/xxx/0719test.md' to '/xxx/0719test/0719test.md'
+Command:	RNFR 0719test.md
+Response:      	350 File exists, ready for destination name.
+Command:	RNTO /xxx/0719test/0719test.md
+Response:      	250 File or directory renamed successfully.
+Status:      	Retrieving directory listing of "/xxx"...
+Command:	EPSV
+Response:      	229 Entering Extended Passive Mode (|||56059|)
+Command:	MLSD
+Response:      	150 Starting data transfer.
+Response:      	226 Operation successful
+Status:      	Directory listing of "/xxx" successful
+```
+
+| Command                        | Description                         |
+| ------------------------------ | ----------------------------------- |
+| RNFR 0719test.md               | RENAME FROM 0719test.md             |
+| RNTO /xxx/0719test/0719test.md | RENAME TO /xxx/0719test/0719test.md |
+
+| Reply Code | Description                                       |
+| ---------- | ------------------------------------------------- |
+| 350        | Requested file action pending further information |
+
+## 重新命名檔案的 Command 跟 Reply
+
+同 [移動檔案](#移動檔案到不同資料夾的-command-跟-reply)，使用 `RNFR` 跟 `RNTO`
+
 ## Active Mode vs Passive Mode
 
-## Commands
+| Mode         | Description                                                         |
+| ------------ | ------------------------------------------------------------------- |
+| Active Mode  | Client 開一個 port，讓 Server 用 20 port 去連，建立 Data Connection |
+| Passive Mode | Server 開一個 port，讓 Client 去連，建立 Data Connection            |
 
-## Reply Code
+現在基本上預設都是 Passive Mode，因為 Active Mode 會需要 Server 主動連線到 Client，可能會被 Client 的防火牆擋住。FileZilla Client 也有提供 Active Mode，從左上角的 "Edit > Network configuration wizard..." 進入，就可以設定
+![fileZilla-client-mode](../../static/img/fileZilla-client-mode.jpg)
 
-概念如同 HTTP 的 Status Code，我們不需要把所有的狀態碼都背起來，只需要先記得常用的，剩下的就查文件即可！
+## Other Commands
 
-<!-- FTP傳輸的資料 -->
-<!-- - ftp-anon -->
-<!-- - ftp-bounce -->
-<!-- - ftp-brute -->
-<!-- - ftp-libopie -->
-<!-- - ftp-proftpd-backdoor -->
-<!-- - ftp-syst -->
-<!-- - ftp-vsftpd-backdoor -->
-<!-- - ftp-vuln-cve2010-4221 -->
+### FEAT
 
-### 參考資料
+列出 Server 支援的 extended features
+
+```
+Command:      FEAT
+Response:     211-Features:
+Response:     MDTM
+Response:     REST STREAM
+Response:     SIZE
+Response:     MLST type;size;modify;perm;
+Response:     MLSD
+Response:     AUTH SSL
+Response:     AUTH TLS
+Response:     PROT
+Response:     PBSZ
+Response:     UTF8
+Response:     TVFS
+Response:     EPSV
+Response:     EPRT
+Response:     MFMT
+Response:     211 End
+```
+
+<!-- todo-yus -->
+<!-- | Command | Description | -->
+<!-- | ------- | ----------- | -->
+
+| Reply Code | Description                         |
+| ---------- | ----------------------------------- |
+| 211        | System status, or system help reply |
+
+### HELP
+
+很多命令列都會有的標配（？
+
+```
+Command:	 HELP
+Response:	 214-The following commands are recognized.
+Response:	 NOP  RNTO RNFR XPWD MDTM REST APPE MKD  RMD  DELE
+Response:	 ALLO STOR SIZE CDUP CWD  TYPE SYST MFMT MODE XRMD
+Response:	 ADAT PROT PBSZ MLSD LIST XCWD NOOP AUTH OPTS EPRT
+Response:	 PASS QUIT PWD  RETR USER NLST CLNT FEAT ABOR HELP
+Response:	 XMKD MLST STRU PASV EPSV PORT STAT
+Response:	 214 Help ok.
+```
+
+<!-- todo-yus -->
+<!-- | Command | Description | -->
+<!-- | ------- | ----------- | -->
+
+| Reply Code | Description  |
+| ---------- | ------------ |
+| 214        | Help message |
+
+## 小結
+
+FTP 的 Commands 跟 Reply Code 很多，並且散落在各個 RFC，這在 RFC 的世界是很常見的。通常會有一個主要的文件（[RFC 959](https://datatracker.ietf.org/doc/html/rfc959)）定義基本，後續再用其他的 RFC 去擴展。並且，FTP 算是一個蠻古早就存在的技術，以 [RFC 959](https://datatracker.ietf.org/doc/html/rfc959) 為例，這是 1985 年發佈的，並且前面還有被棄用的 FTP RFC，代表這個技術已經存在好幾十年了
+
+本篇文章，帶大家認識基本的 FTP Commands 跟 Replies，並且使用 FileZilla 作為 Client 跟 Server，觀察一些基本操作。如果有興趣深入 FTP Security 的話，可以參考我寫的 [nmap FTP scripts](../web-security/nmap-ftp-scripts.md)
+
+## 參考資料
 
 - https://nmap.org/nsedoc/scripts/
-  <!-- - https://www.w3.org/Protocols/rfc959/ -->
-  <!-- - https://datatracker.ietf.org/doc/html/rfc959 -->
-  <!-- RFC 2228（1997）：新增 FTP 的安全擴展（FTP Security Extensions）。 -->
-  <!-- RFC 2389（1998）：定義了 FEAT 命令，允許伺服器回報其支援的擴展功能。 -->
-  <!-- RFC 2428（1998）：引入了 IPv6 支援和擴展的被動模式（EPSV, EPRT）。 -->
-  <!-- https://chatgpt.com/c/6878e496-f3e4-8012-9a18-0326d7376e5d -->
+- https://datatracker.ietf.org/doc/html/rfc959
+- https://datatracker.ietf.org/doc/html/rfc1635
+- https://datatracker.ietf.org/doc/html/rfc2228
+- https://datatracker.ietf.org/doc/html/rfc2389
+- https://datatracker.ietf.org/doc/html/rfc2428
+- https://datatracker.ietf.org/doc/html/rfc3659
+- https://www.npmjs.com/package/basic-ftp
+- https://nmap.org/nsedoc/scripts/
