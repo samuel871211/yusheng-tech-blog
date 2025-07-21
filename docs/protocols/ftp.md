@@ -44,7 +44,7 @@ Mac 則需要先進入 Administer FileZilla Server
 登入以後，左上角 "Server > Configure... > Administration"，設定密碼
 ![fileZilla-set-admin-password](../../static/img/fileZilla-set-admin-password.jpg)
 
-❗ 不幸的是，Mac 在設定 Admin 密碼似乎有 Bug，點選 "Apply" 以後沒有反應，會導致整個 Administer FileZilla Server 無法操作。我研究了一陣子後，終於找到 Report Bug 的管道，但感覺社群活躍度不高，石沈大海的機率偏高。總之我還是先發了 [Bug Report](https://trac.filezilla-project.org/ticket/13267)，後續再看看有沒有回應。
+❗ 不幸的是，Mac 在設定 Admin 密碼似乎有 Bug，點選 "Apply" 以後沒有反應，會導致整個 Administer FileZilla Server 無法操作。我研究了一陣子後，終於找到 Report Bug 的管道，但感覺社群活躍度不高，石沉大海的機率偏高。總之我還是先發了 [Bug Report](https://trac.filezilla-project.org/ticket/13267)，後續再看看有沒有回應。
 
 ### Client 帳密 & 權限設定
 
