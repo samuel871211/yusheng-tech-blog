@@ -12,7 +12,7 @@ description: SMTP
 | 587  | SMTPS，主要用來接收 SMTP Client 發送的信件                |
 | 2525 | Fallback，沒有在規範內                                    |
 
-<!-- todo-yus 看到這裡 https://nodemailer.com/usage#create-a-transporter -->
+<!-- todo-yus 看到這裡 https://nodemailer.com/extras/smtp-server -->
 
 ## 參考資料
 

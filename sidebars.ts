@@ -113,7 +113,13 @@ const sidebars: SidebarsConfig = {
       items: [
         "protocols/mqtt",
         "protocols/ftp",
-        // "protocols/smtp"
+        "protocols/smtp",
+        "protocols/vnc",
+        // "protocols/rdp",
+        // "protocols/imap",
+        // "protocols/sip",
+        // "protocols/pop"
+        // "protocols/websocket"
       ],
     },
   ],
