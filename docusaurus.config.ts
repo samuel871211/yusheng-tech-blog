@@ -35,6 +35,9 @@ const config: Config = {
     [
       "classic",
       {
+        gtag: {
+          trackingID: "G-RV3EB8YSME",
+        },
         docs: {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
