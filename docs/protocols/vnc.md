@@ -1,6 +1,8 @@
 ---
 title: VNC
 description: VNC
+last_update:
+  date: "2025-07-23T08:00:00+08:00"
 ---
 
 ## 前言
