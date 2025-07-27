@@ -114,7 +114,7 @@ const sidebars: SidebarsConfig = {
         "protocols/mqtt",
         "protocols/ftp",
         "protocols/smtp",
-        "protocols/vnc",
+        "protocols/rfb",
         // "protocols/rdp",
         // "protocols/imap",
         // "protocols/sip",
