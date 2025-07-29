@@ -2,7 +2,7 @@
 title: SMTP
 description: SMTP
 last_update:
-  date: "2025-07-27T08:00:00+08:00"
+  date: "2025-07-29T08:00:00+08:00"
 ---
 
 ## Port
@@ -11,7 +11,7 @@ last_update:
 | ---- | --------------------------------------------------------- |
 | 25   | SMTP，最古老的，主要用來 Server ->> Server 之間的信件傳送 |
 | 465  | SMTPS，已棄用，建議使用 587                               |
-| 587  | SMTPS，主要用來接收 SMTP Client 發送的信件                |
+| 587  | Submission，主要用來接收 SMTP Client 發送的信件           |
 | 2525 | Fallback，沒有在規範內                                    |
 
 ## SMTP Server Minimum Implementation
