@@ -1,6 +1,6 @@
 ---
-title: 深入研究 JavaScript 的 Binary Data
-description: 深入研究 JavaScript 的 Binary Data
+title: JavaScript 的 Binary Data
+description: JavaScript 的 Binary Data
 last_update:
   date: "2025-05-11T08:00:00+08:00"
 ---
