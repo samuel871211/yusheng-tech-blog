@@ -76,6 +76,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "web-security/nmap-basic",
         "web-security/nmap-ftp-scripts",
+        "web-security/nmap-smtp-scripts",
         // "web-security/dot-git",
         // "web-security/nmap-mysql-scripts",
         // "web-security/CVE-2024-4577",
