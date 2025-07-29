@@ -174,6 +174,7 @@ empubm5SMlE0d2tOVnBnbmYx
 
 | Status Code | Description                                                |
 | ----------- | ---------------------------------------------------------- |
+| 503         | Bad sequence of commands                                   |
 | 538         | Encryption required for requested authentication mechanism |
 | 535         | Authentication credentials invalid                         |
 | 334         | 334 `<base64 challenge>`                                   |

@@ -542,6 +542,18 @@ Checks for a format string vulnerability in the Exim SMTP server (version 4.70 t
 
 DKIM 我之前在 [SMTP](../protocols/smtp.md) 的文章沒有介紹到，但這個漏洞的前提是，要有辦法執行 `MAIL FROM` + `RCPT TO` + `DATA`，所以我覺得以滲透測試來講，效益也不高
 
+## Additional Status Codes
+
+這些是我之前的文章 [SMTP](../protocols/smtp.md) 沒有寫到的 Status Codes
+
+| Status Code | Description                                         |
+| ----------- | --------------------------------------------------- |
+| 530         | Must issue a STARTTLS command first                 |
+| 421         | Service not available, closing transmission channel |
+| 504         | Command parameter not implemented                   |
+
+## 小結
+
 ## 參考資料
 
 - https://nmap.org/nsedoc/scripts/
