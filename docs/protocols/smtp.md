@@ -706,18 +706,23 @@ https://datatracker.ietf.org/doc/html/rfc3463
 | 554         | Transaction failed                                   |
 | 535         | Authentication credentials invalid                   |
 | 550         | Requested action not taken: mailbox unavailable      |
+| 454         |                                                      |
 
 | Enhanced Status Code | Description |
 | -------------------- | ----------- |
 | 5.7.1                |             |
 | 4.2.0                |             |
 | 5.7.8                |             |
+| 2.7.0                |             |
+| 4.7.1                |             |
 
-# ETRN
+## BDAT
 
-# DSN
+## ETRN
 
-# CHUNKING
+## DSN
+
+## CHUNKING
 
 ## 小結
 
