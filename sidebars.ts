@@ -122,6 +122,15 @@ const sidebars: SidebarsConfig = {
         // "protocols/websocket"
       ],
     },
+    // {
+    //   type: "category",
+    //   label: "nodejs",
+    //   items: [
+    //     "nodejs/events",
+    //     "nodejs/socket",
+    //     "nodejs/stream",
+    //   ],
+    // },
   ],
 };
 
