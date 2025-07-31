@@ -694,6 +694,31 @@ iVBORw0KGgoAAAANSUhEUgAAAMgAAACqCAYAAADoZADPAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 ...省略 base64 圖片的部分
 ```
 
+## enhanced status code
+
+https://datatracker.ietf.org/doc/html/rfc2034
+https://datatracker.ietf.org/doc/html/rfc3463
+
+| Status Code | Description                                          |
+| ----------- | ---------------------------------------------------- |
+| 502         | Command not implemented                              |
+| 450         | Requested mail action not taken: mailbox unavailable |
+| 554         | Transaction failed                                   |
+| 535         | Authentication credentials invalid                   |
+| 550         | Requested action not taken: mailbox unavailable      |
+
+| Enhanced Status Code | Description |
+| -------------------- | ----------- |
+| 5.7.1                |             |
+| 4.2.0                |             |
+| 5.7.8                |             |
+
+# ETRN
+
+# DSN
+
+# CHUNKING
+
 ## 小結
 
 SMTP 在 2025 年其實也是佔有一席之地，從它的 RFC 發展活躍度，我才發現到 SMTP 遠沒有我想像的簡單。這篇文章頂多算是淺入淺出的學習筆記，實際上還有很多主題我沒有研究，但我的目標只是對 SMTP 有個初步的認識，會用一些基本的 SMTP Commands，並且大概知道 SMTP Message 的格式。不過，有 HTTP 的基礎，再來學習 SMTP 真的會快很多，很多概念我認為都是相通的，在學習 SMTP 的時候，常常有一種忽然打通任督二脈的感覺，原來這不是 HTTP 獨有的設計模式啊！
