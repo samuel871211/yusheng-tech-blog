@@ -111,6 +111,7 @@ const sidebars: SidebarsConfig = {
         "protocols/ftp",
         "protocols/smtp",
         "protocols/rfb",
+        "protocols/ssh",
         // "protocols/arp",
         // "protocols/dns",
         // "protocols/tcp",
