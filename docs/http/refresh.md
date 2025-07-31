@@ -5,7 +5,7 @@ last_update:
   date: "2025-06-25T08:00:00+08:00"
 ---
 
-### Refresh Response Header
+## Refresh Response Header
 
 Refresh 是一個 Response Header，將用戶在 N 秒後導向指定頁面，語法是
 
@@ -17,7 +17,7 @@ Refresh: 2; url=https://developer.mozilla.org
 
 若不指定 url 的話，則代表原頁重整
 
-### Refresh without url
+## Refresh without url
 
 使用 NodeJS HTTP 模組實作
 
@@ -42,7 +42,7 @@ httpServer.on("request", function requestListener(req, res) {
 瀏覽器打開 http://localhost:5000/ ，就可以看到每隔 3 秒刷新頁面的效果了
 ![refresh-without-url-3secs](../../static/img/refresh-without-url-3secs.jpg)
 
-### referrer
+## referrer
 
 根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Refresh)的描述
 
@@ -80,7 +80,7 @@ if (req.url == "/refreshed") {
 瀏覽器打開 http://localhost:5000/ ，可以看到 referrer 確實有帶到
 ![referrer-5000](../../static/img/referrer-5000.jpg)
 
-### Refresh with javascript protocol
+## Refresh with javascript protocol
 
 如果 Server 端設定 `Refresh: 0; url=javascript:alert(1)`，能夠執行程式碼嗎？我們試試看：
 
@@ -97,7 +97,7 @@ if (req.url === "/javascript-protocol") {
 ![refresh-with-javascript-protocol](../../static/img/refresh-with-javascript-protocol.jpg)
 結論是，不行～
 
-### HTTP redirect vs refresh
+## HTTP redirect vs refresh
 
 如果 HTTP redirect 跟 refresh 同時定義，會以誰為主呢？
 
@@ -119,7 +119,7 @@ if (req.url === "/http-redirect-vs-refresh") {
 ![http-redirect-vs-refresh](../../static/img/http-redirect-vs-refresh.jpg)
 答案是 http 30x redirect 勝出！
 
-### JavsScript redirect vs refresh
+## JavsScript redirect vs refresh
 
 如果在 `<script>` 定義 redirect 跟 HTTP refresh，會以誰為主呢？
 
@@ -154,7 +154,7 @@ javascriptRedirect.html
 ![javascript-redirect-vs-refresh](../../static/img/javascript-redirect-vs-refresh.jpg)
 答案是 JavaScript redirect 勝出！
 
-### meta refresh vs refresh
+## meta refresh vs refresh
 
 如果在 HTML 定義 meta 跟 HTTP refresh，會以誰為主呢？
 
@@ -205,7 +205,7 @@ metaRefresh.html
 ![meta-refresh-vs-refresh-1](../../static/img/meta-refresh-vs-refresh-1.jpg)
 答案是 refresh 勝出！
 
-### Redirection order of precedence
+## Redirection order of precedence
 
 上面測試了很多情境，根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Refresh)的描述
 
@@ -220,7 +220,7 @@ Note: Even though it's present in the HTTP response, the Refresh header is still
 3. HTML Meta Refresh（例如：`<meta http-equiv="refresh" content="3; url=https://www.google.com">`）
 4. HTTP Refresh
 
-### beforeunload and refresh
+## beforeunload and refresh
 
 既然 HTTP Refresh 是透過 HTML 的機制，那 beforeunload 應該也會觸發？
 
@@ -260,11 +260,11 @@ In other words, the browser will only show the dialog box if the frame or any em
 ![beforeunload](../../static/img/beforeunload.jpg)
 答案是會觸發 beforeunload！
 
-### 小結
+## 小結
 
 本篇文章，帶大家了解 HTTP Refresh 的機制，並且也跟 HTTP Redirect 還有 JavaScript Redirect 去做比較，希望大家收穫滿滿。
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Refresh
 - https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event

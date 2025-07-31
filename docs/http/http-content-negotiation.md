@@ -299,7 +299,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 `Content-Negotiation`，我放到很後面才講，當初看標題以為是一個很難的主題，結果實際閱讀完，才發現其實概念也不難。過程中也看到很多歷史的演進，像是 `Accept-Charset`，現在基本上都是 `UTF-8` 的年代，所以這個 Header 基本上也沒在使用了。另外還有 300 Multiple Choices 的概念，讓我理解到規範跟實作的差距。希望看完本篇文章的你，也有所收穫呦～
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept

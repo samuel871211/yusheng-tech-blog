@@ -5,7 +5,7 @@ last_update:
   date: "2025-03-13T08:00:00+08:00"
 ---
 
-### 行前準備
+## 行前準備
 
 為了等等方便測試，我們一樣先建立一個簡單的 NodeJS HTTP Server，所有 path 跟 method 都統一回傳 `ok` 字串就好
 
@@ -17,7 +17,7 @@ httpServer.on("request", (req, res) => {
 });
 ```
 
-### HTTP request header origin
+## HTTP request header origin
 
 origin 是什麼？我們打開 http://localhost:5000 > F12 > Console，輸入 location
 
@@ -37,7 +37,7 @@ origin 是什麼？我們打開 http://localhost:5000 > F12 > Console，輸入 l
 
 可以看到 origin 就是 `<scheme>://<hostname>:<port>` 的規則組成的
 
-### 瀏覽器會在什麼情況加入 origin？
+## 瀏覽器會在什麼情況加入 origin？
 
 1. 跨域請求，例如我從 http://localhost:5000 要去請求 https://www.google.com 的頁面，我們試著在 http://localhost:5000 > F12 > Console 輸入以下程式碼
 
@@ -58,7 +58,7 @@ origin: http://localhost:5000
 fetch("http://localhost:5000", { method: "POST" });
 ```
 
-### 瀏覽器會在什麼情況不加入 origin？
+## 瀏覽器會在什麼情況不加入 origin？
 
 1. 跨域請求 && GET 或 HEAD 方法 && 指定 `no-cors`
 
@@ -73,7 +73,7 @@ fetch("https://www.google.com", { mode: "no-cors", method: "HEAD" });
 fetch("https://www.google.com", { mode: "no-cors", method: "POST" });
 ```
 
-### 可以透過 javascript 改變 origin 嗎？
+## 可以透過 javascript 改變 origin 嗎？
 
 講到這邊，腦筋動很快的小夥伴可能會想到，origin request header 是可以透過 javascript 去改變的嗎？我們試試看
 
@@ -98,7 +98,7 @@ A header (name, value) is forbidden request-header if these steps return true:
 
 當我們使用瀏覽器的 fetch 時，這些 forbidden headers 是無法透過 javascript 設定的！
 
-### origin 竟然也有可能是 null？
+## origin 竟然也有可能是 null？
 
 根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin#description) 描述，以下幾種情況，origin 會是 null，我們挑一個來測試：
 
@@ -123,7 +123,7 @@ fetch("https://www.google.com");
 
 小夥伴們可能會好奇，origin: null 跟 完全沒有 origin request header 差在哪裡？這邊的邏輯有點複雜，但總之來說就是，在某些特殊的跨域請求情境下，瀏覽器必須在 request header 帶上 origin，但由於安全以及隱私的情況，像剛才是本機打開的 `index.html` 檔案，如果直接把 `origin: file:///Users/xxx/path-to/index.html` 送出去，可能會導致用戶的隱私被揭露，所以這時候瀏覽器就會送出 `origin: null`，就像是在告訴 Server 端 "Hi，這是一個跨域請求，但是由於包含用戶的隱私，所以我沒辦法提供 origin 給你，請你根據這個特殊情況處理呦"
 
-### HTTP request header Referer
+## HTTP request header Referer
 
 referer 跟 origin 類似，都是 request header，也都是 Fetch API 官方文件有提到的 forbidden request header，但是 fetch API 其實還是有提供方法可以修改 referer，參考 MDN 文件
 
@@ -149,7 +149,7 @@ referer: http://localhost:5000/
 
 等等，為什麼不是 `http://localhost:5000/test`，而是 `http://localhost:5000/` 呢？難道是 MDN 文件在騙人？
 
-### Referrer-Policy
+## Referrer-Policy
 
 題外話，觀察細微的小夥伴們應該有看到 `Referer` 跟 `Referrer-Policy`，為什麼後者有兩個連續的 `r`？其實後者 `Referrer` 才是正確的，至於為何會有 `Referer` 這個錯誤的拼寫，是因為 [HTTP 1.0 的規範](https://datatracker.ietf.org/doc/html/rfc1945#section-10.13) 當初在定義的時候拼錯字了，但為了向後兼容（backward compatibility），所以就只好將錯就錯QQ
 
@@ -189,7 +189,7 @@ This prevents leaks of private data that may be accessible from other parts of t
 
 我們再來看看 referrer policy 還有哪些值，我們一樣以 http://localhost:5000/test?a=1&b=2 這個頁面發起請求
 
-### 1. `no-referrer`
+## 1. `no-referrer`
 
 完全不送 referer
 
@@ -208,7 +208,7 @@ fetch("https://www.google.com", {
 });
 ```
 
-### 2. `no-referrer-when-downgrade`
+## 2. `no-referrer-when-downgrade`
 
 downgrade（https > http 或 https > file） 情境就不送 referrer，反之就送完整 URL
 
@@ -227,7 +227,7 @@ fetch("https://www.google.com", {
 });
 ```
 
-### 3. `origin`
+## 3. `origin`
 
 不管怎樣，我就是只送 origin 啦！
 
@@ -249,7 +249,7 @@ fetch("http://localhost:5000", { referrerPolicy: "origin", mode: "no-cors" });
 fetch("https://www.google.com", { referrerPolicy: "origin", mode: "no-cors" });
 ```
 
-### 4. `origin-when-cross-origin`
+## 4. `origin-when-cross-origin`
 
 同源的情況就送完整的 URL，反之只送 origin
 
@@ -283,7 +283,7 @@ fetch("https://www.google.com", {
 });
 ```
 
-### 5. `same-origin`
+## 5. `same-origin`
 
 同源的情況就送完整的 URL，反之就完全不送 referer
 
@@ -317,7 +317,7 @@ fetch("https://www.google.com", {
 });
 ```
 
-### 6. `strict-origin`
+## 6. `strict-origin`
 
 protocol 沒有 downgrade 的時候就送 origin，反之就不送
 
@@ -351,11 +351,11 @@ fetch("https://www.google.com", {
 });
 ```
 
-### 7. `strict-origin-when-cross-origin`
+## 7. `strict-origin-when-cross-origin`
 
 這是瀏覽器的預設值，上面有講過了～
 
-### 8. `unsafe-url`
+## 8. `unsafe-url`
 
 不管怎樣，我就是送完整的 URL 啦！但會有資安疑慮，所以不建議設定這個
 
@@ -418,11 +418,11 @@ If document’s origin is an opaque origin, return no referrer.
 
 上面也有提到，當使用 file scheme 時，origin 會是 null（opaque origin），所以這時候就直接不加上 `referer` request header 了
 
-### 小結
+## 小結
 
 這個章節，我們介紹了 `Origin`, `Referer`, `Referrer-Policy`，以及在 Fetch API 的參數使用 `referrerPolicy` 來控制 request header `Referer`，但其實 `referrerPolicy` 也可以當作 HTTP response header，甚至可以在部分 HTML Element 身上使用！下個章節我們會繼續深入 `referrerPolicy`
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer

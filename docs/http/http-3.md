@@ -3,13 +3,13 @@ title: HTTP 3 and Alt-Svc
 description: HTTP 3 and Alt-Svc
 ---
 
-### UDP
+## UDP
 
-### QUIC
+## QUIC
 
-### Go HTTP 3
+## Go HTTP 3
 
-### 參考資料
+## 參考資料
 
 - https://claude.ai/chat/3f086c0b-45da-4235-9803-2705c7d2012e
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Alt-Svc

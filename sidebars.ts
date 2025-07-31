@@ -77,6 +77,7 @@ const sidebars: SidebarsConfig = {
         "web-security/nmap-basic",
         "web-security/nmap-ftp-scripts",
         "web-security/nmap-smtp-scripts",
+        // "web-security/nikto",
         // "web-security/dot-git",
         // "web-security/nmap-mysql-scripts",
         // "web-security/CVE-2024-4577",
@@ -88,18 +89,12 @@ const sidebars: SidebarsConfig = {
       items: [
         // "web-tech/xml",
         // "web-tech/web-rtc",
-        // "wen-tech/subresource-integrity",
+        // "web-tech/subresource-integrity",
+        // "web-tech/service-worker",
+        // "web-tech/tracking-user-activation",
         "web-tech/binary-data-in-javascript",
       ],
     },
-    // {
-    //   type: "category",
-    //   label: "tcp",
-    //   items: [
-    //     "tcp/nagle-algorithm",
-    //     "tcp/tcp-finite-state-machine"
-    //   ],
-    // },
     {
       type: "category",
       label: "data-formats",
@@ -116,6 +111,9 @@ const sidebars: SidebarsConfig = {
         "protocols/ftp",
         "protocols/smtp",
         "protocols/rfb",
+        // "protocols/arp",
+        // "protocols/dns",
+        // "protocols/tcp",
         // "protocols/rdp",
         // "protocols/imap",
         // "protocols/sip",

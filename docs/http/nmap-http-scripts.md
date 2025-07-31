@@ -7,7 +7,7 @@ last_update:
 
 進入本篇之前，建議先看過 [nmap-basic](../web-security/nmap-basic.md) 呦！
 
-### 本機 NodeJS http server 環境設定
+## 本機 NodeJS http server 環境設定
 
 nmap 有一份超大的字典，維護每個 port 對應的服務是什麼，可參考 [Github 原始碼](https://github.com/nmap/nmap/blob/master/nmap-services)。總之，我們需要把 port 開在 80, 443 或 8080，nmap 才會正確識別這是 HTTP 服務
 
@@ -56,7 +56,7 @@ http80Server.on("request", function requestListener(req, res) {
 });
 ```
 
-### nmap http-enum 掃描
+## nmap http-enum 掃描
 
 終端機輸入
 
@@ -104,7 +104,7 @@ Nmap done: 1 IP address (1 host up) scanned in 1.42 seconds
 ]
 ```
 
-### nmap http-enum 會掃描哪些路徑
+## nmap http-enum 會掃描哪些路徑
 
 根據 nmap 在 github 的原始碼描述，[http-enum.nse](https://github.com/nmap/nmap/blob/master/scripts/http-enum.nse)
 
@@ -147,7 +147,7 @@ table.insert(fingerprints, {
   });
 ```
 
-### nmap http-enum 什麼情況會終止掃描
+## nmap http-enum 什麼情況會終止掃描
 
 在看 [http-enum.nse](https://github.com/nmap/nmap/blob/master/scripts/http-enum.nse) 的時候，我發現部分情境會終止 http-enum 的掃描，接下來就逐步嘗試
 
@@ -187,7 +187,7 @@ NSE: Finished http-enum against 127.0.0.1:80.
 
 因為我們把所有路由都回傳 200 + 固定內容，nmap 無法判斷接下來要掃描的 fingerprints 是否真的存在，為了避免大量的誤報，故直接終止掃描
 
-### nmap http-enum 什麼情況會產生大量的誤報
+## nmap http-enum 什麼情況會產生大量的誤報
 
 ```ts
 // case2: 嘗試回傳 200 頁面 + 不同內容，讓 nmap 產生大量誤報
@@ -215,7 +215,7 @@ PORT   STATE SERVICE
 |   /wiki/: Wiki
 ```
 
-### nmap http- 開頭的 scripts 還有哪些
+## nmap http- 開頭的 scripts 還有哪些
 
 nmap 所有的 scripts 可在 https://nmap.org/nsedoc/scripts/ 查詢，其中 `http-` 開頭的就有 100 多個，這邊整理一些常用的
 
@@ -277,13 +277,14 @@ nmap 所有的 scripts 可在 https://nmap.org/nsedoc/scripts/ 查詢，其中 `
 - http-wordpress-enum
 - http-wordpress-users
 
-### http-passwd
+## http-passwd
 
 檢查 Web Server 是否有 Path Traversal 的漏洞，可以取得 `/etc/passwd` 或是 `/boot.ini`
 
-<!-- ### http-sql-injection -->
+<!-- todo-yus -->
+<!-- ## http-sql-injection -->
 
-### 參考資料
+## 參考資料
 
 - https://nmap.org/nsedoc/lib/http.html
 - https://nmap.org/nsedoc/scripts/

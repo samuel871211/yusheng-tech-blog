@@ -5,11 +5,11 @@ last_update:
   date: "2025-05-13T08:00:00+08:00"
 ---
 
-### AI 時代來臨，讓 SSE 技術再次浮上檯面
+## AI 時代來臨，讓 SSE 技術再次浮上檯面
 
 當我們使用 AI 工具如 [Claude](https://claude.ai/new) 或是 [ChatGPT](https://chatgpt.com/) 時，會發現 AI 在回答時，內容會一個一個字出現，而不是等到所有字產完才一次出現。這樣的方式，使用者可以獲得更好的體驗，可以獲得即時的回答，而不需要等待幾十秒才看到一大篇內容。這背後用到的技術，就是 Server-Sent Events。
 
-### SSE 跟 HTTP 有什麼關聯
+## SSE 跟 HTTP 有什麼關聯
 
 若仔細觀察 [Claude](https://claude.ai/new) 的 Network，會發現 SSE 其實沒有什麼神奇的魔法，就是在 Response Header 加上 `Content-Type: text/event-stream; charset=utf-8`
 
@@ -21,7 +21,7 @@ last_update:
 
 可以看到，SSE 本質上就是一個長連結的 HTTP，搭配指定的 `Content-Type` 跟 Response Payload 格式，就可以讓 Server 傳遞多次資料給 Client 端，透過一個 HTTP 請求的來回
 
-### SSE 的 Response Payload 格式
+## SSE 的 Response Payload 格式
 
 根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#fields) 的描述，SSE 的 Response Payload 結構如下
 
@@ -66,7 +66,7 @@ data: This is second line.
 
 這樣的結果會是 `This is first line.\nThis is second line.`
 
-### 不指定 event 的 SSE
+## 不指定 event 的 SSE
 
 我們創建一個 `index.html`，點擊按鈕後，會使用 SSE 傳輸資料
 
@@ -158,7 +158,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 當不指定 event 的情況，預設的 event 就是 `message`，所以在 client 端的 javascript 才會透過 `onmessage` 去接收 SSE。
 
-### 指定 event 的 SSE
+## 指定 event 的 SSE
 
 承上，如果我們在 server side 刻意指定 `event: message` 呢？這樣 client 端一樣是透過 `onmessage` 去接嗎？我們修改一下程式碼
 
@@ -237,7 +237,7 @@ if (req.url === "/customSSE") {
 
 ![sse-custom-event](../../static/img/sse-custom-event.jpg)
 
-### 加上 id
+## 加上 id
 
 剛才的範例，id 欄位都是空的，我們接著嘗試給每個 eventStream 都加上 id
 
@@ -299,7 +299,7 @@ if (req.url === "/customSSEWithId") {
 
 ![sse-custom-event-with-id](../../static/img/sse-custom-event-with-id.jpg)
 
-### 多行 data
+## 多行 data
 
 我們接著嘗試多行 data 的情境
 
@@ -337,7 +337,7 @@ if (req.url === "/multiLineDataSSE") {
 
 ![sse-multi-line-data](../../static/img/sse-multi-line-data.jpg)
 
-### 使用 fetch API 去戳 SSE Endpoint 會發生什麼事
+## 使用 fetch API 去戳 SSE Endpoint 會發生什麼事
 
 在瀏覽器的 F12 > Console 輸入以下程式碼
 
@@ -352,17 +352,17 @@ fetch("http://localhost:5000/sse")
 ![sse-with-fetch](../../static/img/sse-with-fetch.jpg)
 
 <!-- todo-yusheng -->
-<!-- ### 使用 fetch API 搭配 ReadableStream 去戳 SSE Endpoint -->
+<!-- ## 使用 fetch API 搭配 ReadableStream 去戳 SSE Endpoint -->
 
 <!-- todo-yusheng -->
-<!-- ### 搭配 `Last-Event-ID` 實現掉包 retry 機制 -->
+<!-- ## 搭配 `Last-Event-ID` 實現掉包 retry 機制 -->
 <!-- https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header -->
 
-### 結尾
+## 結尾
 
 本篇 SSE 帶大家實作了各種情境，並且也解析了 SSE 的實際應用（AI 問答），希望大家收穫滿滿！
 
-### 參考資料
+## 參考資料
 
 - https://html.spec.whatwg.org/multipage/server-sent-events.html
 - https://developer.mozilla.org/en-US/docs/Web/API/EventSource

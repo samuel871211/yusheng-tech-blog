@@ -5,7 +5,7 @@ last_update:
   date: "2025-03-16T08:00:00+08:00"
 ---
 
-### Response Header 也能設定 referrerPolicy？
+## Response Header 也能設定 referrerPolicy？
 
 上一篇談到使用 fetch API 的參數來設定 `referrerPolicy`，現在要來談談如何從 Server Side 去設定，使用 NodeJS HTTP module 來實作簡易的 HTTP server，設定 `no-referrer`，並且載入跨域的圖片跟影片
 
@@ -35,7 +35,7 @@ http://localhost:5000/ ，使用瀏覽器預設的 `Referrer Policy: strict-orig
 ![imageWithResponseReferrerPolicy](../../static/img/imageWithResponseReferrerPolicy.jpg)
 ![videoWithResponseReferrerPolicy](../../static/img/videoWithResponseReferrerPolicy.jpg)
 
-### fetch API 是否也會套用 Response Header 設定的 referrerPolicy？
+## fetch API 是否也會套用 Response Header 設定的 referrerPolicy？
 
 我們接著使用 fetch API，觀察 `Referrer Policy` 是否也變成 `no-referrer`
 
@@ -47,7 +47,7 @@ fetch("https://www.google.com/");
 
 可以觀察到 General > `Referrer Policy: no-referrer`，我們可以得出一個結論，當 Response Header 有設定 `Referrer Policy`，就會覆寫瀏覽器的預設值
 
-### By Request 設定的 referrerPolicy，優先度會比較高嗎？
+## By Request 設定的 referrerPolicy，優先度會比較高嗎？
 
 我們再繼續嘗試，如果在 fetch API 指定 `referrerPolicy`，這個優先級會高過 Response Header 設定的 `Referrer Policy` 嗎？
 
@@ -59,7 +59,7 @@ fetch("https://www.google.com/", { referrerPolicy: "origin" });
 
 可以觀察到 Request Headers > `referrer: http://localhost:5000/`，我們可以得出一個結論，優先順序: By 請求設定的 > Response Header 設定的 > 瀏覽器的預設值
 
-### HTML 也能設定 referrerPolicy？
+## HTML 也能設定 referrerPolicy？
 
 HTML meta 標籤可以設定全局的 `referrerPolicy`，作用就跟從 Response Header 設定是一樣的，我們調整一下 NodeJS 的程式碼:
 
@@ -128,7 +128,7 @@ http://localhost:5000/
 
 `<script>` 跟 `<img>` 也都符合預期，沒有發送 `referer`
 
-### 從 Google Map Embed API 來了解 referrer-policy 的實務應用
+## 從 Google Map Embed API 來了解 referrer-policy 的實務應用
 
 我們來創建一個 Google Map API Key
 
@@ -209,3 +209,11 @@ https://issuetracker.google.com/issues/366168659
 2. Website restrictions 本來就不是唯一限制 API Key 安全性的手段，還有 API restrictions, URL Signing Secret 等等，都可以保護 API Key
 
 結論，多層的防禦總是比較安全，至少當前面幾層被攻破的時候，後面還有幾層可以保護！
+
+## 參考資料
+
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+- https://developer.mozilla.org/en-US/docs/Web/Security/Referer_header:_privacy_and_security_concerns
+- https://stackoverflow.com/questions/42239643/when-do-browsers-send-the-origin-header-when-do-browsers-set-the-origin-to-null/42242802

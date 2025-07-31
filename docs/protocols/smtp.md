@@ -1,6 +1,6 @@
 ---
-title: SMTP
-description: SMTP
+title: Simple Mail Transfer Protocol (SMTP)
+description: Simple Mail Transfer Protocol (SMTP)
 last_update:
   date: "2025-07-29T08:00:00+08:00"
 ---

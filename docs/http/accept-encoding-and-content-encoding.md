@@ -5,7 +5,7 @@ last_update:
   date: "2025-05-03T08:00:00+08:00"
 ---
 
-### 透過瀏覽器觀察 Accept-Encoding
+## 透過瀏覽器觀察 Accept-Encoding
 
 當我們使用瀏覽器打開任何一個網頁時，F12 > Network > Doc > Request Headers，應該都可以看到 `Accept-Encoding: gzip, deflate, br, zstd`
 
@@ -13,7 +13,7 @@ last_update:
 
 這是瀏覽器預設就會發送的 Request Header，代表瀏覽器支援這些資料壓縮的演算法
 
-### Accept-Encoding 深入研究
+## Accept-Encoding 深入研究
 
 - `Accept-Encoding` 也可以作為 Response Header，用來告訴 client 端，Server 支援哪些資料壓縮的演算法
 - 不一定要有空格，也可以是 `Accept-Encoding: gzip,deflate,br,zstd` 的形式，Server 需要正確的處理這兩種情境
@@ -22,20 +22,20 @@ last_update:
 - `Accept-Encoding: identity` => 原始資料直接回傳就好，不要再壓縮了
 - `Accept-Encoding: gzip, identity;q=0` => 回傳的資料一定要壓縮，如果 Server 不支援 gzip 壓縮方法，必須回傳 406 Not Acceptable
 
-### HTTP 常見的壓縮演算法
+## HTTP 常見的壓縮演算法
 
 1. [gzip](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept-Encoding#gzip)
 2. [deflate](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Accept-Encoding#deflate)
 3. [br](https://github.com/google/brotli)
 4. [zstd](https://github.com/facebook/zstd)
 
-### 排序代表的意義
+## 排序代表的意義
 
 - Server 需要根據這個優先順序 `gzip, deflate, br, zstd` 來決定要使用哪個壓縮演算法
 - 根據我查到的資料， `gzip, deflate, br, zstd` 這個順序是根據這些演算法的普及度、效率和兼容性考慮
 - 以這些演算法的問世時間從遠到近排序的話，`deflate, gzip, br, zstd`
 
-### 使用 NodeJS zlib + HTTP serve 壓縮後的靜態資源
+## 使用 NodeJS zlib + HTTP serve 壓縮後的靜態資源
 
 NodeJS 有原生的模組 `zlib`，專門處理壓縮跟解壓縮的邏輯，常見的 `gzip`, `deflate`, `br` 演算法都有支援，唯獨 `zstd` 是比較新的演算法，在目前 (NodeJS v23.11.0)[https://nodejs.org/api/zlib.html#for-zstd-based-streams] 是還在實驗中的 API，故本篇就不使用。
 
@@ -99,11 +99,11 @@ httpServer.on("request", function requestListener(req, res) {
 
 沒壓縮的情況，體積是 113 KB，可以感受到這個壓縮比還是非常有感的
 
-### Content-Encoding
+## Content-Encoding
 
 上面的程式碼範例，Server 在成功 match 到 client 端的 `Accept-Encoding` 之後，會回傳 `Content-Encoding` 的 HTTP Header。client 端收到以後，就會根據這個值去做對應的解壓縮。
 
-### 錯誤的 Content-Encoding 會發生什麼事情
+## 錯誤的 Content-Encoding 會發生什麼事情
 
 我們改寫一下 NodeJS 程式碼（只列出異動部分）
 
@@ -118,7 +118,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 ![wrong-content-encoding](../../static/img/wrong-content-encoding.jpg)
 
-### client 傳送壓縮後的資訊給 server
+## client 傳送壓縮後的資訊給 server
 
 [上面的範例](#使用-nodejs-zlib--http-serve-壓縮後的靜態資源) 是 Server 處理壓縮的邏輯，但 `Content-Encoding` 也可以當作 Request Header。我們使用瀏覽器於 2023-05 新增的 [Compression Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API) 來處理 client 端的 gzip 壓縮（這段程式碼稍微複雜，牽涉到很多 js 偏底層的概念，包含 `ArrayBuffer`, `ReadableStream`, `Uint8Array`, `CompressionStream`, `Blob`）
 
@@ -227,7 +227,7 @@ Response body 是解壓縮後的資料
 
 ![parse-gzip-req-payload](../../static/img/parse-gzip-res-payload.jpg)
 
-### Accept-Encoding as Response Header
+## Accept-Encoding as Response Header
 
 上面的 `/postGzipped` 路由，其實已經有正確處理 415 Unsupported Media Type 的情況，我們只需要稍微改寫 client 端的程式碼，把 `Content-Encoding` 拔掉
 
@@ -247,7 +247,7 @@ async function sendGzippedBlobToServer(body) {
 
 ![post-gzipped-415](../../static/img/post-gzipped-415.jpg)
 
-### client 端沒有明確指定 Content-Type
+## client 端沒有明確指定 Content-Type
 
 這時候 Server 有幾種處理方式：
 
@@ -274,21 +274,21 @@ async function fetchAndCompressToGzip() {
 ![post-gzipped-400](../../static/img/post-gzipped-400.jpg)
 
 <!-- todo-yusheng 在想這個要不要講 -->
-<!-- ### Compression
+<!-- ## Compression
 
 資料的壓縮通常分為兩種
 
 1. Loss-less compression（無損壓縮）
 2. Lossy compression (破壞性資料壓縮) -->
 
-### 插曲
+## 插曲
 
 在寫這篇文章的時候，其實我還順便發現了 `node` 跟 `@types/node` 的兩個錯誤，並且順便發 PR 修正了
 
 1. [doc: fix typo of file `zlib.md`](https://github.com/nodejs/node/pull/58093)
 2. [doc[node]: add "accept-encoding" to `interface IncomingHttpHeaders`](https://github.com/DefinitelyTyped/DefinitelyTyped/pull/72673)
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Compression
 - https://developer.mozilla.org/en-US/docs/Glossary/Lossless_compression

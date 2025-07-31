@@ -5,7 +5,7 @@ last_update:
   date: "2025-06-22T08:00:00+08:00"
 ---
 
-### Source Map 是什麼
+## Source Map 是什麼
 
 現代前端開發，我們寫的 Code 通常都是打包後才會部署，而打包環節，通常都包含 minify 跟 uglify，導致我們在瀏覽器 debug 的時候，看到的都是這種很醜的程式碼
 
@@ -13,7 +13,7 @@ last_update:
 
 現代很多打包工具，例如 Webpack, Vite 都有支援 Source Map 的選項，讓開發者可以在 `npm run build` 階段，打包出 `file.js.map` 的檔案，這個檔案就可以讓我們在瀏覽器的 DevTools 看到原始的程式碼，方便 debug。
 
-### NextJS Enable Source Map
+## NextJS Enable Source Map
 
 來看看 NextJS 官方文件怎說的
 
@@ -44,7 +44,7 @@ const nextConfig = {
 
 ![source-map-prod](../../static/img/source-map-prod.jpg)
 
-### 瀏覽器怎麼知道 .js.map 的對應
+## 瀏覽器怎麼知道 .js.map 的對應
 
 其實很簡單～在打包過後的 js，最後一行會有
 
@@ -60,7 +60,7 @@ const nextConfig = {
 
 Webpack, Vite 這些打包工具在打包時，預設都會以註解來標示對應的 .map 檔。當然，也可以透過 Response Header 來設定，就來到了我們今天的主題。
 
-### Response Header 設定 Source Map
+## Response Header 設定 Source Map
 
 1. 使用 [UglifyJS-online](https://skalman.github.io/UglifyJS-online/)，貼上這段程式碼
 
@@ -129,11 +129,11 @@ httpServer.on("request", function requestListener(req, res) {
    ![add.jpg](../../static/img/add.jpg)
    ![original.jpg](../../static/img/original.jpg)
 
-### 小結
+## 小結
 
 現代前端框架，幫我們處理好太多細節了，像是開發模式的 Source Map。瀏覽器其實也會額外發起請求載入 `.map` 檔案，只是不會在 NetWork Tab 看到而已。自己動手實作一個 HTTP Server 的過程，也對整個前端開發的架構更了解～
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/SourceMap
 - https://developer.mozilla.org/en-US/docs/Glossary/Source_map

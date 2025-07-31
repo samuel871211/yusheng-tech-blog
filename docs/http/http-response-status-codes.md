@@ -3,65 +3,65 @@ title: HTTP response status codes
 description: HTTP response status codes
 ---
 
-### 100 Continue
+## 100 Continue
 
-### 202 Accepted
+## 202 Accepted
 
-### 203 Non-Authoritative Information
+## 203 Non-Authoritative Information
 
-### 205 Reset Content
+## 205 Reset Content
 
-### 207 Multi-Status
+## 207 Multi-Status
 
-### 208 Already Reported
+## 208 Already Reported
 
-### 226 IM Used
+## 226 IM Used
 
-### 402 Payment Required
+## 402 Payment Required
 
-### 408 Request Timeout
+## 408 Request Timeout
 
-### 409 Conflict
+## 409 Conflict
 
-### 410 Gone
+## 410 Gone
 
-### 411 Length Required
+## 411 Length Required
 
-### 414 URI Too Long
+## 414 URI Too Long
 
-### 417 Expectation Failed
+## 417 Expectation Failed
 
-### 421 Misdirected Request
+## 421 Misdirected Request
 
-### 423 Locked
+## 423 Locked
 
-### 424 Failed Dependency
+## 424 Failed Dependency
 
-### 431 Request Header Fields Too Large
+## 431 Request Header Fields Too Large
 
-### 451 Unavailable For Legal Reasons
+## 451 Unavailable For Legal Reasons
 
-### 501 Not Implemented
+## 501 Not Implemented
 
-### 502 Bad Gateway
+## 502 Bad Gateway
 
-### 503 Service Unavailable
+## 503 Service Unavailable
 
-### 504 Gateway Timeout
+## 504 Gateway Timeout
 
-### 505 HTTP Version Not Supported
+## 505 HTTP Version Not Supported
 
-### 506 Variant Also Negotiates
+## 506 Variant Also Negotiates
 
-### 507 Insufficient Storage
+## 507 Insufficient Storage
 
-### 508 Loop Detected
+## 508 Loop Detected
 
-### 510 Not Extended
+## 510 Not Extended
 
-### 511 Network Authentication Required
+## 511 Network Authentication Required
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/100
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/202

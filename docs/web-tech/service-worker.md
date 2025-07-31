@@ -1,6 +1,6 @@
 ---
-title: Subresource Integrity
-description: Subresource Integrity
+title: Service Worker
+description: Service Worker
 ---
 
 ## 參考資料

@@ -1,6 +1,6 @@
 ---
-title: FTP
-description: FTP
+title: File Transfer Protocol (FTP)
+description: File Transfer Protocol (FTP)
 last_update:
   date: "2025-07-20T08:00:00+08:00"
 ---

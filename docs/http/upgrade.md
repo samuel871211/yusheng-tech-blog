@@ -5,7 +5,7 @@ last_update:
   date: "2025-06-28T08:00:00+08:00"
 ---
 
-### Upgrade 使用情境
+## Upgrade 使用情境
 
 Upgrade 是 HTTP/1.1 獨有的機制，大部分的使用情境都是 WebSocket，在連線之前要先做協議溝通（其實就是一個 HTTP round trip）
 
@@ -27,7 +27,7 @@ Upgrade: websocket
 
 以上是關於 Upgrade 快速地描述，實際上在協議溝通過程，還會有很多 WebSocket 相關的 Headers，等等會講到
 
-### WebSocket
+## WebSocket
 
 由於這段協議溝通，在瀏覽器已經有 `WebSocket` 包裝好，NodeJS Server Side 也只需使用 [ws](https://github.com/websockets/ws) 即可達成，所以我們先用成熟的 Solution 觀察這段協議溝通
 
@@ -123,7 +123,7 @@ httpServer.on("request", function requestListener(req, res) {
 隨意嘗試傳送一些資料，也確實有成功來回！
 ![websocket-send-data](../../static/img/websocket-send-data.jpg)
 
-### Sec-WebSocket-Version
+## Sec-WebSocket-Version
 
 這是一個 Request & Response Header
 
@@ -167,7 +167,7 @@ The response from the server might look as follows:
 If the server doesn't support the version, or any header in the handshake is not understood or has an incorrect value, the server should send a response with status 400 Bad Request and immediately close the socket. It should also include Sec-WebSocket-Version in the 400 response, listing the versions that it does support.
 ```
 
-### Sec-WebSocket-Extensions
+## Sec-WebSocket-Extensions
 
 這是一個 Request & Response Header
 
@@ -183,7 +183,7 @@ As Response Header 的情境
 - 承上，若沒有 Server 支援的，可以捨棄這個 Header
 - 若 Server 回傳 Client 不支援的 `Sec-WebSocket-Extensions`，則 Client 必須斷開連結
 
-### Sec-WebSocket-Key
+## Sec-WebSocket-Key
 
 - 這是一個 Request Header
 - 用來告訴 Server "我是真的要 Upgrade 到 WebSocket 呦"
@@ -204,7 +204,7 @@ function generateWebSocketKeyModern() {
 }
 ```
 
-### Sec-WebSocket-Protocol
+## Sec-WebSocket-Protocol
 
 這是一個 Request & Response Header
 
@@ -218,7 +218,7 @@ As Response Header 的情境
 - 格式同 `Sec-WebSocket-Protocol: soap`，代表 Server 最終決定使用的 sub-protocol
 - 承上，若沒有 Server 支援的，可以捨棄這個 Header
 
-### Sec-WebSocket-Accept
+## Sec-WebSocket-Accept
 
 - 這是一個 Response Header
 - 格式 `Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=`
@@ -232,7 +232,7 @@ createHash("sha1")
 
 - 代表 Server 接受且支援升級到 WebSocket
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Upgrade
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Protocol_upgrade_mechanism

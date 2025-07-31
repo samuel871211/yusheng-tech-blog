@@ -153,7 +153,7 @@ const responses = await Promise.all([
 
 ![browserMaxConnection6+6](../../static/img/browserMaxConnection6+6.jpg)
 
-### HTTP 2 的 multiplexing 機制，解決了 HOL blocking
+## HTTP 2 的 multiplexing 機制，解決了 HOL blocking
 
 我們來看看 MDN 原文的解說
 
@@ -184,6 +184,6 @@ const responses = await Promise.all([
 
 今天我們學到了 HTTP 1.1 HOL Blocking，並且也學到了 HTTP 2 的 multiplexing 機制，希望能讓各位夥伴對 HTTP 更熟悉一點
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Glossary/Head_of_line_blocking

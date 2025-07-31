@@ -5,7 +5,7 @@ last_update:
   date: "2025-06-27T08:00:00+08:00"
 ---
 
-### Transfer-Encoding: chunked
+## Transfer-Encoding: chunked
 
 HTTP 1.1 的世界，新增了 `Transfer-Encoding: chunked` 的概念，允許 request.body 或是 response.body 分塊傳輸
 
@@ -33,7 +33,7 @@ third line\r\n
 0\r\n\r\n
 ```
 
-### 使用 NodeJS 實作 Transfer-Encoding: chunked
+## 使用 NodeJS 實作 Transfer-Encoding: chunked
 
 我們來看看 NodeJS HTTP 模組，什麼時候會開啟 `Transfer-Encoding: chunked` 傳輸：
 
@@ -86,7 +86,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 `res.write` 底層，會處理 `\r\n` 以及計算資料 byte length 的邏輯，所以只需寫入資料即可
 
-### 使用 Socket.write 自行處理資料格式
+## 使用 Socket.write 自行處理資料格式
 
 為了讓大家對 chunked encoding 的資料格式更熟悉，我們接著使用 [Socket.write](https://nodejs.org/api/net.html#socketwritedata-encoding-callback) 來寫入 raw HTTP Response Body
 
@@ -131,7 +131,7 @@ res.socket?.write(
 
 瀏覽器就會噴 `ERR_INVALID_CHUNKED_ENCODING` 的錯誤，代表瀏覽器底層會去解析這個資料，整理完才會顯示給使用者
 
-### Transfer-Encoding: chunked + Content-Length
+## Transfer-Encoding: chunked + Content-Length
 
 上面的範例，在 `Transfer-Encoding: chunked` 的情況，NodeJS HTTP 模組預設都不會傳送 `Content-Length` 的 Response Header
 
@@ -195,7 +195,7 @@ If a message is received with both a Transfer-Encoding and a Content-Length head
 
 簡單來說，不允許兩個 header 一起設置，但當兩個 header 同時設置時，接收方可選擇回傳錯誤訊息，或是把 `Content-Length` 捨棄，咱們的 Chrome 瀏覽器選擇了後者。
 
-### 使用 curl 觀察 raw HTTP Response Body
+## 使用 curl 觀察 raw HTTP Response Body
 
 由於瀏覽器已經把 Response Body 都整理好，才呈現給使用者看，但我們要怎麼確定傳輸的格式真的是
 
@@ -233,7 +233,7 @@ thirdline~~~
 When --raw is used, it disables all internal HTTP decoding of content or transfer encodings and instead makes curl passed on unaltered, raw, data.
 ```
 
-### Transfer-Encoding: chunked 搭配 Content-Type: application/json
+## Transfer-Encoding: chunked 搭配 Content-Type: application/json
 
 chunked 的資料除了 `text/plain` 純文字，也可以是其他類型的，我們使用 `application/json` 來當範例
 
@@ -274,7 +274,7 @@ if (req.url === "/case4") {
 - 28 = 十進位的 40，等於 `6","age":18,"email":"example@gmail.com"}` 的 byte length
 - 結尾也符合 `0\r\n\r\n`
 
-### ReadableStream，讓你分塊讀取 Response Body
+## ReadableStream，讓你分塊讀取 Response Body
 
 當資料量很大時，雖然資料是分塊傳輸，但瀏覽器會等到所有資料都收到，才顯示給前端，在使用者體驗上就比較差
 
@@ -315,7 +315,7 @@ fetch("URL")
 
 ![transfer-encoding-with-fetch](../../static/img/transfer-encoding-with-fetch.jpg)
 
-### Transfer-Encoding: chunked + Connection: closed
+## Transfer-Encoding: chunked + Connection: closed
 
 如果設定 `Connection: closed` 的話，還可以正常接收 chunk 嗎？
 
@@ -344,7 +344,7 @@ if (req.url === "/case6") {
 
 因為 `Connection: closed` 指的是在這次 HTTP 來回的傳輸完畢之後，才關閉 TCP Connection，並不是 Response Header 傳輸完畢之後就直接關閉了，這兩者之間是有差異的。
 
-### 跟 Server Sent Events 的差別
+## 跟 Server Sent Events 的差別
 
 在研究 `Transfer-Encoding: chunked` 的時候，我一直覺得這跟 [SSE](./server-sent-events.md) 的概念很像，後來才發現，其實 SSE 就是 `Transfer-Encoding: chunked` + 把 Response Body 按照指定的文本格式包裝～
 
@@ -359,7 +359,7 @@ if (req.url === "/case6") {
 |          retry          |               ❌               |                     ✅                      |
 |        eventType        |               ❌               |                     ✅                      |
 
-### Transfer-Encoding vs Content-Encoding
+## Transfer-Encoding vs Content-Encoding
 
 實務上，瀏覽器到 Server 中間可能會經過很多節點，例如 Client `<=>` Proxy Server `<=>` CDN `<=>` Actual Server
 
@@ -373,12 +373,12 @@ if (req.url === "/case6") {
 | 是否為 End-to-end headers  |          ❌           |        ✅        |
 
 <!-- todo-yusheng -->
-<!-- ### request smuggling -->
+<!-- ## request smuggling -->
 
 <!-- todo-yusheng -->
-<!-- ### response splitting -->
+<!-- ## response splitting -->
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Transfer-Encoding
 - https://datatracker.ietf.org/doc/html/rfc9112#name-chunked-transfer-coding

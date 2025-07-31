@@ -5,7 +5,7 @@ last_update:
   date: "2025-06-27T08:00:00+08:00"
 ---
 
-### 語法
+## 語法
 
 ```
 Strict-Transport-Security: max-age=<seconds>
@@ -13,7 +13,7 @@ Strict-Transport-Security: max-age=<seconds>; includeSubDomains
 Strict-Transport-Security: max-age=<seconds>; includeSubDomains; preload
 ```
 
-### NodeJS HTTP Server
+## NodeJS HTTP Server
 
 根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security#description) 的描述：
 
@@ -46,7 +46,7 @@ httpServer.on("request", function requestListener(req, res) {
 ![localhost-5000-hsts-not-found](../../static/img/localhost-5000-hsts-not-found.jpg)
 都沒查到！代表 Chrome 真的忽略了在 HTTP Protocol 設定的 HSTS（但我們還需要驗證在 HTTPS Protocol 是否就會紀錄 HSTS）
 
-### NodeJS HTTPS Server
+## NodeJS HTTPS Server
 
 我們按照以下步驟，在本機啟動 NodeJS HTTPS Server
 
@@ -95,7 +95,7 @@ httpsServer.on("request", function httpsRequestListener(req, res) {
 ![localhost-5001-cert-invalid](../../static/img/localhost-5001-cert-invalid.jpg)
 恩...看來遇到了自簽憑證不被信任的問題，此時瀏覽器也不會註冊 HSTS
 
-### mkcert 建立本機 CA
+## mkcert 建立本機 CA
 
 我們把剛才生成的 `private-key.pem` 跟 `cert.pem` 砍掉，並且執行
 
@@ -116,7 +116,7 @@ mkcert -key-file private-key.pem -cert-file cert.pem localhost
 1. 瀏覽器不會紀錄 localhost 這個 host
 2. chrome://net-internals/#hsts 不會立即查到剛設定的 Strict-Transport-Security
 
-### 設定 hosts 檔案
+## 設定 hosts 檔案
 
 為了逐步排查，我們先來設定本機的 hosts 檔案
 
@@ -137,7 +137,7 @@ mkcert -key-file private-key.pem -cert-file cert.pem hsts.test.com nodejs.hsts.t
 ![hsts-test-com-5001-hsts-valid](../../static/img/hsts-test-com-5001-hsts-valid.jpg)
 成功在 Chrome 註冊 HSTS，並且查得到了！看來我上面的猜測是正確的
 
-### 憑證不安全的情境
+## 憑證不安全的情境
 
 根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security#description) 的描述：
 
@@ -164,7 +164,7 @@ httpServer.on("request", function httpRequestListener(req, res) {
 
 重整瀏覽器後，NodeJS 確實沒印出任何 log，瀏覽器在這層的防護是真的很完善！
 
-### disable HSTS
+## disable HSTS
 
 根據 [MDN文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security#expiration) 的描述：
 
@@ -190,7 +190,7 @@ res.setHeader("Strict-Transport-Security", "max-age=0");
 ![hsts-test-com-hsts-not-found](../../static/img/hsts-test-com-hsts-not-found.jpg)
 確實刪掉了～
 
-### Best Practice
+## Best Practice
 
 根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security#insecure_http_requests) 的描述：
 
@@ -206,7 +206,7 @@ If the host accepts insecure HTTP requests, it should respond with a permanent r
 ![developer-mozilla-org-http-301-to-https](../../static/img/developer-mozilla-org-http-301-to-https.jpg)
 就可以看到 developer.mozilla.org 確實有 Follow Best Practice 了～
 
-### HSTS 如何強制切到 HTTPS Protocol
+## HSTS 如何強制切到 HTTPS Protocol
 
 我們再次用瀏覽器輸入 http://developer.mozilla.org/zh-CN/ ，由於剛才瀏覽器已經有把 developer.mozilla.org 加到 HSTS 列表，所以 `瀏覽器會攔截這個 HTTP Request，並且回傳 307 Redirect 到 HTTPS Protocol，所以對 Server 來說實際上只有收到一個 HTTPS Request，很重要！`
 ![developer-mozilla-org-http-307-to-https](../../static/img/developer-mozilla-org-http-307-to-https.jpg)
@@ -215,7 +215,7 @@ If the host accepts insecure HTTP requests, it should respond with a permanent r
 - 因為上圖的 Response Header 連基本的 `Content-Length`, `Date` 都沒有，代表這個 HTTP Request 根本沒有到達 Server
 - 且如果真的有到達 Server 的話，那就失去 HSTS 的意義了，因為 HSTS 就是要避免資料透過 Insecure HTTP 傳輸，瀏覽器的職責就是擋住 HTTP Request，並且轉成 HTTPS
 
-### preload 機制
+## preload 機制
 
 根據 [hstspreload.org](https://hstspreload.org/#preloading) 的描述：
 
@@ -227,18 +227,18 @@ To account for this first-load problem, Chrome maintains a list of domains that 
 
 為了解決這個問題，Chrome 維護了一個 preload list，採取申請制，並且對於申請的規範較為嚴格，且後續要從 preload list 移除也需要再提交申請，整套流程極為複雜，且效益不高（就是為了解決 first-load 的問題），所以申請前請三思！
 
-### preload 申請規範
+## preload 申請規範
 
 1. 合法的憑證（廢話）
 2. Follow [Best Practice](#best-practice)
 3. 所有 subdomain 都要 HTTPS
 4. `Strict-Transport-Security: max-age=至少一年; includeSubDomains; preload`
 
-### 小結
+## 小結
 
 HSTS 已經存在 10 幾年了，但我竟然到 2025 年才知道有這個 Security Header，真的是相見恨晚～學習 HTTP 的路程，真的是一路上充滿驚喜，透過這篇文章，我自己也學到很多東西，希望各位也收穫滿滿呦～
 
-### 參考資料
+## 參考資料
 
 - chrome://net-internals/#hsts
 - https://www.chromium.org/hsts/

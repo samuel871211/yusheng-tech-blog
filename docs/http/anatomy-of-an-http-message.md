@@ -154,7 +154,7 @@ function checkInvalidHeaderChar(val) {
 
 今天的內容到這裡，開頭是介紹 Anatomy of an HTTP message，但沒想到卻延伸到了 CRLF Injection XDD
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Messages#anatomy_of_an_http_message
 - https://ithelp.ithome.com.tw/m/articles/10242682

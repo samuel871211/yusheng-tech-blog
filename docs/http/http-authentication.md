@@ -390,7 +390,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 其實關於 HTTP Authentication 能寫的內容超多～本篇只有介紹 `Basic` 這個 `auth-scheme`，實際上還有超多，如果真的要一個一個說，應該可以分很多篇講。不過，我認為這樣的內容，基本上可以涵蓋 HTTP Authentication 的基本概念了～希望大家有收穫
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/WWW-Authenticate

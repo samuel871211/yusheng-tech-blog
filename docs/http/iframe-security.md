@@ -5,7 +5,7 @@ last_update:
   date: "2025-06-18T08:00:00+08:00"
 ---
 
-### 大綱
+## 大綱
 
 本篇要來介紹 iframe security，內容包含
 
@@ -13,7 +13,7 @@ last_update:
 2. X-Frame-Options
 3. CSP: frame-ancestors
 
-### `<iframe sandbox>`
+## `<iframe sandbox>`
 
 根據 [html.spec.whatwg.org](https://html.spec.whatwg.org/multipage/iframe-embed-object.html#attr-iframe-sandbox) 的文件描述
 
@@ -132,7 +132,7 @@ When the attribute is set, the content is treated as being from a unique opaque 
   </tbody>
 </table>
 
-### 實作環節
+## 實作環節
 
 我們建立以下：
 | 檔案名稱 | 用途 |
@@ -143,7 +143,7 @@ When the attribute is set, the content is treated as being from a unique opaque 
 | index.ts | NodeJS HTTP Server |
 | download.js | 被下載的測試檔案，內容隨意 |
 
-### allow-downloads
+## allow-downloads
 
 5000.html
 
@@ -251,7 +251,7 @@ console.log("downloaded js file!!!");
 
 重整畫面，點擊下載按鈕，此時就可以正常下載了 ✨✨✨
 
-### allow-forms
+## allow-forms
 
 5000.html
 
@@ -317,7 +317,7 @@ if (req.url === "/form") {
 
 重整畫面，點擊 submit 按鈕，此時就可以正常表單驗證 & 送出表單了 ✨✨✨
 
-### allow-modals
+## allow-modals
 
 5000.html
 
@@ -362,7 +362,7 @@ if (req.url === "/form") {
 
 重整畫面，點擊按鈕，此時就可以正常跳出 modal 了 ✨✨✨
 
-### allow-popups
+## allow-popups
 
 5000.html
 
@@ -401,7 +401,7 @@ if (req.url === "/form") {
 
 重整畫面，點擊按鈕，此時就可以正常開啟新視窗了 ✨✨✨
 
-### allow-popups-to-escape-sandbox
+## allow-popups-to-escape-sandbox
 
 5000.html
 
@@ -476,7 +476,7 @@ if (req.url === "/sandbox-popup") {
 - ✅ 原頁導轉，由於還是同一個 browsing context（不是 popup），所以還是會被 sandbox 限制（不能執行 script）
 - ✅ 另開新頁，吃到 `allow-popups-to-escape-sandbox`，所以可以跳出 sandbox 的限制（可以執行 script）
 
-### allow-top-navigation & allow-top-navigation-by-user-activation
+## allow-top-navigation & allow-top-navigation-by-user-activation
 
 5000.html
 
@@ -514,32 +514,32 @@ if (req.url === "/sandbox-popup") {
 
 重整畫面，點擊按鈕，此時就可以正常把 top window 導轉了 ✨✨✨
 
-### X-Frame-Options
+## X-Frame-Options
 
 - 一句話總結，這個 Response Header 決定該網頁是否可以被 HTML 的 `<iframe>`, `<frame>`, `<embed>` 跟 `<object>` 嵌入
 - 其中，`<frame>`, `<embed>` 跟 `<object>` 都是比較老舊的 HTMLElement，故本篇會著重在 `<iframe>`
 
-### X-Frame-Options: DENY
+## X-Frame-Options: DENY
 
 不讓任何網頁嵌入
 
-### X-Frame-Options: SAMEORIGIN
+## X-Frame-Options: SAMEORIGIN
 
 只讓同源的網頁嵌入
 
-### CSP: frame-ancestors
+## CSP: frame-ancestors
 
 比 [X-Frame-Options](#x-frame-options) 更新的 HTTP Response Header，可以提供更精細的控制，可設定多個白名單
 
-### frame-ancestors 'none'
+## frame-ancestors 'none'
 
 跟 [X-Frame-Options: DENY](#x-frame-options-deny) 類似，不讓任何網頁嵌入
 
-### frame-ancestors 'self'
+## frame-ancestors 'self'
 
 跟 [X-Frame-Options: SAMEORIGIN](#x-frame-options-sameorigin) 類似，只讓同源的網頁嵌入
 
-### X-Frame-Options 跟 CSP 都沒設定的情況
+## X-Frame-Options 跟 CSP 都沒設定的情況
 
 - 該網頁可被任何網頁嵌入
 - 遵守 [Same-origin_policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy)
@@ -554,7 +554,7 @@ if (req.url === "/sandbox-popup") {
   Uncaught SecurityError: Failed to read a named property 'document' from 'Window': Blocked a frame with origin "http://localhost:5001" from accessing a cross-origin frame.
   ```
 
-### X-Frame-Options: DENY + frame-ancestors 'self'
+## X-Frame-Options: DENY + frame-ancestors 'self'
 
 如果同時設定這兩個，瀏覽器會以哪個為更高優先度呢？我們使用 NodeJS HTTP 模組來試試看：
 
@@ -612,7 +612,7 @@ http5001Server.on("request", function requestListener(req, res) {
 The frame-ancestors directive obsoletes the X-Frame-Options header. If a resource has both policies, the frame-ancestors policy SHOULD be enforced and the X-Frame-Options policy SHOULD be ignored.
 ```
 
-### X-Frame-Options 跟 CSP frame-ancestors 該怎麼設定
+## X-Frame-Options 跟 CSP frame-ancestors 該怎麼設定
 
 因為 `CSP frame-ancestors` 是比較新的功能，為了瀏覽器的向後兼容性，建議兩者都設置
 
@@ -639,7 +639,7 @@ res.setHeader(
 );
 ```
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe#sandbox
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options

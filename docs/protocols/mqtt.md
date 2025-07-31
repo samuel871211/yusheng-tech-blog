@@ -1,6 +1,6 @@
 ---
-title: MQTT
-description: MQTT
+title: Message Queuing Telemetry Transport (MQTT)
+description: Message Queuing Telemetry Transport (MQTT)
 last_update:
   date: "2025-04-20T08:00:00+08:00"
 ---

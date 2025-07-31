@@ -5,7 +5,7 @@ last_update:
   date: "2025-05-25T08:00:00+08:00"
 ---
 
-### Retry-After
+## Retry-After
 
 Retry-After 是一個 HTTP Response Header，有兩種表達方式
 
@@ -14,7 +14,7 @@ Retry-After 是一個 HTTP Response Header，有兩種表達方式
 
 其中，第二種表達方式，跟 `Date: Sat, 24 May 2025 10:57:26 GMT` HTTP Header 的格式一模一樣，都是 [UTCString](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toUTCString)
 
-### 使用時機
+## 使用時機
 
 Retry-After 通常會用在以下情境
 
@@ -22,7 +22,7 @@ Retry-After 通常會用在以下情境
 - 429 Too Many Requests
 - 30x Redirections
 
-### 實作環節
+## 實作環節
 
 老樣子，使用 NodeJS HTTP 模組實作
 
@@ -61,7 +61,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 ![browser-does-not-implement-retry-after](../../static/img/browser-does-not-implement-retry-after.jpg)
 
-### undici RetryAgent
+## undici RetryAgent
 
 既然瀏覽器沒有實作 `Retry-After`，我找到 [undici](https://github.com/nodejs/undici)，`An HTTP/1.1 client, written from scratch for Node.js`，裡面就有實作 `Retry-After` 的邏輯。
 
@@ -162,7 +162,7 @@ Retry-After: 14.005ms
 }
 ```
 
-### fetch 跟 retry 的歷史
+## fetch 跟 retry 的歷史
 
 使用瀏覽器的 `fetch`，即便收到 `Retry-After` 的 Response Header，也不會自動 retry
 
@@ -199,13 +199,13 @@ graph TD
     style M fill:#fff3e0
 ```
 
-### 小結
+## 小結
 
 在實作 `Retry-After` 的時候，我原本以為瀏覽器會實作 Retry 的機制，後來實測才發現沒有，但我也沒有找到瀏覽器沒有實作 Retry 機制的相關討論串或是 issue。
 
 還好 `undici` 有實作，才讓我有東西可以參考。並且也搜到很多 `fetch` 相關的歷史，真的是收穫滿滿！
 
-### 參考資料
+## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Date
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
