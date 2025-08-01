@@ -408,7 +408,7 @@ The smtp-vuln-cve2010-4344.exploit script argument will make the script try to e
 
 ## SIZE
 
-SMTP Server 通常有支援 [SIZE extension](https://datatracker.ietf.org/doc/html/rfc1870)，可以設定 SMTP Server 最大可接受的 [SMTP Message](../protocols/smtp.md#smtp-message)．這個漏洞的手法，就是傳送超過上限的 SMTP Message，導致 heap overflow
+SMTP Server 通常有支援 [SIZE extension](https://datatracker.ietf.org/doc/html/rfc1870)，可以設定 SMTP Server 最大可接受的 [SMTP Message](../protocols/smtp.md#smtp-message)。這個漏洞的手法，就是傳送超過上限的 SMTP Message，導致 heap overflow
 
 ## smtp-vuln-cve2011-1720
 
