@@ -854,11 +854,33 @@ iVBORw0KGgoAAAANSUhEUgAAAMgAAACqCAYAAADoZADPAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 ### Notify
 
 ```
-RCPT TO:<test@gmail.com> NOTIFY=NEVER
-RCPT TO:<test@gmail.com> NOTIFY=SUCCESS,FAILURE,DELAY
+RCPT TO:<receiver@gmail.com> NOTIFY=NEVER
+RCPT TO:<receiver@gmail.com> NOTIFY=SUCCESS,FAILURE,DELAY
 ```
 
 ### ORCPT (Original Recipient)
+
+```
+RCPT TO:<receiver@gmail.com> NOTIFY=NEVER ORCPT=rfc822;test@gmail.com
+```
+
+### RET
+
+RET = Returned [SMTP Message](#smtp-message)
+
+```
+MAIL FROM:<sender@gmail.com> RET=FULL
+MAIL FROM:<sender@gmail.com> RET HDRS
+```
+
+### ENVID
+
+```
+MAIL FROM:<sender@gmail.com> ENVID=newsletter-20250801-001 RET=HDRS
+...
+DATA
+Original-Envelope-ID: newsletter-20250801-001
+```
 
 <!-- ## BDAT -->
 
@@ -887,6 +909,7 @@ SMTP 在 2025 年其實也是佔有一席之地，從它的 RFC 發展活躍度�
 | SMTPUTF8                            | https://datatracker.ietf.org/doc/html/rfc6531 |
 | Returning Enhanced Error Codes      | https://datatracker.ietf.org/doc/html/rfc2034 |
 | Enhanced Mail System Status Codes   | https://datatracker.ietf.org/doc/html/rfc3463 |
+| Delivery Status Notifications       | https://datatracker.ietf.org/doc/html/rfc3461 |
 | Remote Message Queue Starting       | https://datatracker.ietf.org/doc/html/rfc1985 |
 | NodeJS SMTP Client                  | https://github.com/nodemailer/nodemailer      |
 | nodemailer Official Document        | https://nodemailer.com/                       |
