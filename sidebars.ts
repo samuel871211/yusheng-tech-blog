@@ -81,6 +81,7 @@ const sidebars: SidebarsConfig = {
         // "web-security/dot-git",
         // "web-security/nmap-mysql-scripts",
         // "web-security/CVE-2024-4577",
+        "web-security/port-swigger",
       ],
     },
     {
