@@ -23,7 +23,6 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "http",
       items: [
-        "http/index",
         "http/anatomy-of-an-http-message",
         "http/keep-alive-and-connection",
         "http/http-1.1-HOL-blocking",
