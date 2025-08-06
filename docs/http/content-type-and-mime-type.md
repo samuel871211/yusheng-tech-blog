@@ -173,7 +173,7 @@ boundary 其實就是用一個很長的字串來當作分割符號，就像是 C
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryC8h6BB9h8kXL7CRQ
 ```
 
-由於 Header 會先傳送到 Server 端，之後才是 Body，所以 Server 端就可以根據這個 boundary 來處理每個 part 的資料。至於 Server 端具體來說要怎麼實現 multipart 的解析呢？其實這題蠻複雜的，畢竟檔案上傳有很多坑，光是要處理不同的檔案類型...。，這部分會建議使用現成的 Solution，可以參考 [busboy](https://www.npmjs.com/package/busboy)，這是一個專門處理 form data 的 NodeJS 模組，有興趣的朋友可以研究看看。
+由於 Header 會先傳送到 Server 端，之後才是 Body，所以 Server 端就可以根據這個 boundary 來處理每個 part 的資料。至於 Server 端具體來說要怎麼實現 multipart 的解析呢？其實這題蠻複雜的，畢竟檔案上傳有很多坑，光是要處理不同的檔案類型...，這部分會建議使用現成的 Solution，可以參考 [busboy](https://www.npmjs.com/package/busboy)，這是一個專門處理 form data 的 NodeJS 模組，有興趣的朋友可以研究看看。
 
 ## Content-Disposition
 
