@@ -1,6 +1,8 @@
 ---
 title: PortSwigger SQL Injection
 description: PortSwigger SQL Injection
+last_update:
+  date: "2025-08-08T08:00:00+08:00"
 ---
 
 ## Lab: SQL injection vulnerability in WHERE clause allowing retrieval of hidden data
@@ -591,6 +593,12 @@ async function Blind_SQL_injection_with_time_delays_and_information_retrieval() 
 這題需要 Burp Suite Pro，暫時無法解
 
 <!-- todo-yus 等買了 burp suite pro 再來解題 -->
+
+## 小結
+
+這系列的挑戰過得真快，不到一週就結束了，我覺得有讓我對 SQL Injection 更加了解。但畢竟我目前還是個前端工程師，工作不會接觸到 SQL，所以我覺得要時常來複習，不然很快就會忘記了QQ
+
+另外，我覺得只靠這 10 幾個練習題，不足以面對真實世界的 SQL Injection，畢竟這些練習題只是把各種重點概念都練習過一次，總覺得好像學到了，但又不夠精深，所以之後會再規劃其他 SQL 相關的學習，例如 [nmap MySQL Scripts](../web-security/nmap-mysql-scripts.md) 跟 [sqlmap](../web-security/sqlmap.md)。
 
 ## 參考資料
 
