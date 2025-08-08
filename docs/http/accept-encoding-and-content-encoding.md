@@ -225,7 +225,7 @@ Request Body 是壓縮後的資料
 
 Response body 是解壓縮後的資料
 
-![parse-gzip-req-payload](../../static/img/parse-gzip-res-payload.jpg)
+![parse-gzip-res-payload](../../static/img/parse-gzip-res-payload.jpg)
 
 ## Accept-Encoding as Response Header
 
