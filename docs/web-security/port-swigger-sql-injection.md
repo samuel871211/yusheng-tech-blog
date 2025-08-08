@@ -7,6 +7,11 @@ last_update:
 
 ## Lab: SQL injection vulnerability in WHERE clause allowing retrieval of hidden data
 
+| Dimension | Description                                                                 |
+| --------- | --------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection#retrieving-hidden-data   |
+| Lab       | https://portswigger.net/web-security/sql-injection/lab-retrieve-hidden-data |
+
 Payload
 
 ```
@@ -21,6 +26,11 @@ SELECT ... FROM products WHERE category = 'Accessories' OR 1=1--'
 
 ## Lab: SQL injection vulnerability allowing login bypass
 
+| Dimension | Description                                                                     |
+| --------- | ------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection#subverting-application-logic |
+| Lab       | https://portswigger.net/web-security/sql-injection/lab-login-bypass             |
+
 Payload
 
 ```
@@ -34,6 +44,11 @@ SELECT ... FROM users WHERE username = 'administrator' OR 1=1--' AND password = 
 ```
 
 ## Lab: SQL injection with filter bypass via XML encoding
+
+| Dimension | Description                                                                                              |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection#sql-injection-in-different-contexts                   |
+| Lab       | https://portswigger.net/web-security/sql-injection/lab-sql-injection-with-filter-bypass-via-xml-encoding |
 
 先嘗試用 `UNION SELECT NULL--` 來判斷前面的 `SELECT` 選了幾個 columns
 
@@ -85,6 +100,11 @@ console 的結果
 
 ## Lab: SQL injection attack, querying the database type and version on Oracle
 
+| Dimension | Description                                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/examining-the-database#querying-the-database-type-and-version |
+| Lab       | https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-oracle   |
+
 題目給的 Hint 很重要:
 
 On Oracle databases, every `SELECT` statement must specify a table to select `FROM`. If your `UNION SELECT` attack does not query from a table, you will still need to include the `FROM` keyword followed by a valid table name.
@@ -111,6 +131,11 @@ SELECT ... FROM products WHERE category = 'Accessories' UNION SELECT banner,NULL
 ```
 
 ## Lab: SQL injection attack, querying the database type and version on MySQL and Microsoft
+
+| Dimension | Description                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/examining-the-database#querying-the-database-type-and-version        |
+| Lab       | https://portswigger.net/web-security/sql-injection/examining-the-database/lab-querying-database-version-mysql-microsoft |
 
 這題稍微卡了一下，主要的卡點有兩個
 
@@ -158,6 +183,11 @@ SELECT ... FROM products WHERE category = 'Lifestyle' UNION SELECT @@version,NUL
 ```
 
 ## Lab: SQL injection attack, listing the database contents on non-Oracle databases
+
+| Dimension | Description                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/sql-injection/examining-the-database#listing-the-contents-of-the-database     |
+| Lab       | https://portswigger.net/web-security/sql-injection/examining-the-database/lab-listing-database-contents-non-oracle |
 
 根據 [SQL injection cheat sheet](https://portswigger.net/web-security/sql-injection/cheat-sheet#comments)，最終得出需使用 `-- ` 的格式來當作註解，嘗試用 `UNION SELECT NULL` 慢慢猜出 `SELECT` 的 columns 數量
 
@@ -211,6 +241,11 @@ window.open(href, "_blank");
 
 ## Lab: SQL injection attack, listing the database contents on Oracle
 
+| Dimension | Description                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/examining-the-database#listing-the-contents-of-an-oracle-database |
+| Lab       | https://portswigger.net/web-security/sql-injection/examining-the-database/lab-listing-database-contents-oracle       |
+
 跟上一題的概念一樣，只是改成 Oracle 的語法，先用 `UNION SELECT NULL` 來猜出 `SELECT` 的 columns 數量
 
 ```js
@@ -261,6 +296,11 @@ window.open(href, "_blank");
 
 ## Lab: SQL injection UNION attack, determining the number of columns returned by the query
 
+| Dimension | Description                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/union-attacks#determining-the-number-of-columns-required |
+| Lab       | https://portswigger.net/web-security/sql-injection/union-attacks/lab-determine-number-of-columns            |
+
 這題意外的簡單，利用前面的技術 `UNION SELECT NULL` 來判斷 `SELECT` 多少 columns
 
 ```js
@@ -271,6 +311,11 @@ window.open(href, "_blank");
 ```
 
 ## Lab: SQL injection UNION attack, finding a column containing text
+
+| Dimension | Description                                                                                              |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/union-attacks#finding-columns-with-a-useful-data-type |
+| Lab       | https://portswigger.net/web-security/sql-injection/union-attacks/lab-find-column-containing-text         |
 
 承接上一題，就是把 `NULL` 換成題目指定的字串 `bpaLX3`，看哪個 index 換掉會成功
 
@@ -286,6 +331,11 @@ window.open(href, "_blank");
 
 ## Lab: SQL injection UNION attack, retrieving data from other tables
 
+| Dimension | Description                                                                                                                      |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/union-attacks#using-a-sql-injection-union-attack-to-retrieve-interesting-data |
+| Lab       | https://portswigger.net/web-security/sql-injection/union-attacks/lab-retrieve-data-from-other-tables                             |
+
 怎麼感覺跟前面的題目有點像@@
 
 ```js
@@ -300,6 +350,11 @@ window.open(href, "_blank");
 
 ## Lab: SQL injection UNION attack, retrieving multiple values in a single column
 
+| Dimension | Description                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/sql-injection/union-attacks#retrieving-multiple-values-within-a-single-column |
+| Lab       | https://portswigger.net/web-security/sql-injection/union-attacks/lab-retrieve-multiple-values-in-single-column     |
+
 結合前面學到的，要猜出哪個 column 是 string
 
 ```js
@@ -313,6 +368,11 @@ window.open(href, "_blank");
 ```
 
 ## Lab: Blind SQL injection with conditional responses
+
+| Dimension | Description                                                                                                                 |
+| --------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/blind#exploiting-blind-sql-injection-by-triggering-conditional-responses |
+| Lab       | https://portswigger.net/web-security/sql-injection/blind/lab-conditional-responses                                          |
 
 這題稍微麻煩，要一個一個字元去猜，先找出密碼的長度，結果是 20 碼
 
@@ -341,6 +401,11 @@ SELECT TrackingId FROM TrackedUsers WHERE TrackingId = 'HsacENgP06akYysN' AND (S
 這題要手動爆破會累死，基本上是要工具，本來沒有下載 Burp Suite，但我看 PortSwigger 的課程一直推薦自家產品，所以還是學一下好了XD
 
 ## Lab: Blind SQL injection with conditional errors
+
+| Dimension | Description                                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/sql-injection/blind#exploiting-blind-sql-injection-by-triggering-conditional-errors |
+| Lab       | https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors                                          |
 
 主要的卡點
 
@@ -445,9 +510,12 @@ async function Blind_SQL_injection_with_conditional_errors() {
 Blind_SQL_injection_with_conditional_errors();
 ```
 
-### Lab: Visible error-based SQL injection
+## Lab: Visible error-based SQL injection
 
-對應文章：https://portswigger.net/web-security/sql-injection/blind#extracting-sensitive-data-via-verbose-sql-error-messages
+| Dimension | Description                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/blind#extracting-sensitive-data-via-verbose-sql-error-messages |
+| Lab       | https://portswigger.net/web-security/sql-injection/blind/lab-sql-injection-visible-error-based                    |
 
 先嘗試在 cookies.TrackingId 注入 `'`
 
@@ -505,7 +573,12 @@ P.S. 解完這題之後，回頭看 Solution，發現真的有限制 trackingId 
 Observe that you receive the initial error message again. Notice that your query now appears to be truncated due to a character limit. As a result, the comment characters you added to fix up the query aren't included.
 ```
 
-### Lab: Blind SQL injection with time delays
+## Lab: Blind SQL injection with time delays
+
+| Dimension | Description                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/blind#exploiting-blind-sql-injection-by-triggering-time-delays |
+| Lab       | https://portswigger.net/web-security/sql-injection/blind/lab-time-delays                                          |
 
 這題主要應該是要猜用什麼 DB，嘗試很多次，最終猜到是 PostgreSQL
 
@@ -513,7 +586,12 @@ Observe that you receive the initial error message again. Notice that your query
 ' OR (SELECT pg_sleep(10)) IS NOT NULL--
 ```
 
-### Lab: Blind SQL injection with time delays and information retrieval
+## Lab: Blind SQL injection with time delays and information retrieval
+
+| Dimension | Description                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/blind#exploiting-blind-sql-injection-by-triggering-time-delays |
+| Lab       | https://portswigger.net/web-security/sql-injection/blind/lab-time-delays-info-retrieval                           |
 
 承接上一題，我猜這題也是用 PostgreSQL，我覺得最麻煩的是不同 SQL Database 的語法不一樣
 
@@ -582,13 +660,23 @@ async function Blind_SQL_injection_with_time_delays_and_information_retrieval() 
 }
 ```
 
-### Lab: Blind SQL injection with out-of-band interaction
+## Lab: Blind SQL injection with out-of-band interaction
+
+| Dimension | Description                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/blind#exploiting-blind-sql-injection-using-out-of-band-oast-techniques |
+| Lab       | https://portswigger.net/web-security/sql-injection/blind/lab-out-of-band                                                  |
 
 這題需要 Burp Suite Pro，暫時無法解
 
 <!-- todo-yus 等買了 burp suite pro 再來解題 -->
 
-### Lab: Blind SQL injection with out-of-band data exfiltration
+## Lab: Blind SQL injection with out-of-band data exfiltration
+
+| Dimension | Description                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/sql-injection/blind#exploiting-blind-sql-injection-using-out-of-band-oast-techniques |
+| Lab       | https://portswigger.net/web-security/sql-injection/blind/lab-out-of-band-data-exfiltration                                |
 
 這題需要 Burp Suite Pro，暫時無法解
 
