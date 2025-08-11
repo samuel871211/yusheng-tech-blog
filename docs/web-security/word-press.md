@@ -31,13 +31,15 @@ description: WordPress
 
 ### wp-json
 
-| /wp-json/wp/v2/ | - |
-| /wp-json/wp/v2/users | - |
-| /wp-json/wp/v2/posts | - |
-| /wp-json/wp/v2/pages | - |
-| /wp-json/wp/v2/media | - |
-| /wp-json/ | - |
-| /wp-json/oembed/1.0/embed?url= | - |
+| Path                           | Description |
+| ------------------------------ | ----------- |
+| /wp-json/wp/v2/                | -           |
+| /wp-json/wp/v2/users           | -           |
+| /wp-json/wp/v2/posts           | -           |
+| /wp-json/wp/v2/pages           | -           |
+| /wp-json/wp/v2/media           | -           |
+| /wp-json/                      | -           |
+| /wp-json/oembed/1.0/embed?url= | -           |
 
 ## wp-content
 
