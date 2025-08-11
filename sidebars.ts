@@ -54,6 +54,7 @@ const sidebars: SidebarsConfig = {
         "http/http-caching-2",
         "http/http-caching-3",
         "http/articles-30-end",
+        // "http/cookie", // 必讀
         // "http/http-message-integrity", // 必讀
         // "http/timing-allow-origin", // 必讀
         // "http/link", // 概念不難，但又可以順便把 <link> 精熟
