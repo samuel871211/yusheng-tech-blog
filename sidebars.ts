@@ -85,6 +85,7 @@ const sidebars: SidebarsConfig = {
         "web-security/port-swigger-sql-injection",
         "web-security/port-swigger-cross-site-scripting",
         "web-security/port-swigger-cross-site-requesy-forgery",
+        "web-security/port-swigger-clickjacking",
         // "web-security/port-swigger-dom-based-vulnerabilities",
         // "web-security/port-swigger-websocket",
       ],
