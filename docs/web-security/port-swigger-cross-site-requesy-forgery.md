@@ -1,6 +1,8 @@
 ---
 title: PortSwigger Cross-site request forgery (CSRF)
 description: PortSwigger Cross-site request forgery (CSRF)
+last_update:
+  date: "2025-08-12T08:00:00+08:00"
 ---
 
 ## Lab: CSRF vulnerability with no defenses
