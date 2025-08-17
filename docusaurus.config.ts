@@ -35,6 +35,7 @@ const config: Config = {
     [
       "classic",
       {
+        sitemap: false,
         gtag: {
           trackingID: "G-RV3EB8YSME",
         },
