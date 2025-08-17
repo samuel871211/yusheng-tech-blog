@@ -88,6 +88,7 @@ const sidebars: SidebarsConfig = {
         "web-security/port-swigger-clickjacking",
         "web-security/port-swigger-dom-based-vulnerabilities",
         // "web-security/sql-injection-beta-gocare-success", // todo-yus 10 月再開啟
+        // "web-security/sql-injection-topone-print-success" // todo-yus 10 月再開啟
         // "web-security/port-swigger-websocket",
       ],
     },
