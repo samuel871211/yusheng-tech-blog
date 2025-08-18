@@ -11,7 +11,7 @@ last_update:
 2. Server (PHP) 會直接把 URL Encoded 的字串塞到 SQL 語法，例如 ` ` => `%20`，所以只要有包含 ` ` 的 SQL Injection Payload 都無效，例如 MYSQL 常用的註解 `-- 123`
 3. 就在我即將放棄之前，跟 Claude 4 又再進行一輪問答以及實測，得出 `/**/` 可以取代 ` `，於是這個 SQL Injection 的路又重新復活了！
 
-## 測試流程
+## 測試過程
 
 1. `'`
 
@@ -179,7 +179,7 @@ Fatal error: Uncaught PDOException: SQLSTATE[HY000]: General error: 1105 XPATH s
 
 成功從 `'~10.6.20-MariaDB-cll-lve~'` 提取到 `version()` = `10.6.20-MariaDB-cll-lve`
 
-27. 接下來請參考
+27. 接下來請參考 [ZD-2025-00980](https://zeroday.hitcon.org/vulnerability/ZD-2025-00980)
 
 ## 學到的東西
 
