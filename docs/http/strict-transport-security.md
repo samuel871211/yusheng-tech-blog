@@ -186,7 +186,7 @@ res.setHeader("Strict-Transport-Security", "max-age=0");
 
 瀏覽器關掉重開，然後 NodeJS 重啟，打開 https://hsts.test.com:5001/
 ![hsts-test-com-set-hsts-max-age-0](../../static/img/hsts-test-com-set-hsts-max-age-0.jpg)
-確定有看到 `"max-age=0` 之後，再到 chrome://net-internals/#hsts 查詢
+確定有看到 `max-age=0` 之後，再到 chrome://net-internals/#hsts 查詢
 ![hsts-test-com-hsts-not-found](../../static/img/hsts-test-com-hsts-not-found.jpg)
 確實刪掉了～
 
