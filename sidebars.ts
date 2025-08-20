@@ -93,6 +93,7 @@ const sidebars: SidebarsConfig = {
         // "web-security/sql-injection-ls-design-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-fulifa-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-eip-nextop-failed" // todo-yus 擇日開放
+        // "web-security/sql-injection-artgarden-success" // todo-yus 10 月再開啟
         // "web-security/port-swigger-websocket",
       ],
     },
