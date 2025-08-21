@@ -87,7 +87,6 @@ const sidebars: SidebarsConfig = {
         "web-security/port-swigger-cross-site-requesy-forgery",
         "web-security/port-swigger-clickjacking",
         "web-security/port-swigger-dom-based-vulnerabilities",
-        // todo-yusheng hiseafood 要不要?
         // "web-security/sql-injection-beta-gocare-success", // todo-yus 10 月再開啟
         // "web-security/sql-injection-topone-print-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-ls-design-success" // todo-yus 10 月再開啟
