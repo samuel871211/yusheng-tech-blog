@@ -13,7 +13,7 @@ last_update:
 
 在學習 HTTP Header 的過程，我會把 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/OPTIONS) 跟 [RFC 文件](https://www.rfc-editor.org/rfc/rfc9110.html#name-options) 一起對照著看。概念上是 MDN 會照著 RFC 的規範來撰寫 "面向開發者好閱讀" 的技術文章，並且提供程式範例，但偶爾也會遇到兩邊 Spec 不一致的問題。
 
-我這次剛好遇到 [RFC 規範](https://www.rfc-editor.org/rfc/rfc9110.html#name-options)說 `OPTIONS` 請求可以搭配 Request Body，原文是
+我這次剛好遇到 [RFC 規範](https://www.rfc-editor.org/rfc/rfc9110.html#name-options) 說 `OPTIONS` 請求可以搭配 Request Body，原文是
 
 ```
 A client that generates an OPTIONS request containing content MUST send a valid Content-Type header field describing the representation media type. Note that this specification does not define any use for such content.
@@ -332,7 +332,7 @@ Content-Type: text/plain; charset=utf-8
 
 ### 時間軸
 
-- 這是一個古早時期（約 2022 ~ 2003 年公布）的資安漏洞，詳細可參考 [這篇文章](https://www.kb.cert.org/vuls/id/867593)
+- 這是一個古早時期（約 2002 ~ 2003 年公布）的資安漏洞，詳細可參考 [這篇文章](https://www.kb.cert.org/vuls/id/867593)
 - 參考 https://www.w3.org/TR/2006/WD-XMLHttpRequest-20060405/#xmlhttprequest 這邊文章，在 2006 年，當時還沒禁止 cross-origin 的 XMLHttpRequest 去讀取 ResponseHeaders
 
 ```
