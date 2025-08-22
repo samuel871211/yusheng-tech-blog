@@ -82,6 +82,7 @@ const sidebars: SidebarsConfig = {
         // "web-security/nmap-mysql-scripts",
         // "web-security/CVE-2024-4577",
         "web-security/word-press",
+        "web-security/word-press-xml-rpc",
         "web-security/port-swigger-sql-injection",
         "web-security/port-swigger-cross-site-scripting",
         "web-security/port-swigger-cross-site-requesy-forgery",

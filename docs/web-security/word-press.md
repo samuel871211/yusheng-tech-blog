@@ -110,6 +110,10 @@ description: WordPress
 | /sitemap_index.xml       | -           |
 | /.well-known/            | -           |
 
+## wordpress.fuzz.txt
+
+[SecLists-wordpress.fuzz.txt](https://github.com/danielmiessler/SecLists/blob/master/Discovery/Web-Content/CMS/wordpress.fuzz.txt)
+
 ## wpscan
 
 上面的 [WordPress Cheet Sheet](#word-press-cheat-sheet) 其實是 AI 給出來的，實際上肯定不只這些，讓我蠻意外的是，竟然還有專門的弱掃工具 [wpscan](https://github.com/wpscanteam/wpscan)
