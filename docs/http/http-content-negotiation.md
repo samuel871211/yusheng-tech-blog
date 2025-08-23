@@ -147,7 +147,7 @@ accept-as-response-header-test.html
 
 瀏覽器打開 http://localhost:5000/accept-as-response-header-test.html，並且慢慢往下滾。結論是第二個 Request 的 `Accept`，並沒有依照第一個 Response 回傳的 `Accept` 去調整
 ![image-1-accept](../../static/img/image-1-accept.jpg)
-![image-2-accept](../../static/img/image-1-accept.jpg)
+![image-2-accept](../../static/img/image-2-accept.jpg)
 
 根據 [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-accept) 的描述：
 
