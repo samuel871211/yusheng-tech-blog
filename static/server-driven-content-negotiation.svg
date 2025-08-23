@@ -306,7 +306,7 @@
     dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em"
     style="font-size: 16px; font-weight: 400;">Accept-Encoding: gzip, deflate, br, zstd</text><text x="289" y="204"
     text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em"
-    style="font-size: 16px; font-weight: 400;">&ZeroWidthSpace;</text>
+    style="font-size: 16px; font-weight: 400;"></text>
   <line x1="76" y1="244" x2="502" y2="244" class="messageLine0" stroke-width="2" stroke="none"
     marker-end="url(#arrowhead)" style="fill: none;"></line><text x="292" y="259" text-anchor="middle"
     dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em"

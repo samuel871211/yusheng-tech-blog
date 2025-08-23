@@ -319,7 +319,7 @@
     text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em"
     style="font-size: 16px; font-weight: 400;">Content-Type: text/plain</text><text x="279" y="276" text-anchor="middle"
     dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em"
-    style="font-size: 16px; font-weight: 400;">&ZeroWidthSpace;</text><text x="279" y="295" text-anchor="middle"
+    style="font-size: 16px; font-weight: 400;"></text><text x="279" y="295" text-anchor="middle"
     dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em"
     style="font-size: 16px; font-weight: 400;">1. /path/to/resource/zh-TW.html</text><text x="279" y="314"
     text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em"
