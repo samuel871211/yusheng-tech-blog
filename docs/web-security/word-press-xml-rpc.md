@@ -5,7 +5,8 @@ description: WordPress /xmlrpc.php
 
 ## 官方文件
 
-https://developer.wordpress.org/apis/xml-rpc/
+- https://developer.wordpress.org/apis/xml-rpc/
+- https://developer.wordpress.org/reference/classes/wp_xmlrpc_server/
 
 ## 測試過程
 
@@ -478,10 +479,12 @@ https://developer.wordpress.org/apis/xml-rpc/
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <methodCall>
-<methodName>wp.getAuthors</methodName>
-<params>
-<param><value>1</value></param>
-</params>
+    <methodName>wp.getAuthors</methodName>
+    <params>
+        <param>
+            <value>1</value>
+        </param>
+    </params>
 </methodCall>
 ```
 
@@ -509,65 +512,36 @@ https://developer.wordpress.org/apis/xml-rpc/
 </methodResponse>
 ```
 
-```xml
+5. [getPingbacks](https://developer.wordpress.org/reference/classes/wp_xmlrpc_server/pingback_extensions_getpingbacks/)
 
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<methodCall>
+    <methodName>pingback.extensions.getPingbacks</methodName>
+    <params>
+        <param>
+            <value>https://example.com</value>
+        </param>
+    </params>
+</methodCall>
 ```
 
 ```xml
-
+<?xml version="1.0" encoding="UTF-8"?>
+<methodResponse>
+    <params>
+        <param>
+            <value>
+                <array>
+                    <data></data>
+                </array>
+            </value>
+        </param>
+    </params>
+</methodResponse>
 ```
 
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
-
-```xml
-
-```
+6. [ping](https://developer.wordpress.org/reference/classes/wp_xmlrpc_server/pingback_ping/)
 
 ## 參考資料
 
