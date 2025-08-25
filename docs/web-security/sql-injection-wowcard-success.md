@@ -1,6 +1,8 @@
 ---
 title: SQL Injection wowcard Success
 description: SQL Injection wowcard Success
+last_update:
+  date: "2025-08-21T08:00:00+08:00"
 ---
 
 ## 前言
