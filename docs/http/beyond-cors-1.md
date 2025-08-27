@@ -2,7 +2,7 @@
 title: beyond CORS (上篇)
 description: beyond CORS (上篇)
 last_update:
-  date: "2025-07-10T08:00:00+08:00"
+  date: "2025-08-27T08:00:00+08:00"
 ---
 
 ## 行前準備
@@ -184,7 +184,10 @@ CORP 的 error message
 img, link, script, video, audio 的 response body 都無法讀取
 ![corp-no-response-body](../../static/img/corp-no-response-body.jpg)
 
-即便有設定 CORP，iframe 還是可以正常載入，X-Frame-Options, CSP frame-ancestors 才可以防止 iframe 的 response body 被載入
+即便有設定 CORP，iframe 還是可以正常載入
+![with-corp-iframe](../../static/img/with-corp-iframe.jpg)
+
+X-Frame-Options, CSP frame-ancestors 才可以防止 iframe 的 response body 被載入
 ![x-frame-options-no-response-body](../../static/img/x-frame-options-no-response-body.jpg)
 
 ### iframe vs CORP
