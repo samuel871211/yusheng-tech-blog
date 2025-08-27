@@ -327,3 +327,4 @@ HTML Entity 解碼過程
 ## 參考資料
 
 - https://portswigger.net/web-security/xxe
+- https://www.w3schools.com/xml/default.asp
