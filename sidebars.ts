@@ -90,7 +90,7 @@ const sidebars: SidebarsConfig = {
         "web-security/port-swigger-dom-based-vulnerabilities",
         "web-security/port-swigger-cors",
         "web-security/port-swigger-xxe",
-        // "web-security/port-swigger-ssrf",
+        "web-security/port-swigger-ssrf",
         // "web-security/port-swigger-http-request-smuggling",
         "web-security/sql-injection-lfi-success",
 
