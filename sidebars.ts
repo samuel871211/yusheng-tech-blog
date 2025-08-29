@@ -106,6 +106,7 @@ const sidebars: SidebarsConfig = {
         // "web-security/sql-injection-artgarden-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-wowisee-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-wowcard-success" // todo-yus 10 月再開啟
+        // "web-security/sql-injection-spirit-tku-success" // todo-yus 10 月再開啟
         // "web-security/port-swigger-websocket",
       ],
     },
