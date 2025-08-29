@@ -93,6 +93,7 @@ const sidebars: SidebarsConfig = {
         "web-security/port-swigger-ssrf",
         // "web-security/port-swigger-http-request-smuggling",
         "web-security/port-swigger-os-command-injection",
+        "web-security/port-swigger-server-side-template-injection",
 
         "web-security/sql-injection-lfi-success",
         // "web-security/sql-injection-beta-gocare-success", // todo-yus 10 月再開啟
