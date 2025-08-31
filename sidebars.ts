@@ -96,6 +96,7 @@ const sidebars: SidebarsConfig = {
         "web-security/port-swigger-server-side-template-injection",
 
         "web-security/sql-injection-lfi-success",
+        "web-security/cases-you-should-use-burp-suite",
         // "web-security/sql-injection-beta-gocare-success", // todo-yus 10 月再開啟
         // "web-security/sql-injection-topone-print-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-ls-design-success" // todo-yus 10 月再開啟
@@ -107,6 +108,7 @@ const sidebars: SidebarsConfig = {
         // "web-security/sql-injection-wowisee-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-wowcard-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-spirit-tku-success" // todo-yus 10 月再開啟
+        // "web-security/sql-injection-stationer-success" // todo-yus 10 月再開啟
         // "web-security/port-swigger-websocket",
       ],
     },
