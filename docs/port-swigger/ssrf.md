@@ -1,6 +1,6 @@
 ---
-title: PortSwigger Server-side request forgery (SSRF)
-description: PortSwigger Server-side request forgery (SSRF)
+title: Server-side request forgery (SSRF)
+description: Server-side request forgery (SSRF)
 last_update:
   date: "2025-08-29T08:00:00+08:00"
 ---

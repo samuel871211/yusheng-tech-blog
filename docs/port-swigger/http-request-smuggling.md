@@ -1,6 +1,6 @@
 ---
-title: PortSwigger HTTP request smuggling
-description: PortSwigger HTTP request smuggling
+title: HTTP request smuggling
+description: HTTP request smuggling
 ---
 
 ## 前言

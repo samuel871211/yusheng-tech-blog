@@ -1,6 +1,6 @@
 ---
-title: PortSwigger Cross-origin resource sharing (CORS)
-description: PortSwigger Cross-origin resource sharing (CORS)
+title: Cross-origin resource sharing (CORS)
+description: Cross-origin resource sharing (CORS)
 last_update:
   date: "2025-08-26T08:00:00+08:00"
 ---

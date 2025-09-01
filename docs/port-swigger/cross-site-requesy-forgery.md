@@ -1,6 +1,6 @@
 ---
-title: PortSwigger Cross-site request forgery (CSRF)
-description: PortSwigger Cross-site request forgery (CSRF)
+title: Cross-site request forgery (CSRF)
+description: Cross-site request forgery (CSRF)
 last_update:
   date: "2025-08-12T08:00:00+08:00"
 ---
@@ -432,7 +432,7 @@ sequenceDiagram
 | Document  | https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions#bypassing-samesite-restrictions-via-vulnerable-sibling-domains |
 | Lab       | https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-strict-bypass-via-sibling-domain                  |
 
-這題需要 [WebSocket](../web-security/port-swigger-websocket.md) 的知識，目前我還沒深入研究，之後再來解
+這題需要 [WebSocket](./websocket.md) 的知識，目前我還沒深入研究，之後再來解
 
 <!-- todo-yusheng -->
 

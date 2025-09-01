@@ -1,6 +1,6 @@
 ---
-title: PortSwigger Clickjacking
-description: PortSwigger Clickjacking
+title: Clickjacking
+description: Clickjacking
 last_update:
   date: "2025-08-13T08:00:00+08:00"
 ---

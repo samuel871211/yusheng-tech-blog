@@ -72,6 +72,24 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Port Swigger",
+      items: [
+        "port-swigger/sql-injection",
+        "port-swigger/cross-site-scripting",
+        "port-swigger/cross-site-requesy-forgery",
+        "port-swigger/clickjacking",
+        "port-swigger/dom-based-vulnerabilities",
+        "port-swigger/cors",
+        "port-swigger/xxe",
+        "port-swigger/ssrf",
+        // "port-swigger/http-request-smuggling",
+        "port-swigger/os-command-injection",
+        "port-swigger/server-side-template-injection",
+        // "port-swigger/websocket",
+      ],
+    },
+    {
+      type: "category",
       label: "web-security",
       items: [
         "web-security/nmap-basic",
@@ -83,18 +101,6 @@ const sidebars: SidebarsConfig = {
         // "web-security/CVE-2024-4577",
         "web-security/word-press",
         "web-security/word-press-xml-rpc",
-        "web-security/port-swigger-sql-injection",
-        "web-security/port-swigger-cross-site-scripting",
-        "web-security/port-swigger-cross-site-requesy-forgery",
-        "web-security/port-swigger-clickjacking",
-        "web-security/port-swigger-dom-based-vulnerabilities",
-        "web-security/port-swigger-cors",
-        "web-security/port-swigger-xxe",
-        "web-security/port-swigger-ssrf",
-        // "web-security/port-swigger-http-request-smuggling",
-        "web-security/port-swigger-os-command-injection",
-        "web-security/port-swigger-server-side-template-injection",
-
         "web-security/sql-injection-lfi-success",
         "web-security/cases-you-should-use-burp-suite",
         // "web-security/sql-injection-beta-gocare-success", // todo-yus 10 月再開啟
@@ -109,7 +115,6 @@ const sidebars: SidebarsConfig = {
         // "web-security/sql-injection-wowcard-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-spirit-tku-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-stationer-success" // todo-yus 10 月再開啟
-        // "web-security/port-swigger-websocket",
       ],
     },
     {

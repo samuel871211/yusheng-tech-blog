@@ -1,6 +1,6 @@
 ---
-title: PortSwigger OS command injection
-description: PortSwigger OS command injection
+title: OS command injection
+description: OS command injection
 last_update:
   date: "2025-08-29T08:00:00+08:00"
 ---

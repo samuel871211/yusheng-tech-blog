@@ -252,7 +252,7 @@ for (let i = 0; i < 3; i++) {
 
 ## 學到的東西
 
-1. 利用 error-based SQLi，從 error message 提取資料，成功用上 [Lab: Visible error-based SQL injection](../web-security/port-swigger-sql-injection.md#lab-visible-error-based-sql-injection) 的概念
+1. 利用 error-based SQLi，從 error message 提取資料，成功用上 [Lab: Visible error-based SQL injection](../port-swigger/sql-injection.md#lab-visible-error-based-sql-injection) 的概念
 
 2. 測試過程很重要，尤其是初學者，建議把測試過程都記錄下來，方便之後回來複習。畢竟真實世界的 SQLi 不是每天都找的到，這比 Lab 環境真實多了，可以學到很多東西
 

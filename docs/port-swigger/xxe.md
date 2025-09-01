@@ -1,6 +1,6 @@
 ---
-title: PortSwigger XML external entity (XXE) injection
-description: PortSwigger XML external entity (XXE) injection
+title: XML external entity (XXE) injection
+description: XML external entity (XXE) injection
 last_update:
   date: "2025-08-27T08:00:00+08:00"
 ---

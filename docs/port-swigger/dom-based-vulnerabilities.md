@@ -1,6 +1,6 @@
 ---
-title: PortSwigger DOM-based vulnerabilities
-description: PortSwigger DOM-based vulnerabilities
+title: DOM-based vulnerabilities
+description: DOM-based vulnerabilities
 last_update:
   date: "2025-08-25T08:00:00+08:00"
 ---
@@ -99,7 +99,7 @@ View exploit => 看到 `Blocked autofocusing on a <a> element in a cross-origin 
 </html>
 ```
 
-這題我覺得蠻有趣，需要結合 [Cross-site scripting](./port-swigger-cross-site-scripting.md) 的知識
+這題我覺得蠻有趣，需要結合 [Cross-site scripting](./cross-site-scripting.md) 的知識
 
 ## Lab: DOM XSS using web messages
 
@@ -436,7 +436,7 @@ HTTP/1.1 301 Moved Permanently
 Location: https://0a6e008703dc6333801b71c8002b006b.web-security-academy.net/post?postId=7
 ```
 
-這題我覺得會用到 [Lab: Reflected XSS into HTML context with all tags blocked except custom ones](./port-swigger-cross-site-scripting.md#lab-reflected-xss-into-html-context-with-all-tags-blocked-except-custom-ones) 的概念
+這題我覺得會用到 [Lab: Reflected XSS into HTML context with all tags blocked except custom ones](./cross-site-scripting.md#lab-reflected-xss-into-html-context-with-all-tags-blocked-except-custom-ones) 的概念
 
 總之就是 `autofocus tabindex=0 onfocus=print()` 這套組合拳，載入頁面就直接觸發
 

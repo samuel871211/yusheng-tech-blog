@@ -1,6 +1,6 @@
 ---
-title: PortSwigger Cross-site scripting
-description: PortSwigger Cross-site scripting
+title: Cross-site scripting
+description: Cross-site scripting
 last_update:
   date: "2025-08-10T08:00:00+08:00"
 ---
@@ -1343,7 +1343,7 @@ https://0a98004004c30aae80f921b300df004e.web-security-academy.net/?token=123;%20
 
 但不得不說，最後 6 題 EXPERT 等級的，是真的蠻難的！題目不會很明確的跟你說是哪個頁面的哪個功能有 XSS 漏洞，所以需要花一點時間去研究，但 PRACTITIONER 等級的就比較親民，基本上跟著文章還有題目的介紹，都算是可以快速的定位 XSS 漏洞的注入點。這也是我覺得實戰跟刷題不一樣的地方，實戰會需要自行尋找可能的 XSS 漏洞注入點，並且利用已知的攻擊手法去測試，但刷題的話，我覺得概念會比較像是學習新的攻擊手法，即便沒有解出來也沒關係，有學到就好～
 
-蠻開心能在累積一些實戰經驗後再來刷題，感覺跟當初在學習 [SQL Injection](../web-security/port-swigger-sql-injection.md) 的時候不一樣，有一點基礎再來解題，會看到不一樣的世界。
+蠻開心能在累積一些實戰經驗後再來刷題，感覺跟當初在學習 [SQL Injection](./sql-injection.md) 的時候不一樣，有一點基礎再來解題，會看到不一樣的世界。
 
 ## 參考資料
 

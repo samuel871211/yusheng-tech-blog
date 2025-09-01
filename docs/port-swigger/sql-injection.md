@@ -1,6 +1,6 @@
 ---
-title: PortSwigger SQL Injection
-description: PortSwigger SQL Injection
+title: SQL Injection
+description: SQL Injection
 last_update:
   date: "2025-08-08T08:00:00+08:00"
 ---

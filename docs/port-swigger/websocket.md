@@ -1,6 +1,6 @@
 ---
-title: PortSwigger WebSockets
-description: PortSwigger WebSockets
+title: WebSockets
+description: WebSockets
 ---
 
 ## 參考資料
