@@ -115,6 +115,7 @@ const sidebars: SidebarsConfig = {
         // "web-security/sql-injection-wowcard-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-spirit-tku-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-stationer-success" // todo-yus 10 月再開啟
+        // "web-security/sql-injection-dce-success" // todo-yus 10 月再開啟
       ],
     },
     {
