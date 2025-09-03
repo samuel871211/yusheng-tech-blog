@@ -2,7 +2,7 @@
 title: SQL Injection dce Success
 description: SQL Injection dce Success
 last_update:
-  date: "2025-09-02T08:00:00+08:00"
+  date: "2025-09-03T08:00:00+08:00"
 ---
 
 ## 前言
@@ -110,3 +110,16 @@ UNION 前後的欄位數量還是得匹配，才會成功執行
 - `type D:\xampp\htdocs\file.php`
 
 19. powershell 感覺必學，功能太強大了
+
+20. CMD 的指令 `systeminfo`
+
+21. CMD 的指令 `ipconfig /all`
+
+22. CMD 的指令 `arp -a` (Address Resolution Protocol)
+
+```
+介面: xxx.yy.zzz.40 --- 0x6
+  網際網路網址          實體位址               類型
+  xxx.yy.zzz.6          aa-bb-cc-dd-ee-ff     動態
+  xxx.yy.zzz.8          bb-cc-dd-ee-ff-aa     動態
+```

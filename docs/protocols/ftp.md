@@ -2,7 +2,7 @@
 title: File Transfer Protocol (FTP)
 description: File Transfer Protocol (FTP)
 last_update:
-  date: "2025-07-20T08:00:00+08:00"
+  date: "2025-09-03T08:00:00+08:00"
 ---
 
 ## FileZilla Client + Server
@@ -360,6 +360,22 @@ Status:      	Directory listing of "/xxx" successful
 現在基本上預設都是 Passive Mode，因為 Active Mode 會需要 Server 主動連線到 Client，可能會被 Client 的防火牆擋住。FileZilla Client 也有提供 Active Mode，從左上角的 "Edit > Network configuration wizard..." 進入，就可以設定
 ![fileZilla-client-mode](../../static/img/fileZilla-client-mode.jpg)
 
+在 Passive Mode 的情境，如果 Server 的防火牆有擋，會看到以下 log
+
+```
+Command: PWD
+Response: 257 "/" is current directory.
+Command: TYPE I
+Response: 200 Type set to I
+Command: PASV
+Response: 227 Entering Passive Mode (xxx,yy,zzz,40,233,198)
+Command: MLSD
+Response: 425 Can't open data connection.
+Error:         Failed to retrieve directory listing
+```
+
+這時候可以改成 Active Mode，讓 Server 主動連線到 Client，這樣就可以避開 Server 的防火牆
+
 ## Other Commands
 
 ### FEAT
@@ -416,6 +432,55 @@ Response:	 214 Help ok.
 | Reply Code | Description  |
 | ---------- | ------------ |
 | 214        | Help message |
+
+## FileZilla Server.xml
+
+如果是透過 `xampp` 安裝的話，目錄會在 `C:\xampp\FileZillaFTP\FileZilla Server.xml`
+
+```xml
+<FileZillaServer>
+    <Settings>
+        <Item name="Admin port" type="numeric">14147</Item>
+        <Item name="Service name" type="string">FileZillaServer</Item>
+        <Item name="Service display name" type="string">FileZillaServer</Item>
+    </Settings>
+    <Groups />
+    <Users>
+        <User Name="username">
+            <Option Name="Pass">md5HashedPassword</Option>
+            <Option Name="Group"></Option>
+            <Option Name="Bypass server userlimit">0</Option>
+            <Option Name="User Limit">0</Option>
+            <Option Name="IP Limit">0</Option>
+            <Option Name="Enabled">1</Option>
+            <Option Name="Comments"></Option>
+            <Option Name="ForceSsl">0</Option>
+            <IpFilter>
+                <Disallowed />
+                <Allowed />
+            </IpFilter>
+            <Permissions>
+                <Permission Dir="D:">
+                    <Option Name="FileRead">1</Option>
+                    <Option Name="FileWrite">1</Option>
+                    <Option Name="FileDelete">1</Option>
+                    <Option Name="FileAppend">1</Option>
+                    <Option Name="DirCreate">1</Option>
+                    <Option Name="DirDelete">1</Option>
+                    <Option Name="DirList">1</Option>
+                    <Option Name="DirSubdirs">1</Option>
+                    <Option Name="IsHome">1</Option>
+                    <Option Name="AutoCreate">0</Option>
+                </Permission>
+            </Permissions>
+            <SpeedLimits DlType="0" DlLimit="10" ServerDlLimitBypass="0" UlType="0" UlLimit="10" ServerUlLimitBypass="0">
+                <Download />
+                <Upload />
+            </SpeedLimits>
+        </User>
+    </Users>
+</FileZillaServer>
+```
 
 ## 小結
 
