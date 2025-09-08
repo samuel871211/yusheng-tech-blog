@@ -147,6 +147,8 @@ const sidebars: SidebarsConfig = {
         "protocols/smtp",
         "protocols/rfb",
         "protocols/ssh",
+        // "protocols/smb",
+        // "protocols/pptp",
         // "protocols/arp",
         // "protocols/dns",
         // "protocols/tcp",
