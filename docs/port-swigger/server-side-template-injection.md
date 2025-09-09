@@ -237,7 +237,9 @@ ${x("rm morale.txt")}
 
 4. `message={{lookup (lookup this "constructor") "constructor"}}`
 
+```
 function Function() { [native code] }
+```
 
 5. `message={{#with (lookup (lookup this "constructor") "constructor") as |func|}}{{func "return 123"}}{{/with}}`
 
@@ -271,7 +273,9 @@ undefined:3 return container.escapeExpression((helpers.propertyIsEnumerable('con
 
 11. `message={{lookup (lookup this "constructor") "constructor" "throw new Error('test')"}}`
 
+```
 function Function() { [native code] }
+```
 
 12. `{{apply (lookup (lookup this "constructor") "constructor") this "throw new Error('test')"}}`
 
