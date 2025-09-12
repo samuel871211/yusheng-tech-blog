@@ -86,6 +86,8 @@ const sidebars: SidebarsConfig = {
         "port-swigger/os-command-injection",
         "port-swigger/server-side-template-injection",
         "port-swigger/path-traversal",
+        "port-swigger/access-control",
+        "port-swigger/authentication",
         // "port-swigger/websocket",
       ],
     },
