@@ -15,3 +15,8 @@ last_update:
 
 - 情境: Exploit SQLi + Server 會把 URL Decode 前的字串直接拼接到 SQL 語法 + 瀏覽器會把 `?query='` 轉換成 `?query=%27`
 - 解法: 用 Burp Suite Repeater 可以在 querystring 的 value 送出 `'`
+
+3. 需要看 30x redirect HTTP Response Body 的時候
+
+- 情境: 有時候 30x redirect HTTP Response Body 會包含一些有趣的資訊，例如 [Port Swigger 這個 Lab](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter-with-data-leakage-in-redirect)
+- 解法: 用 Burp Suite Proxy 的瀏覽器，就可以看到完整的 HTTP History
