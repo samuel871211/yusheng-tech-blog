@@ -2,7 +2,7 @@
 title: Access control vulnerabilities and privilege escalation
 description: Access control vulnerabilities and privilege escalation
 last_update:
-  date: "2025-09-11T08:00:00+08:00"
+  date: "2025-09-14T08:00:00+08:00"
 ---
 
 ## Lab: Unprotected admin functionality
@@ -308,6 +308,8 @@ fetch(
 ```
 
 ## 小結
+
+這系列的 Labs 好快就解完了，沒有 Expert 等級的題目，整體來說都偏簡單
 
 ## 參考資料
 
