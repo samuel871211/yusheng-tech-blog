@@ -910,6 +910,28 @@ carlos:onceuponatime
 
 常見的 MD5 hashed 弱密碼可以透過 [線上的 MD5 Reverse 工具](https://md5.gromweb.com/) 來得知，我也是最近才得知的，因為 MySQL 跟 FileZilla Server 都會存 MD5 Hashed 密碼
 
+## Lab: Password reset broken logic
+
+| Dimension | Description                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/authentication/other-mechanisms#resetting-passwords-using-a-url |
+| Lab       | https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-broken-logic |
+
+在 `/forget-password` 頁面的表單看到
+
+```html
+<input required="" type="hidden" name="username" value="wiener" />
+```
+
+改成 `carlos` 就可以成功修改受害者的密碼～
+
+## Lab: Password reset poisoning via middleware
+
+| Dimension | Description                                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/authentication/other-mechanisms#resetting-passwords-using-a-url             |
+| Lab       | https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-poisoning-via-middleware |
+
 ## 參考資料
 
 - https://portswigger.net/web-security/authentication
