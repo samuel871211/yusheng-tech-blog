@@ -130,6 +130,8 @@ const sidebars: SidebarsConfig = {
         // "web-tech/subresource-integrity",
         // "web-tech/service-worker",
         // "web-tech/tracking-user-activation",
+        // "web-tech/jwt",
+        // "web-tech/oauth",
         "web-tech/binary-data-in-javascript",
       ],
     },

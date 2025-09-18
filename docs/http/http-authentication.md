@@ -331,10 +331,6 @@ sequenceDiagram
 
 跟 [Browser-Based HTTP Authentication](#browser-based-http-authentication-小結) 不一樣的是，多了一層 Proxy，如果認證沒過，HTTP 請求是完全摸不到 Origin Server 的
 
-<!-- ## jwt 淺入淺出 -->
-
-<!-- todo https://www.npmjs.com/package/jsonwebtoken -->
-
 ## `http://username:password@localhost:5000/` 是什麼
 
 這是一個已被棄用多年的用法，原因是 username 跟 password 直接寫在 URL，很容易被瀏覽器的歷史紀錄以及 Web Server 的 `access.log` 紀錄

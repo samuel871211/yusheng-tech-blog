@@ -2,7 +2,7 @@
 title: OAuth 2.0 authentication vulnerabilities
 description: OAuth 2.0 authentication vulnerabilities
 last_update:
-  date: "2025-09-16T08:00:00+08:00"
+  date: "2025-09-18T08:00:00+08:00"
 ---
 
 ## Lab: Authentication bypass via OAuth implicit flow
@@ -353,6 +353,19 @@ https://oauth-0a3b00690304f08a80f083e302720086.oauth-server.net/me
   "email_verified": true
 }
 ```
+
+## Lab: SSRF via OpenID dynamic client registration
+
+| Dimension | Description                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/oauth/openid#unprotected-dynamic-client-registration               |
+| Lab       | https://portswigger.net/web-security/oauth/openid/lab-oauth-ssrf-via-openid-dynamic-client-registration |
+
+<!-- todo-yus 這題需要付費版QQ -->
+
+## 小結
+
+在解 Lab 的過程，我才知道 OAuth 原來有 RFC，感覺之後要找時間來讀一下，至少把基礎的架構搞懂
 
 ## 參考資料
 
