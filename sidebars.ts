@@ -88,7 +88,9 @@ const sidebars: SidebarsConfig = {
         "port-swigger/path-traversal",
         "port-swigger/access-control",
         "port-swigger/authentication",
-        // "port-swigger/websocket",
+        "port-swigger/oauth",
+        "port-swigger/websocket",
+        "port-swigger/web-cache-poisoning",
       ],
     },
     {
