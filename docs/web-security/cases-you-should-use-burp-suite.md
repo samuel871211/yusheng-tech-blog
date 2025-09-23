@@ -25,3 +25,8 @@ last_update:
 
 - 情境: 瀏覽器的 JavaScript，不支援在 `new WebSocket` 的時候加上 Custom HTTP Header，例如我想要加上 `X-Forwarded-For`
 - 解法：用 Burp Suite Proxy 的瀏覽器 > WebSocket History > 選擇一個 message > Send To Repeater > 斷線以後可以選擇 Reconnect
+
+5. 需要在 HTTP GET Request 帶上 Body 的時候
+
+- 情境: 瀏覽器的 fetch 不支援在 GET 請求帶上 Body
+- 解法: 用 Burp Suite Repeater（是說 Postman 也可以啦）

