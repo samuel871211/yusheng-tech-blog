@@ -91,6 +91,7 @@ const sidebars: SidebarsConfig = {
         "port-swigger/oauth",
         "port-swigger/websocket",
         "port-swigger/web-cache-poisoning",
+        "port-swigger/insecure-deserialization",
       ],
     },
     {
