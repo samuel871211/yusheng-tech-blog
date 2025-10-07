@@ -1,0 +1,156 @@
+---
+title: Information disclosure
+description: Information disclosure
+---
+
+## Lab: Information disclosure in error messages
+
+| Dimension | Description                                                                                           |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/information-disclosure/exploiting#error-messages                 |
+| Lab       | https://portswigger.net/web-security/information-disclosure/exploiting/lab-infoleak-in-error-messages |
+
+嘗試 https://0af9000b03d382b281d1f77600800031.web-security-academy.net/product?productId=%27
+
+```
+Internal Server Error: java.lang.NumberFormatException: For input string: "'"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:647)
+	at java.base/java.lang.Integer.parseInt(Integer.java:777)
+	at lab.c.w.x.y.Z(Unknown Source)
+	at lab.o.go.g.z.h(Unknown Source)
+	at lab.o.go.i.z.p.E(Unknown Source)
+	at lab.o.go.i.e.lambda$handleSubRequest$0(Unknown Source)
+	at s.x.s.t.lambda$null$3(Unknown Source)
+	at s.x.s.t.N(Unknown Source)
+	at s.x.s.t.lambda$uncheckedFunction$4(Unknown Source)
+	at java.base/java.util.Optional.map(Optional.java:260)
+	at lab.o.go.i.e.y(Unknown Source)
+	at lab.server.k.a.n.l(Unknown Source)
+	at lab.o.go.v.B(Unknown Source)
+	at lab.o.go.v.l(Unknown Source)
+	at lab.server.k.a.k.p.B(Unknown Source)
+	at lab.server.k.a.k.b.lambda$handle$0(Unknown Source)
+	at lab.c.t.z.p.Q(Unknown Source)
+	at lab.server.k.a.k.b.Q(Unknown Source)
+	at lab.server.k.a.r.V(Unknown Source)
+	at s.x.s.t.lambda$null$3(Unknown Source)
+	at s.x.s.t.N(Unknown Source)
+	at s.x.s.t.lambda$uncheckedFunction$4(Unknown Source)
+	at lab.server.gv.B(Unknown Source)
+	at lab.server.k.a.r.G(Unknown Source)
+	at lab.server.k.w.c.q(Unknown Source)
+	at lab.server.k.q.m(Unknown Source)
+	at lab.server.k.c.m(Unknown Source)
+	at lab.server.gd.F(Unknown Source)
+	at lab.server.gd.r(Unknown Source)
+	at lab.x.e.lambda$consume$0(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+Apache Struts 2 2.3.31
+```
+
+通常這種 Application Server 噴的錯誤訊息，只能當作漏洞挖掘的入口，不能單獨算一個漏洞，實務上我看過好幾個 ASP.NET 的服務都有這個問題
+
+## Lab: Information disclosure on debug page
+
+| Dimension | Description                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/information-disclosure/exploiting#debugging-data             |
+| Lab       | https://portswigger.net/web-security/information-disclosure/exploiting/lab-infoleak-on-debug-page |
+
+首頁的 HTML 看到 `<!-- <a href=/cgi-bin/phpinfo.php>Debug</a> -->`
+
+訪問 https://0a49004903e723e08188398300630085.web-security-academy.net/cgi-bin/phpinfo.php
+
+搜尋 SECRET_KEY，看到 `axkx2kh24eql5x9tbbcrw50j0t0fqp23`，成功解題～
+
+## Lab: Source code disclosure via backup files
+
+| Dimension | Description                                                                                                    |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/information-disclosure/exploiting#source-code-disclosure-via-backup-files |
+| Lab       | https://portswigger.net/web-security/information-disclosure/exploiting/lab-infoleak-via-backup-files           |
+
+先訪問 `/robots.txt`，看到
+
+```
+User-agent: *
+Disallow: /backup
+```
+
+再訪問 `/backup`，發現有 Directory Listing，之後訪問 `/backup/ProductTemplate.java.bak`，成功看到 DB 密碼～
+
+```java
+package data.productcatalog;
+
+import common.db.JdbcConnectionBuilder;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class ProductTemplate implements Serializable
+{
+    static final long serialVersionUID = 1L;
+
+    private final String id;
+    private transient Product product;
+
+    public ProductTemplate(String id)
+    {
+        this.id = id;
+    }
+
+    private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException
+    {
+        inputStream.defaultReadObject();
+
+        ConnectionBuilder connectionBuilder = ConnectionBuilder.from(
+                "org.postgresql.Driver",
+                "postgresql",
+                "localhost",
+                5432,
+                "postgres",
+                "postgres",
+                "qcwho9h1825jdqvdle5iitnpetl9xylz"
+        ).withAutoCommit();
+        try
+        {
+            Connection connect = connectionBuilder.connect(30);
+            String sql = String.format("SELECT * FROM products WHERE id = '%s' LIMIT 1", id);
+            Statement statement = connect.createStatement();
+            ResultSet resultSet = statement.executeQuery(sql);
+            if (!resultSet.next())
+            {
+                return;
+            }
+            product = Product.from(resultSet);
+        }
+        catch (SQLException e)
+        {
+            throw new IOException(e);
+        }
+    }
+
+    public String getId()
+    {
+        return id;
+    }
+
+    public Product getProduct()
+    {
+        return product;
+    }
+}
+```
+
+## 參考資料
+
+- https://portswigger.net/web-security/information-disclosure
