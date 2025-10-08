@@ -2,7 +2,7 @@
 title: Cases you should use burp suite
 description: Cases you should use burp suite
 last_update:
-  date: "2025-08-31T08:00:00+08:00"
+  date: "2025-10-08T08:00:00+08:00"
 ---
 
 1. 需要看原始的 Response Hex 的時候
@@ -30,3 +30,8 @@ last_update:
 
 - 情境: 瀏覽器的 fetch 不支援在 GET 請求帶上 Body
 - 解法: 用 Burp Suite Repeater（是說 Postman 也可以啦）
+
+6. 需要修改 HTTP Request Header Host 的時候
+
+- 情境: 瀏覽器的 fetch 不支援修改 Host Header
+- 解法: 用 Burp Suite Repeater（Postman 應該是不行，會噴 `Error:The "options.headers.host" property must be of type string. Received an instance of Array`）
