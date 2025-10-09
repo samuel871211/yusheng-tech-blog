@@ -54,6 +54,7 @@ const sidebars: SidebarsConfig = {
         "http/http-caching-2",
         "http/http-caching-3",
         "http/articles-30-end",
+        // "http/request-target-and-host" // port swigger 延伸的
         // "http/cookie", // 必讀
         // "http/http-message-integrity", // 必讀
         // "http/timing-allow-origin", // 必讀
