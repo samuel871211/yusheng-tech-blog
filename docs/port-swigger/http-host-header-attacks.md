@@ -1,6 +1,8 @@
 ---
 title: HTTP Host header attacks
 description: HTTP Host header attacks
+last_update:
+  date: "2025-10-10T08:00:00+08:00"
 ---
 
 ## 前言
