@@ -85,7 +85,3 @@ last_update:
 很明顯 A 就是在用裝忙的方式來逃避學習新知識，而我的大腦不由自主地選了 A
 
 我覺得我在真實世界找到的 SQLi 已經夠多了，如果是以 "刷完 PortSwigger SQLi Lab 覺得不夠理解，所以才到真實世界補足 SQLi 經驗" 為出發點的話，那也差不多可以暫停了，該去學習下一個 Web Security Topic 了。
-
-## 參考資料
-
-- https://claude.ai/chat/c97c8834-1773-4f76-8521-d43b8dd433f9
