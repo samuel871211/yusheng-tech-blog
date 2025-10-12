@@ -183,7 +183,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Reflections",
-      items: ["reflections/20251011"],
+      items: ["reflections/responsible-disclosure-roi"],
     },
   ],
 };
