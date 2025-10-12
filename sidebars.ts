@@ -97,6 +97,7 @@ const sidebars: SidebarsConfig = {
         "port-swigger/http-host-header-attacks",
         "port-swigger/prototype-pollution",
         "port-swigger/essential-skills",
+        "port-swigger/business-logic-vulnerabilities",
       ],
     },
     {
