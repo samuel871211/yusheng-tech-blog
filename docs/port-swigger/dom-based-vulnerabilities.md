@@ -9,6 +9,7 @@ last_update:
 
 這邊整理了可能會有 DOM-based vulnerabilities 的情境
 
+- https://portswigger.net/web-security/cross-site-scripting/dom-based#which-sinks-can-lead-to-dom-xss-vulnerabilities
 - https://portswigger.net/web-security/dom-based#common-sources
 - https://portswigger.net/web-security/dom-based#which-sinks-can-lead-to-dom-based-vulnerabilities
 - https://portswigger.net/web-security/dom-based/open-redirection#which-sinks-can-lead-to-dom-based-open-redirection-vulnerabilities
