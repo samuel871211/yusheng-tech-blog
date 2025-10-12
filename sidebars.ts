@@ -180,11 +180,11 @@ const sidebars: SidebarsConfig = {
     //     "nodejs/stream",
     //   ],
     // },
-    // {
-    //   type: "category",
-    //   label: "Reflections",
-    //   items: ["reflections/the-day-sqli-and-xss-stopped-being-fun"],
-    // },
+    {
+      type: "category",
+      label: "Reflections",
+      items: ["reflections/20251011"],
+    },
   ],
 };
 
