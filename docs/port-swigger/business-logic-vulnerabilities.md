@@ -1,6 +1,8 @@
 ---
 title: Business logic vulnerabilities
 description: Business logic vulnerabilities
+last_update:
+  date: "2025-10-15T08:00:00+08:00"
 ---
 
 ## Lab: Excessive trust in client-side controls
