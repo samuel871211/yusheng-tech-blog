@@ -494,6 +494,8 @@ LnR4dAY7DFQ7EjoMcmVzb2x2ZQ==`);
 
 在 HTML 的註解有看到 `<!-- <a href=/backup/AccessTokenUser.java>Example user</a> -->`，訪問 https://0a58004e04fa9310806044b4004400ba.web-security-academy.net/backup/AccessTokenUser.java 後
 
+https://replit.com/@samuel871211/java-serialization-example
+
 ```java
 package data.session.token;
 

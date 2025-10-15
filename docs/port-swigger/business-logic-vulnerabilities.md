@@ -338,6 +338,10 @@ Invalid email address: 1 => ysLPLLvJF438cPQamdAP8FdK%2bskruZkjAdamzQGqzqA%3d
 
 把 stay-logged-in: rZWe%2fD3rM7ewYxd744A6UeFy1D655dKtwnLESo2EiBg%3d 的 value 塞回 notification 後，得知格式為 `wiener:1760445014612`
 
+嘗試把 notification 的 value by character 移除，應該會看到類似 input length must be a multiple of 16 的錯誤訊息
+
+故嘗試填充到 32 的長度 Invalid email address: 456789012
+
 Invalid email address: 456789012administrator:1760446048111
 ysLPLLvJF438cPQamdAP8AaL/f331brhCpNccoDZWjmEcS+AQsP/hyhXKs8T2oSJ2FpBVFc/BdEpgvhzfaF9cQ==
 CAC2CF2CBBC9178DFC70F41A99D00FF0068BFDFDF7D5BAE10A935C7280D95A3984712F8042C3FF8728572ACF13DA8489D85A4154573F05D12982F8737DA17D71
@@ -355,6 +359,21 @@ CAC2CF2CBBC9178DFC70F41A99D00FF0068BFDFDF7D5BAE10A935C7280D95A39 => 移除一樣
 84712F8042C3FF8728572ACF13DA8489D85A4154573F05D12982F8737DA17D71 => 把這個重新 Base64 Encode => hHEvgELD/4coVyrPE9qEidhaQVRXPwXRKYL4c32hfXE=
 
 貼回 notification 驗證，確定解出來是 administrator:1760446048111，成功通關～
+
+## Lab: Bypassing access controls using email address parsing discrepancies
+
+| Dimension | Description                                                                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/logic-flaws/examples#email-address-parser-discrepancies                                                  |
+| Lab       | https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-bypassing-access-controls-using-email-address-parsing-discrepancies |
+
+這題有說，建議先把 Gareth Heyes 的這篇文章 https://portswigger.net/research/splitting-the-email-atom 讀過，但我覺得這對現階段的我來說太困難了，這需要深入理解 email 的格式，以及各種 parser 的實作差異，我目前還是先以廣度為主，所以這題我就直接照著答案走一遍
+
+<!-- todo-yus 未來要研究 -->
+
+## 小結
+
+這系列的 Labs，感覺都是跟著 Gareth Heyes 的 writeup，真希望有朝ㄧ日能變得跟他一樣強...撇除掉最後一題 email address parsing 真的超出我現況能理解的知識邊界，其餘的題目，解題的當下，都讓我有一種 "原來還有這種 Bypass 技巧，我怎麼一開始沒想到" 的驚嘆～我喜歡這種思考的過程，以及被題目的 Solution 突破思考盲點的當下，意識到自己的不足，也才會更有動力往前
 
 ## 參考資料
 
