@@ -98,7 +98,7 @@ const sidebars: SidebarsConfig = {
         "port-swigger/essential-skills",
         "port-swigger/business-logic-vulnerabilities",
         "port-swigger/web-cache-deception",
-        // "port-swigger/race-conditions",
+        "port-swigger/race-conditions",
         // "port-swigger/api-testing",
         // "port-swigger/llm-attacks",
         // "port-swigger/file-upload-vulnerabilities",
