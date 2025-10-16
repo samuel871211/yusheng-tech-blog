@@ -123,6 +123,10 @@ Array(40)
 
 後來我看了解答，發現 Burp Repeater 也可以做到同樣的事情，且不用寫任何程式碼，也是蠻方便的
 
+## 中途暫停
+
+這系列的 Labs，從我 2025/10/15 打完第一題，我就覺得，我要先理解 HTTP2 的知識，這樣打起來會比較輕鬆，所以我會先去把其他系列的 Labs 打完，之後再來解這邊～
+
 ## 參考資料
 
 - https://portswigger.net/web-security/race-conditions
