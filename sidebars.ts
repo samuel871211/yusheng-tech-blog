@@ -99,7 +99,7 @@ const sidebars: SidebarsConfig = {
         "port-swigger/business-logic-vulnerabilities",
         "port-swigger/web-cache-deception",
         "port-swigger/api-testing",
-        // "port-swigger/llm-attacks",
+        "port-swigger/llm-attacks",
         // "port-swigger/file-upload-vulnerabilities",
         // "port-swigger/nosql-injection",
         // "port-swigger/graphql",
