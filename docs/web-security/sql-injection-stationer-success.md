@@ -7,6 +7,8 @@ last_update:
 
 ## 前言
 
+本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-01101 的延伸
+
 - 目標: `https://xl-stationer.com.tw/item/182藍色筆桿20mm推進式工程筆0021`
 - 可控制 item 後面的 path 達到 SQLi
 

@@ -5,9 +5,9 @@ last_update:
   date: "2025-08-17T08:00:00+08:00"
 ---
 
-本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-00978 的詳細測試過程
+本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-00978 的延伸
 
-## 測試過程
+<!-- ## 測試過程
 
 1. `'`
 
@@ -248,7 +248,7 @@ for (let i = 0; i < 3; i++) {
 }
 ```
 
-![gocare-list-usr-names](../../static/img/gocare-list-usr-names.jpg)
+![gocare-list-usr-names](../../static/img/gocare-list-usr-names.jpg) -->
 
 ## 學到的東西
 
@@ -268,7 +268,7 @@ for (let i = 0; i < 3; i++) {
 
 2. 在進行 SQLi 測試時，我會一直想推敲出原始的 SQL 語法，不然我會無法思考該怎麼注入，但也許可以著重在測試結果就好（？不要刻意去糾結原始的 SQL 語法，只要能夠成功提取到資料就好（？
 
-## 再次嘗試
+<!-- ## 再次嘗試
 
 1. `'%))-- 123`，成功查到資料
 
@@ -326,4 +326,4 @@ FROM...') #1 /home2/lsdesign/public_html/course/index.php(268):
 DB->Execute('SELECT a.* FROM...') #2
 /home2/lsdesign/public_html/course/index.php(17): show_search(Array) #3 {main}
 thrown in /home2/lsdesign/public_html/includes/cls_mysql.php on line 65
-```
+``` -->

@@ -7,11 +7,11 @@ last_update:
 
 ## 前言
 
-1. 這是一個 URL Path 的 SQL Injection，目標是 `https://www.topone-print.com.tw/company.html`，可在 `company.html` 後面注入 SQL Injection Payload
-2. Server (PHP) 會直接把 URL Encoded 的字串塞到 SQL 語法，例如 ` ` => `%20`，所以只要有包含 ` ` 的 SQL Injection Payload 都無效，例如 MYSQL 常用的註解 `-- 123`
-3. 就在我即將放棄之前，跟 Claude 4 又再進行一輪問答以及實測，得出 `/**/` 可以取代 ` `，於是這個 SQL Injection 的路又重新復活了！
+1. 本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-00980 的延伸
+2. Server (PHP) 會直接把 URL Encoded 的字串塞到 SQL 語法，例如半形空白 => `%20`，所以只要有包含半形空白的 SQL Injection Payload 都無效，例如 MYSQL 常用的註解 `-- 123`
+3. 就在我即將放棄之前，跟 Claude 4 又再進行一輪問答以及實測，得出 `/**/` 可以取代半形空白，於是這個 SQL Injection 的路又重新復活了！
 
-## 測試過程
+<!-- ## 測試過程
 
 1. `'`
 
@@ -179,19 +179,21 @@ Fatal error: Uncaught PDOException: SQLSTATE[HY000]: General error: 1105 XPATH s
 
 成功從 `'~10.6.20-MariaDB-cll-lve~'` 提取到 `version()` = `10.6.20-MariaDB-cll-lve`
 
-27. 接下來請參考 [ZD-2025-00980](https://zeroday.hitcon.org/vulnerability/ZD-2025-00980)
+27. 接下來請參考 [ZD-2025-00980](https://zeroday.hitcon.org/vulnerability/ZD-2025-00980) -->
 
 ## 學到的東西
 
-1. 如果在 ` ` 無法正確注入的情況，可以用 `/**/` 來取代 ` `
+1. 如果在半形空白無法正確注入的情況，可以用 `/**/` 來取代半形空白
 2. [LOCATE()](https://www.w3schools.com/sql/func_mysql_locate.asp)
 3. 一開始跟 AI 對話時，建議要把完整的現況交代清楚，清楚的告知任務，並且賦予 AI 一個角色，例如
 
 ```
-你是 SQLi 大師，
+你是 SQLi 大師
 任務: 分析一個 SQLi，每次請提供一個 Payload 以及解釋攻擊手法
 情境: URL Path Based SQLi
 target: https://www.domain.com.tw/company.html
 SQLi Payload: https://www.domain.com.tw/company.html'
-Error Message: Fatal error: Uncaught PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '1' AND meta_type = '1'' at line 1 in /home2/topone/public_html/includes/cls_mysql.php:44 Stack trace: #0 /home2/topone/public_html/includes/cls_mysql.php(44): PDOStatement->execute() #1 /home2/topone/public_html/includes/lib_main.php(32): DB->GetRow('SELECT * FROM m...') #2 /home2/topone/public_html/includes/init.php(55): getMetaHotsite('meta_memo') #3 /home2/topone/public_html/company.php(8): require_once('/home2/topone/p...') #4 {main} thrown in /home2/topone/public_html/includes/cls_mysql.php on line 44
+Error Message: Fatal error: Uncaught PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '1' AND meta_type = '1'' at line 1 in ...
 ```
+
+<!-- Error Message: Fatal error: Uncaught PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '1' AND meta_type = '1'' at line 1 in /home2/topone/public_html/includes/cls_mysql.php:44 Stack trace: #0 /home2/topone/public_html/includes/cls_mysql.php(44): PDOStatement->execute() #1 /home2/topone/public_html/includes/lib_main.php(32): DB->GetRow('SELECT * FROM m...') #2 /home2/topone/public_html/includes/init.php(55): getMetaHotsite('meta_memo') #3 /home2/topone/public_html/company.php(8): require_once('/home2/topone/p...') #4 {main} thrown in /home2/topone/public_html/includes/cls_mysql.php on line 44 -->

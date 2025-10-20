@@ -5,7 +5,9 @@ last_update:
   date: "2025-08-19T08:00:00+08:00"
 ---
 
-## 測試過程
+本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-00994 的延伸
+
+<!-- ## 測試過程
 
 1. `https://www.ls-design.com.tw/news_detail_2025_zeroclick.html'`
 
@@ -165,9 +167,11 @@ Fatal error: Uncaught exception 'PDOException' with message 'SQLSTATE[HY000]: Ge
 
 回到熟悉的 `EXTRACTVALUE` 最對味
 
-28. 接下來請參考 [ZD-2025-00994](https://zeroday.hitcon.org/vulnerability/ZD-2025-00994)
+28. 接下來請參考 [ZD-2025-00994](https://zeroday.hitcon.org/vulnerability/ZD-2025-00994) -->
 
 ## 學到的東西
 
-1. AI 有前面的 23 組錯誤訊息分析，很快地就在 3 次找到答案，比起我從一開始就問 AI，我自己先嘗試一下，真的卡關再問，效率會比較高，而且有比較多時間可以自主思考
+<!-- 1. AI 有前面的 23 組錯誤訊息分析，很快地就在 3 次找到答案，比起我從一開始就問 AI，我自己先嘗試一下，真的卡關再問，效率會比較高，而且有比較多時間可以自主思考 -->
+
+1. 比起我從一開始就問 AI，我自己先嘗試一下，真的卡關再問，效率會比較高，而且有比較多時間可以自主思考
 2. 我太關注原始的 SQL 語法是什麼，但實際上 Error-Based SQLi 只要能夠成功製造 SQL 的錯誤，就有機會可以偷到資料，即便不知道原始的 SQL 語法也沒關係（但我還是好想知道喔XD）

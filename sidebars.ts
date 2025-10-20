@@ -124,19 +124,19 @@ const sidebars: SidebarsConfig = {
         "web-security/word-press-xml-rpc",
         "web-security/sql-injection-lfi-success",
         "web-security/cases-you-should-use-burp-suite",
-        // "web-security/sql-injection-beta-gocare-success", // todo-yus 10 月再開啟
-        // "web-security/sql-injection-topone-print-success" // todo-yus 10 月再開啟
-        // "web-security/sql-injection-ls-design-success" // todo-yus 10 月再開啟
+        "web-security/sql-injection-beta-gocare-success",
+        "web-security/sql-injection-topone-print-success",
+        "web-security/sql-injection-ls-design-success",
         // "web-security/sql-injection-fulifa-success" // todo-yus 10 月再開啟
-        // "web-security/sql-injection-eip-nextop-failed" // todo-yus 擇日開放
-        // "web-security/sql-injection-buy-org-failed" // todo-yus 擇日開放
-        // "web-security/sql-injection-inan-failed" // todo-yus 擇日開放
-        // "web-security/sql-injection-artgarden-success" // todo-yus 10 月再開啟
+        // "web-security/sql-injection-eip-nextop-failed"
+        // "web-security/sql-injection-buy-org-failed"
+        // "web-security/sql-injection-inan-failed"
+        "web-security/sql-injection-artgarden-success",
         // "web-security/sql-injection-wowisee-success" // todo-yus 10 月再開啟
         // "web-security/sql-injection-wowcard-success" // todo-yus 10 月再開啟
-        // "web-security/sql-injection-spirit-tku-success" // todo-yus 10 月再開啟
+        "web-security/sql-injection-spirit-tku-success",
         // "web-security/sql-injection-stationer-success" // todo-yus 10 月再開啟
-        // "web-security/sql-injection-dce-success" // todo-yus 10 月再開啟
+        "web-security/sql-injection-dce-success",
       ],
     },
     {

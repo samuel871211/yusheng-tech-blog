@@ -1,18 +1,20 @@
 ---
-title: SQL Injection spirit.tku
-description: SQL Injection spirit.tku
+title: SQL Injection spirit.tku Success
+description: SQL Injection spirit.tku Success
 last_update:
   date: "2025-09-05T08:00:00+08:00"
 ---
 
 ## 前言
 
-- 目標網址: http://spirit.tku.edu.tw:8088/job/index.php?qs=zd1czZLoqxC0jMy9qNDMuejh&valid=1
+本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-01095 的延伸
+
+<!-- - 目標網址: http://spirit.tku.edu.tw:8088/job/index.php?qs=zd1czZLoqxC0jMy9qNDMuejh&valid=1
 - 目標功能: 忘記密碼
 - 實際戳的 API: http://spirit.tku.edu.tw:8088/job/login/main_company_forget_ok.php?c=1
-- 注入點為 `c=1`
+- 注入點為 `c=1` -->
 
-## 測試過程
+<!-- ## 測試過程
 
 1. `'`
 
@@ -288,7 +290,7 @@ from Company A
 <ModifyTime>2020-05-07T16:40:16</ModifyTime>
 <LoginTime>2020-05-07T16:40:16</LoginTime>
 <LoginCount>2</LoginCount>
-```
+``` -->
 
 ## 學到的東西
 
@@ -304,7 +306,7 @@ SELECT COUNT(*) + 'hello' FROM Student FOR XML PATH('')
 SELECT table_name as tn FROM information_schema.tables FOR XML PATH('')
 ```
 
-## 測試過程 2
+<!-- ## 測試過程 2
 
 1. SchoolType
 
@@ -462,4 +464,4 @@ order by (select case IsClosed when 0 then 1 when 1 then 2 end)
 		, Id
 		"
 ....
-```
+``` -->
