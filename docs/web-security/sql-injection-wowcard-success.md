@@ -5,12 +5,18 @@ last_update:
   date: "2025-08-21T08:00:00+08:00"
 ---
 
-## 前言
+本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-01031 的延伸
+
+## 學到的東西
+
+同 [上一篇](./sql-injection-wowisee-success.md#學到的東西)
+
+<!-- ## 前言
 
 - 目標: `https://shop.wowcard.com.tw/wsearch.asp`
-- 使用 POST + FormData，不需要煩惱 URL Encode + Decode 的問題
+- 使用 POST + FormData，不需要煩惱 URL Encode + Decode 的問題 -->
 
-## 測試過程
+<!-- ## 測試過程
 
 1. `'`
 
@@ -106,4 +112,4 @@ Microsoft OLE DB Provider for SQL Server 錯誤 '80040e07'
 Microsoft SQL Server 2008 (SP4) - 10.0.6000.29 (X64) Sep 3 2014 04:11:34 Copyright (c) 1988-2008 Microsoft Corporation Enterprise Edition (64-bit) on Windows NT 6.1 <X64> (Build 7601: Service Pack 1)
 ```
 
-11. 接下來請參考 [ZD-2025-01031](https://zeroday.hitcon.org/vulnerability/ZD-2025-01031)
+11. 接下來請參考 [ZD-2025-01031](https://zeroday.hitcon.org/vulnerability/ZD-2025-01031) -->

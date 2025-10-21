@@ -132,8 +132,8 @@ const sidebars: SidebarsConfig = {
         // "web-security/sql-injection-buy-org-failed"
         // "web-security/sql-injection-inan-failed"
         "web-security/sql-injection-artgarden-success",
-        // "web-security/sql-injection-wowisee-success" // todo-yus 10 月再開啟
-        // "web-security/sql-injection-wowcard-success" // todo-yus 10 月再開啟
+        "web-security/sql-injection-wowisee-success",
+        "web-security/sql-injection-wowcard-success",
         "web-security/sql-injection-spirit-tku-success",
         // "web-security/sql-injection-stationer-success" // todo-yus 10 月再開啟
         "web-security/sql-injection-dce-success",
