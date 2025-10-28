@@ -1,6 +1,8 @@
 ---
 title: JWT
 description: JWT
+last_update:
+  date: "2025-10-28T08:00:00+08:00"
 ---
 
 <!-- ## 前言
