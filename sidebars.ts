@@ -103,7 +103,7 @@ const sidebars: SidebarsConfig = {
         "port-swigger/web-cache-deception",
         "port-swigger/file-upload-vulnerabilities",
         "port-swigger/jwt",
-        // "port-swigger/graphql",
+        "port-swigger/graphql",
         // "port-swigger/race-conditions",
         // "port-swigger/http-request-smuggling",
       ],
