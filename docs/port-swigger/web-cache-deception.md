@@ -1,6 +1,8 @@
 ---
 title: Web cache deception
 description: Web cache deception
+last_update:
+  date: "2025-10-22T08:00:00+08:00"
 ---
 
 ## Path mapping discrepancies

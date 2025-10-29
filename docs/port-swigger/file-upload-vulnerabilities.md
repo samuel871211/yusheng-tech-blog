@@ -1,6 +1,8 @@
 ---
 title: File upload vulnerabilities
 description: File upload vulnerabilities
+last_update:
+  date: "2025-10-23T08:00:00+08:00"
 ---
 
 ## Lab: Remote code execution via web shell upload
