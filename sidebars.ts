@@ -54,6 +54,7 @@ const sidebars: SidebarsConfig = {
         "http/http-caching-2",
         "http/http-caching-3",
         "http/articles-30-end",
+        "http/http-2",
         // "http/request-target-and-host" // port swigger 延伸的
         // "http/cookie", // 必讀
         // "http/http-message-integrity", // 必讀
@@ -62,7 +63,7 @@ const sidebars: SidebarsConfig = {
         // "http/clear-site-data", // 感覺可以水一篇
         // "http/content-security-policy-1", // 必讀，想放後面
         // "http/content-security-policy-2", // 必讀，想放後面
-        // "http/http-2", // 必讀，想放後面
+        // "http/http-2",
         // "http/http-version-negotiation", // 這個偏難
         // "http/http-3", // 這個偏難
         // "http/beyond-cors-2", // 超難，想放後面
