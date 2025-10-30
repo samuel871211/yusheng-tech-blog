@@ -2,7 +2,7 @@
 title: GraphQL API vulnerabilities
 description: GraphQL API vulnerabilities
 last_update:
-  date: "2025-10-31T08:00:00+08:00"
+  date: "2025-10-30T08:00:00+08:00"
 ---
 
 ## How GraphQL works
@@ -269,7 +269,7 @@ Response 很大包，可以使用 [online 的 visualizer](http://nathanrandal.co
 
 ## Suggestions
 
-如果 [Introspection](#using-introspection) 被禁用，也可以透過 suggestions 來描繪出 graphql 的 schema，簡單講就是利用錯誤訊息
+如果 [Introspection](#using-introspection) 被禁用，也可以透過 suggestions 來描繪出 GraphQL 的 schema，簡單講就是利用錯誤訊息
 
 ```
 There is no entry for 'productInfo'. Did you mean 'productInformation' instead?
@@ -277,7 +277,7 @@ There is no entry for 'productInfo'. Did you mean 'productInformation' instead?
 
 有專門的工具做這件事情 [Clairvoyance 千里眼](https://github.com/nikitastupin/clairvoyance)
 
-不過如果 Server 有設定 [hideschemadetailsfromclienterrors](https://www.apollographql.com/docs/apollo-server/api/apollo-server#hideschemadetailsfromclienterrors)，那就無法提取 graphql 的 schema 了
+不過如果 Server 有設定 [hideschemadetailsfromclienterrors](https://www.apollographql.com/docs/apollo-server/api/apollo-server#hideschemadetailsfromclienterrors)，那就無法提取 GraphQL 的 schema 了
 
 ## Lab: Accessing private GraphQL posts
 
@@ -348,7 +348,7 @@ fetch(
 }
 ```
 
-用 [Running a full introspection query](#running-a-full-introspection-query) 的技巧，提取 graphql 的 schema
+用 [Running a full introspection query](#running-a-full-introspection-query) 的技巧，提取 GraphQL 的 schema
 
 ![graphql-lab-1](../../static/img/graphql-lab-1.svg)
 
@@ -394,7 +394,7 @@ fetch(`${location.origin}/graphql/v1`, {
 | Document  | https://portswigger.net/web-security/graphql#exploiting-unsanitized-arguments      |
 | Lab       | https://portswigger.net/web-security/graphql/lab-graphql-accidental-field-exposure |
 
-跟上一題一樣，用 [Running a full introspection query](#running-a-full-introspection-query) 的技巧，提取 graphql 的 schema
+跟上一題一樣，用 [Running a full introspection query](#running-a-full-introspection-query) 的技巧，提取 GraphQL 的 schema
 
 ![graphql-lab-2](../../static/img/graphql-lab-2.svg)
 
@@ -867,7 +867,7 @@ fetch(`${location.origin}/api?query=${encodeURIComponent(query)}`);
 }
 ```
 
-graphql 的語法，我還在熟悉中，感覺很像是 JavaScript + JSON 的合體，另外對於 graphql 的物件模型，我也還在慢慢摸索
+GraphQL 的語法，我還在熟悉中，感覺很像是 JavaScript + JSON 的合體，另外對於 GraphQL 的物件模型，我也還在慢慢摸索
 
 ## Lab: Bypassing GraphQL brute force protections
 
@@ -970,6 +970,10 @@ mutation {
   document.forms[0].submit();
 </script>
 ```
+
+## 小結
+
+這系列沒有 expert 等級的題目，一下子就打完了，感覺才剛入門 GraphQL 就結束了，有點可惜QQ
 
 ## 參考資料
 
