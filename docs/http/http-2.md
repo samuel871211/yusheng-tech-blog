@@ -355,6 +355,8 @@ http2.connect;
 
 ## Keep-Alive
 
+### HTTP/2 discard connection-specific header fields
+
 如果仔細觀察 [Response Pseudo-header](#response-pseudo-header) 的話，會覺得很空虛
 
 架一個最小 HTTP/1.1 Server PoC 來比較
@@ -378,13 +380,296 @@ Keep-Alive: timeout=5
 Content-Length: 26
 ```
 
-會發現 Connection 跟 Keep-Alive 都消失了！這是 HTTP/2 設計上的改進，根據 []
+會發現 Connection 跟 Keep-Alive 都消失了！這是 HTTP/2 設計上的改進，根據 [RFC 9113 #section-8.2.2](https://datatracker.ietf.org/doc/html/rfc9113#section-8.2.2) 的描述
+
+```
+An endpoint MUST NOT generate an HTTP/2 message containing connection-specific header fields. This includes the Connection header field and those listed as having connection-specific semantics in Section 7.6.1 of [HTTP] (that is, Proxy-Connection, Keep-Alive, Transfer-Encoding, and Upgrade). Any message containing connection-specific header fields MUST be treated as malformed.
+```
+
+### Malformed HTTP/2 Response With Connection Header
+
+我猜測瀏覽器應該會嚴格遵守這個規範，所以我們來構造一個 malformed HTTP/2 Response
+
+```ts
+// server
+https2Server.on("request", (req, res) => {
+  console.log(req.headers);
+  res.writeHead(200, { connection: "keep-alive" });
+  res.end("Welcome to HTTP/2 Server");
+});
+
+// client
+const rootCA = readFileSync("mkcert -CAROOT");
+const clientHttp2Session1 = http2.connect("https://localhost:5002", {
+  ca: rootCA,
+});
+clientHttp2Session1.request().on("response", console.log).end();
+```
+
+瀏覽器跟 NodeJS HTTP/2 Client 的行為都一致 => 把 Connection Header 移除
+
+```
+(node:6224) UnsupportedWarning: The provided connection header is not valid, the value will be dropped from the header and will never be in use.
+```
+
+回到剛才 HTTP/2 把 connection-specific header fields 移除的原因，參考 [RFC 9113 #section-9.1](https://datatracker.ietf.org/doc/html/rfc9113#section-9.1) 的描述
+
+```
+HTTP/2 connections are persistent. For best performance, it is expected that clients will not close connections until it is determined that no further communication with a server is necessary (for example, when a user navigates away from a particular web page) or until the server closes the connection.
+```
+
+### NodeJS HTTP/1.1 vs HTTP/2 Client API
+
+從 NodeJS http, http2 的 Client API，也可以明顯感覺到差異
+
+HTTP/1.1
+
+```ts
+import http from "http";
+http.request("URL");
+```
+
+HTTP/2
+
+```ts
+import http2 from "http2";
+const clientHttp2Session = http2.connect("Origin");
+clientHttp2Session.request({ ":path": "/path/to/resource" });
+```
+
+### HTTP/2 solves HTTP/1.1 HOL Blocking
+
+所謂的 `http2.connect('Origin')`，其實就是建立一個 TCP Connection，並且在 Application Layer 建立一個 HTTP/2 的 Persistent Connection，後續所有 HTTP Request, Response 都在這個 TCP Connection 傳輸。
+
+[RFC 9113 #section-9.1](https://datatracker.ietf.org/doc/html/rfc9113#section-9.1) 也有提到
+
+```
+Clients SHOULD NOT open more than one HTTP/2 connection to a given host and port pair
+```
+
+如果理解 [HTTP 1.1 HOL blocking](./http-1.1-HOL-blocking.md) 的話，可能就會想問，只建議開一個連線，那還不如用 HTTP/1.1 開六條 TCP Connection，速度肯定更快！
+
+我們實測看看，先在 Server 加上
+
+```ts
+https2Server.on("request", (req, res) => {
+  setTimeout(() => res.end("Welcome to HTTP/2 Server"), 1000);
+});
+https2Server.on("connection", (socket) => {
+  console.log("socket created");
+});
+https2Server.on("session", (session) => {
+  console.log("session created");
+});
+```
+
+瀏覽器打開 https://localhost:5002/，F12 > Console 輸入
+
+```ts
+Array(30)
+  .fill(0)
+  .forEach(() => fetch(location.origin));
+```
+
+如果按照 HTTP/1.1 的概念
+
+- 第 1 ~ 6 個請求會在第 1 秒之後完成
+- 第 7 ~ 12 個請求會 Stalled 1 秒，因為要等待前面 6 個 請求完成，才能複用 TCP Connection，並且會在第 2 秒之後完成
+- 依此類推，總共需要 5 秒才能完成
+
+但是 HTTP/2 解決了這個問題，這 30 個請求幾乎都是同時回傳，並且 Server 也只有建立一個 TCP Connection
+![http2-30-requests-no-stalled](../../static/img/http2-30-requests-no-stalled.jpg)
+
+並且 Server 也只有建立一個 TCP Connection，以及一個 HTTP/2 的 Persistent Connection
+
+```
+socket created
+session created
+```
+
+## Http2Session
+
+NodeJS 的 [Http2Session](https://nodejs.org/api/http2.html#class-http2session)，就是代表 HTTP/2 的 Persistent Connection，官方描述如下
+
+```
+Instances of the http2.Http2Session class represent an active communications session between an HTTP/2 client and server.
+```
+
+### Restrict maxHttp2Sessions for Http2Server
+
+當我們使用 `http2.connect()` 的時候，就會建立一個 `Http2Session`
+
+我在官方文件找不到 `Http2Server.maxSessions` 的設定，但由於前面有講到，其實 `Http2Session` 跟 TCP Connection 是 1:1 的關係，所以我們可以在 TCP 層設定
+
+```ts
+https2Server.maxConnections = 1;
+```
+
+然後嘗試建立兩個連線
+
+```ts
+const rootCA = readFileSync("mkcert -CAROOT");
+const clientHttp2Session1 = http2.connect("https://localhost:5002", {
+  ca: rootCA,
+});
+const clientHttp2Session2 = http2.connect("https://localhost:5002", {
+  ca: rootCA,
+});
+```
+
+就會噴以下錯誤訊息
+
+```ts
+Error: read ECONNRESET
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+  errno: -4077,
+  code: 'ECONNRESET',
+  syscall: 'read'
+}
+```
+
+P.S. 這個錯誤是會直接讓 NodeJS Server 掛掉的，所以記得在 `ClientHttp2Session` 加上錯誤捕捉
+
+```ts
+clientHttp2Session2.on("error", console.log);
+```
+
+### @types/node not perfect
+
+P.S. [@types/node](https://www.npmjs.com/package/@types/node) 雖然有在 `Http2Session` 定義
+
+```ts
+export interface Http2Session extends EventEmitter {
+  on(event: "error", listener: (err: Error) => void): this;
+}
+```
+
+但是在 `ClientHttp2Session` 這層就沒有定義 onError
+
+```ts
+export interface ClientHttp2Session extends Http2Session {
+  on(
+    event: "altsvc",
+    listener: (alt: string, origin: string, stream: number) => void,
+  ): this;
+  on(event: "origin", listener: (origins: string[]) => void): this;
+  on(
+    event: "connect",
+    listener: (
+      session: ClientHttp2Session,
+      socket: net.Socket | tls.TLSSocket,
+    ) => void,
+  ): this;
+  on(
+    event: "stream",
+    listener: (
+      stream: ClientHttp2Stream,
+      headers: IncomingHttpHeaders & IncomingHttpStatusHeader,
+      flags: number,
+      rawHeaders: string[],
+    ) => void,
+  ): this;
+}
+```
+
+導致型別推導不完全，這問題其實我每次在寫 NodeJS 的時候都覺得很不方便，但畢竟 [@types/node](https://www.npmjs.com/package/@types/node) 跟 NodeJS 本身是分開維護的，建議還是看 [NodeJS 官方文件](https://nodejs.org/docs/latest/api/)，查詢對應 NodeJS Major Version 會比較準確
+
+## Http2Stream
+
+了解 [Http2Session](#http2session) 的概念之後，接下來要來談 [Http2Stream](https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2stream)，對應到 [RFC 9113 #section-5](https://datatracker.ietf.org/doc/html/rfc9113#section-5)
+
+NodeJS 官方文件介紹
+
+```
+Each instance of the Http2Stream class represents a bidirectional HTTP/2 communications stream over an Http2Session instance.
+```
+
+RFC 9113
+
+```
+A "stream" is an independent, bidirectional sequence of frames exchanged between the client and server within an HTTP/2 connection.
+```
+
+## NodeJS maxConcurrentStreams
+
+承接 [HTTP/2 solves HTTP/1.1 HOL Blocking](#http2-solves-http11-hol-blocking)，我很好奇，一個 HTTP/2 的連線，到底可以同時發多少請求？
+
+先看看 [NodeJS 官方文件](https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object)
+
+- `maxConcurrentStreams`: Specifies the maximum number of concurrent streams permitted on an `Http2Session`. There is no default value which implies, at least theoretically, 232-1 streams may be open concurrently at any given time in an `Http2Session`. The minimum value is 0. The maximum allowed value is 232-1. Default: `4294967295`.
+
+再來看看 [RFC 9113 #section-6.5.2-2.6.1](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2-2.6.1)
+
+```
+SETTINGS_MAX_CONCURRENT_STREAMS (0x03):
+This setting indicates the maximum number of concurrent streams that the sender will allow. This limit is directional: it applies to the number of streams that the sender permits the receiver to create.
+```
+
+## SETTINGS
+
+根據 [RFC 9113 #section-6.5.2](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2)，HTTP/2 的每個連線都可以設定以下
+
+- SETTINGS_HEADER_TABLE_SIZE
+- SETTINGS_ENABLE_PUSH
+- SETTINGS_MAX_CONCURRENT_STREAMS
+- SETTINGS_INITIAL_WINDOW_SIZE
+- SETTINGS_MAX_FRAME_SIZE
+- SETTINGS_MAX_HEADER_LIST_SIZE
+
+重點！
+
+1. 每個連線都可以設定，相當於 NodeJS 的 `Http2Session`
+
+```
+A SETTINGS frame MUST be sent by both endpoints at the start of a connection
+
+SETTINGS frames always apply to a connection, never a single stream.
+```
+
+2. Client, Server 可以各自設定彼此的 SETTINGS 給對方遵守
+
+```
+Settings are not negotiated; they describe characteristics of the sending peer, which are used by the receiving peer.
+```
+
+<!-- https://datatracker.ietf.org/doc/html/rfc9113#section-6.5 -->
+
+<!-- ## frameError
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-frameerror -->
+
+<!-- ## goaway
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-goaway
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiongoawaycode-laststreamid-opaquedata -->
+
+<!-- ## localSettings
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback -->
+
+<!-- ## remoteSettings
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings -->
+
+<!-- ## ping
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-ping
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpingpayload-callback -->
+
+<!-- ## originSet
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionoriginorigins
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionoriginset
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-origin -->
+
+<!-- ## trailers
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-trailers -->
 
 ## frame
-
-## session
-
-## stream
 
 ## Header Compression
 
