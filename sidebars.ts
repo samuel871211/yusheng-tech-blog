@@ -106,7 +106,7 @@ const sidebars: SidebarsConfig = {
         "port-swigger/jwt",
         "port-swigger/graphql",
         "port-swigger/race-conditions",
-        // "port-swigger/http-request-smuggling",
+        "port-swigger/http-request-smuggling",
       ],
     },
     {
