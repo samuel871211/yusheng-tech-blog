@@ -1,6 +1,8 @@
 ---
 title: Race conditions
 description: Race conditions
+last_update:
+  date: "2025-11-03T08:00:00+08:00"
 ---
 
 ## Lab: Limit overrun race conditions
@@ -340,6 +342,10 @@ function lab6() {
 ```
 
 這樣就會生成同樣的 passwordResetToken，就可以修改受害者（carlos）的密碼了
+
+## 小結
+
+有先把 [http2](../http/http-2.md) 的基礎概念搞懂，再來打這系列的 Labs 真的會很輕鬆，除了 [Lab: Partial construction race conditions](#lab-partial-construction-race-conditions) 這題比較複雜，其餘我都是用 NodeJS http2 模組解的。
 
 ## 參考資料
 
