@@ -899,7 +899,7 @@ encodeURIComponent(
 2. serialize class 的階段，只會保留 class 的狀態，可以想像成是 React.useState
 3. deserialize class 的階段，會嘗試呼叫 `__wakeup`，但不會呼叫 `__construct`
 
-## Lab: Developing a custom gadget chain for PHP deserialization
+## Lab: Using PHAR deserialization to deploy a custom gadget chain
 
 | Dimension | Description                                                                                                                                    |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
