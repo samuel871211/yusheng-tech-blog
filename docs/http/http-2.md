@@ -673,6 +673,16 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-trailers -->
 
 ## Header Compression
 
+## Content-Length
+
+根據 [RFC 9113 #section-8.1.1](https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1) 的描述
+
+```
+A request or response that includes message content can include a content-length header field. A request or response is also malformed if the value of a content-length header field does not equal the sum of the DATA frame payload lengths that form the content, unless the message is defined as having no content.
+```
+
+然而有些 HTTP/2 的實作沒有遵守 RFC 的 "MUST" 規範，導致了 [H2.CL request smuggling](../port-swigger/http-request-smuggling.md#lab-h2cl-request-smuggling)
+
 ## 參考資料
 
 - https://nodejs.org/api/http2.html

