@@ -386,6 +386,8 @@ Content-Length: 26
 An endpoint MUST NOT generate an HTTP/2 message containing connection-specific header fields. This includes the Connection header field and those listed as having connection-specific semantics in Section 7.6.1 of [HTTP] (that is, Proxy-Connection, Keep-Alive, Transfer-Encoding, and Upgrade). Any message containing connection-specific header fields MUST be treated as malformed.
 ```
 
+若 http/2 server 允許 Transfer-Encoding，則可能會有 [H2.TE vulnerabilities](../port-swigger/http-request-smuggling.md#h2te-vulnerabilities)
+
 ### Malformed HTTP/2 Response With Connection Header
 
 我猜測瀏覽器應該會嚴格遵守這個規範，所以我們來構造一個 malformed HTTP/2 Response

