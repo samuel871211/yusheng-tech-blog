@@ -669,7 +669,7 @@ async function Blind_SQL_injection_with_time_delays_and_information_retrieval() 
 
 這題需要 Burp Suite Pro，暫時無法解
 
-<!-- todo-yus 等買了 burp suite pro 再來解題 -->
+<!-- todo-yus Burp Suite Pro -->
 
 ## Lab: Blind SQL injection with out-of-band data exfiltration
 
@@ -680,7 +680,7 @@ async function Blind_SQL_injection_with_time_delays_and_information_retrieval() 
 
 這題需要 Burp Suite Pro，暫時無法解
 
-<!-- todo-yus 等買了 burp suite pro 再來解題 -->
+<!-- todo-yus Burp Suite Pro -->
 
 ## 小結
 

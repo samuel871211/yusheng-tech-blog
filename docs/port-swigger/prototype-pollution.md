@@ -943,7 +943,7 @@ fetch(`${location.origin}/my-account/change-address`, {
 | Document  | https://portswigger.net/web-security/prototype-pollution/server-side#remote-code-execution-via-child-process-execsync                    |
 | Lab       | https://portswigger.net/web-security/prototype-pollution/server-side/lab-exfiltrating-sensitive-data-via-server-side-prototype-pollution |
 
-<!-- todo-yus 需要付費版 -->
+<!-- todo-yus Burp Suite Pro -->
 
 ## 小結
 

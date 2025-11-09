@@ -21,7 +21,7 @@ last_update:
 | Document  | https://portswigger.net/web-security/essential-skills/using-burp-scanner-during-manual-testing#scanning-non-standard-data-structures     |
 | Lab       | https://portswigger.net/web-security/essential-skills/using-burp-scanner-during-manual-testing/lab-scanning-non-standard-data-structures |
 
-<!-- todo-yus 這題要付費版 -->
+<!-- todo-yus Burp Suite Pro -->
 
 ## 小結
 

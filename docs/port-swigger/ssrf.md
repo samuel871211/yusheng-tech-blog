@@ -296,7 +296,7 @@ fetch(`${location.origin}/product/stock`, {
 | Document  | https://portswigger.net/web-security/ssrf/blind#how-to-find-and-exploit-blind-ssrf-vulnerabilities |
 | Lab       | https://portswigger.net/web-security/ssrf/blind/lab-out-of-band-detection                          |
 
-<!-- todo-yusheng -->
+<!-- todo-yus Burp Suite Pro -->
 
 這題需要 Burp Suite Professional，之後再來解～
 
@@ -307,7 +307,7 @@ fetch(`${location.origin}/product/stock`, {
 | Document  | https://portswigger.net/web-security/ssrf/blind#how-to-find-and-exploit-blind-ssrf-vulnerabilities |
 | Lab       | https://portswigger.net/web-security/ssrf/blind/lab-shellshock-exploitation                        |
 
-<!-- todo-yusheng -->
+<!-- todo-yus Burp Suite Pro -->
 
 這題需要 Burp Suite Professional，之後再來解～
 

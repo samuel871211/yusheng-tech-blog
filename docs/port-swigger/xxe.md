@@ -115,7 +115,7 @@ fetch(
 | Document  | https://portswigger.net/web-security/xxe/blind#detecting-blind-xxe-using-out-of-band-oast-techniques |
 | Lab       | https://portswigger.net/web-security/xxe/blind/lab-xxe-with-out-of-band-interaction                  |
 
-<!-- todo-yusheng -->
+<!-- todo-yus Burp Suite Pro -->
 
 這題需要 Burp Suite Professional，之後再來解～
 
@@ -126,7 +126,7 @@ fetch(
 | Document  | https://portswigger.net/web-security/xxe/blind#detecting-blind-xxe-using-out-of-band-oast-techniques         |
 | Lab       | https://portswigger.net/web-security/xxe/blind/lab-xxe-with-out-of-band-interaction-using-parameter-entities |
 
-<!-- todo-yusheng -->
+<!-- todo-yus Burp Suite Pro -->
 
 這題需要 Burp Suite Professional，之後再來解～
 
@@ -137,7 +137,7 @@ fetch(
 | Document  | https://portswigger.net/web-security/xxe/blind#exploiting-blind-xxe-to-exfiltrate-data-out-of-band |
 | Lab       | https://portswigger.net/web-security/xxe/blind/lab-xxe-with-out-of-band-exfiltration               |
 
-<!-- todo-yusheng -->
+<!-- todo-yus Burp Suite Pro -->
 
 這題需要 Burp Suite Professional，之後再來解～
 

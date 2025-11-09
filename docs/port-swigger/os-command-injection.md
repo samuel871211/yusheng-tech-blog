@@ -95,7 +95,7 @@ fetch(`${location.origin}/feedback/submit`, {
 | Document  | https://portswigger.net/web-security/os-command-injection#exploiting-blind-os-command-injection-using-out-of-band-oast-techniques |
 | Lab       | https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band                                                   |
 
-<!-- todo-yusheng -->
+<!-- todo-yus Burp Suite Pro -->
 
 這題需要 Burp Suite Professional，之後再來解～
 
@@ -106,7 +106,7 @@ fetch(`${location.origin}/feedback/submit`, {
 | Document  | https://portswigger.net/web-security/os-command-injection#exploiting-blind-os-command-injection-using-out-of-band-oast-techniques |
 | Lab       | https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band-data-exfiltration                                 |
 
-<!-- todo-yusheng -->
+<!-- todo-yus Burp Suite Pro -->
 
 這題需要 Burp Suite Professional，之後再來解～
 

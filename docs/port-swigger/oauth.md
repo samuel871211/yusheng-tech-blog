@@ -361,7 +361,7 @@ https://oauth-0a3b00690304f08a80f083e302720086.oauth-server.net/me
 | Document  | https://portswigger.net/web-security/oauth/openid#unprotected-dynamic-client-registration               |
 | Lab       | https://portswigger.net/web-security/oauth/openid/lab-oauth-ssrf-via-openid-dynamic-client-registration |
 
-<!-- todo-yus 這題需要付費版QQ -->
+<!-- todo-yus Burp Suite Pro -->
 
 ## 小結
 
