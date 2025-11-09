@@ -5,7 +5,7 @@ last_update:
   date: "2025-08-31T08:00:00+08:00"
 ---
 
-## 前言
+<!-- ## 前言
 
 本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-01101 的延伸
 
@@ -207,15 +207,16 @@ select I.partName,I.Id,I.Name as ItemName,C.Id as ClsId,C.Name as ClsName,CU.Id 
 select I.partName,I.Id,I.Name as ItemName,C.Id as ClsId,C.Name as ClsName,CU.Id as ClsUpId,CU.Name as ClsUpName,O.Id as RoomId,O.Name as RoomName,I.ItemColorId,I.MinAmount,I.multipleLimit from Item I Left join Cls C on I.ClsId=C.Id Left join ClsUp CU on C.ClsUpId=CU.Id Left join OnlineRoom O on CU.OnlineRoomId=O.Id WHERE Replace(Replace(Replace(Replace(Replace(I.Name,' ',''),'.',''),'\',''),'/',''),'#','')=''AND(SELECT(COUNT(*))FROM(Users))>0--' and I.online=1 and I.State in ('1','2')
 ```
 
-空白, `.`, `%2F**%2F` 都不能注入，雖然有 SQLi，但能偷到的資料不多
+空白, `.`, `%2F**%2F` 都不能注入，雖然有 SQLi，但能偷到的資料不多 -->
 
-## 前言2
+## 前言
 
+- 本文是 https://zeroday.hitcon.org/vulnerability/ZD-2025-01101 的延伸
 - 目標: `https://xl-stationer.com.tw/_Models/mItemList.asp?ClsId=1&ClsUpId=&Name=123123&PriceMax=&PriceMin=0&RoomId=&orderby=2&page=1&sty=`
 - 可控制每個參數
 - 這個 API 回傳的是 JSON 列表，有機會達成 UNION SELECT
 
-## 測試流程2
+<!-- ## 測試流程2
 
 1. `mItemList.asp?Name=%27&PriceMin=0&orderby=2&page=1`
 
@@ -654,7 +655,7 @@ async function main() {
 
 ```js
 ["id", "acc", "pass", "ip", "act", "recdate"];
-```
+``` -->
 
 ## 學到的東西
 

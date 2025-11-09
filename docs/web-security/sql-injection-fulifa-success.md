@@ -5,7 +5,7 @@ last_update:
   date: "2025-08-18T08:00:00+08:00"
 ---
 
-## 測試過程
+<!-- ## 測試過程
 
 1. `https://www.fulifa.com.tw/news.php'`
 
@@ -33,4 +33,6 @@ Fatal error: Uncaught PDOException: SQLSTATE[42S02]: Base table or view not foun
 
 SELECT 語法成功執行～
 
-5. 接下來請參考 [ZD-2025-01012](https://zeroday.hitcon.org/vulnerability/ZD-2025-01012)
+5. 接下來請參考 [ZD-2025-01012](https://zeroday.hitcon.org/vulnerability/ZD-2025-01012) -->
+
+[ZD-2025-01012](https://zeroday.hitcon.org/vulnerability/ZD-2025-01012)
