@@ -1,8 +1,10 @@
 ---
 title: Insecure deserialization
 description: Insecure deserialization
+# last_update:
+#   date: "2025-10-07T08:00:00+08:00"
 last_update:
-  date: "2025-10-07T08:00:00+08:00"
+  date: "2025-11-09T08:00:00+08:00"
 ---
 
 ## PHP serialization format
@@ -1031,13 +1033,11 @@ $phar->stopBuffering();
 
 Online PHP Editor 應該沒辦法用，因為這是要創建一個 .phar 檔案，要在 php.ini 設定 `phar.readonly = Off`
 
-<!-- todo-yus 上面的程式碼是 AI 產的，我覺得我需要先理解 .phar 是什麼 -->
-
 產出的 evil.jpg 上傳後，回傳 `Invalid Avatar`，看來只有前 4 個 Byte 的 Magic Number 還不夠
 
 決定先把 [File Upload](https://portswigger.net/web-security/file-upload) 的 Labs 打完，再來解這題
 
-<!-- todo-yus -->
+11/09 更，感覺這題太難，先照著 Solution 走一次就好
 
 ## 小結
 
