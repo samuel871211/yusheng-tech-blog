@@ -113,6 +113,7 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "web-security",
       items: [
+        "web-security/cheat-sheet",
         "web-security/nmap-basic",
         "web-security/nmap-ftp-scripts",
         "web-security/nmap-smtp-scripts",

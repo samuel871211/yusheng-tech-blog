@@ -34,6 +34,8 @@ location.href = returnUrl ? returnUrl[1] : "/";
 
 ## Lab: DOM-based cookie manipulation
 
+<!-- todo-yus 可重打 -->
+
 | Dimension | Description                                                                                              |
 | --------- | -------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/dom-based/cookie-manipulation#what-is-dom-based-cookie-manipulation |
@@ -215,6 +217,8 @@ View exploit => 看到 `Blocked autofocusing on a <a> element in a cross-origin 
 ```
 
 ## Lab: Exploiting DOM clobbering to enable XSS
+
+<!-- todo-yus 可重打 -->
 
 | Dimension | Description                                                                                                 |
 | --------- | ----------------------------------------------------------------------------------------------------------- |

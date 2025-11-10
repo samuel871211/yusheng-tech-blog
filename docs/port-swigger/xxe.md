@@ -200,6 +200,8 @@ fetch(
 
 ## Lab: Exploiting blind XXE to retrieve data via error messages
 
+<!-- todo-yus 可重打 -->
+
 | Dimension | Description                                                                                             |
 | --------- | ------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/xxe/blind#exploiting-blind-xxe-to-retrieve-data-via-error-messages |

@@ -319,6 +319,8 @@ encodeURIComponent(
 
 ## Lab: Server-side template injection with information disclosure via user-supplied objects
 
+<!-- todo-yus 可重打 -->
+
 | Dimension | Description                                                                                                                                                             |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/server-side-template-injection/exploiting#developer-supplied-objects                                                               |
@@ -337,6 +339,8 @@ Traceback (most recent call last): File "<string>", line 11, in <module> File "/
 75ozk1mu1703073y26eowd52tj9vf91c
 
 ## Lab: Server-side template injection in a sandboxed environment
+
+<!-- todo-yus 可重打 -->
 
 | Dimension | Description                                                                                                                                  |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -395,7 +399,7 @@ file:/home/carlos/my_password.txt
 
 [convert-ascii-to-string](https://onlinestringtools.com/convert-ascii-to-string) => `0ot0l5x3ir3jpg8ki7l8`
 
-##
+## Lab: Server-side template injection with a custom exploit
 
 | Dimension | Description                                                                                                                                   |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
