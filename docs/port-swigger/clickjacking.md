@@ -111,7 +111,7 @@ last_update:
 </script>
 ```
 
-在 exploit-server 的 response body 設定以下 html，重點是 `<iframe sandbox="allow-forms">`，這樣可以阻止 `window.addEventListener("DOMContentLoaded"` 的執行，因為沒有 [allow-scripts](../http/iframe-security.md#iframe-sandbox)
+在 exploit-server 的 response body 設定以下 html，重點是 `<iframe sandbox="allow-forms">`，這樣可以阻止 `window.addEventListener("DOMContentLoaded")` 的執行，因為沒有 [allow-scripts](../http/iframe-security.md#iframe-sandbox)
 
 ```html
 <html>
