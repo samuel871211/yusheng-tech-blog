@@ -58,6 +58,7 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 ### Blind
 
 - [time delays](https://portswigger.net/web-security/sql-injection/cheat-sheet#time-delays)
+- [DNS Lookup](https://portswigger.net/web-security/sql-injection/cheat-sheet#dns-lookup)
 
 ### Bypass Skill
 
@@ -191,10 +192,57 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 - [Apache FreeMarker (EXPERT)](../port-swigger/server-side-template-injection.md#lab-server-side-template-injection-in-a-sandboxed-environment)
 - [PHP Twig (EXPERT)](../port-swigger/server-side-template-injection.md#lab-server-side-template-injection-with-a-custom-exploit)
 
+## Path traversal
+
+### Payloads
+
+- [Basic](../port-swigger/path-traversal.md#lab-file-path-traversal-simple-case): `../../../etc/passwd`
+- [Strip non-recursively](../port-swigger/path-traversal.md#lab-file-path-traversal-traversal-sequences-stripped-non-recursively)
+- [URL Encode](../port-swigger/path-traversal.md#lab-file-path-traversal-traversal-sequences-stripped-with-superfluous-url-decode)
+  - Partial URL Encode: `..%2F..%2F..%2Fetc%2Fpasswd`
+  - URL Encode: `%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd`
+  - Double URL Encode: `%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd`
+- [Start Path](../port-swigger/path-traversal.md#lab-file-path-traversal-validation-of-start-of-path): `/var/www/images/../../../etc/passwd`
+- [Null Byte](../port-swigger/path-traversal.md#lab-file-path-traversal-validation-of-file-extension-with-null-byte-bypass): `../../../etc/passwd%00.jpg`
+
+## Access control
+
+### Recon
+
+- [`/robots.txt`](../port-swigger/access-control.md#lab-unprotected-admin-functionality)
+- [Reuqest Param](../port-swigger/access-control.md#lab-user-role-controlled-by-request-parameter)
+  - `Cookie: admin=true`
+  - `?role=1`
+  - `roleid=2`
+- [Request Header](../port-swigger/access-control.md#lab-url-based-access-control-can-be-circumvented)
+  - `X-Original-URL`
+  - [403 Bypasser](<(https://github.com/sting8k/BurpSuite_403Bypasser)>)
+- [Casing, File Extension, Trailing Slash](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter)
+- [30x With Sensitive Data](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter-with-data-leakage-in-redirect)
+- [IDOR](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter-with-password-disclosure)
+  - `?id=administrator`
+  - `?userId=1`
+- [Referer Based](../port-swigger/access-control.md#lab-referer-based-access-control)
+
+## Authentication
+
+### Recon
+
+- Username/Password enumeration
+  - [via different responses](../port-swigger/authentication.md#lab-username-enumeration-via-different-responses)
+  - [via subtly different responses](../port-swigger/authentication.md#lab-username-enumeration-via-subtly-different-responses)
+  - [via response timing](../port-swigger/authentication.md#lab-username-enumeration-via-response-timing)
+  - `X-Forwarded-For`
+  - [Success Login can reset counter](../port-swigger/authentication.md#lab-broken-brute-force-protection-ip-block)
+  - [via account lock](../port-swigger/authentication.md#lab-username-enumeration-via-account-lock)
+  - [multiple credentials per request](../port-swigger/authentication.md#lab-broken-brute-force-protection-multiple-credentials-per-request)
+  - [via stay-logged-in cookie](../port-swigger/authentication.md#lab-brute-forcing-a-stay-logged-in-cookie)
+  - [via password change](../port-swigger/authentication.md#lab-password-brute-force-via-password-change)
+- [Brute-Force verification code](../port-swigger/authentication.md#lab-2fa-broken-logic)
+- [Password reset using victim's username](../port-swigger/authentication.md#lab-password-reset-broken-logic)
+- [Password reset poison via `X-Forward-Host`](../port-swigger/authentication.md#lab-password-reset-poisoning-via-middleware)
+
 <!--
-"port-swigger/path-traversal",
-"port-swigger/access-control",
-"port-swigger/authentication",
 "port-swigger/oauth",
 "port-swigger/websocket",
 "port-swigger/web-cache-poisoning",
