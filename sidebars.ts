@@ -144,6 +144,11 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "pentesterlab",
+      items: ["pentesterlab/recon"],
+    },
+    {
+      type: "category",
       label: "web-tech",
       items: [
         // "web-tech/xml",
