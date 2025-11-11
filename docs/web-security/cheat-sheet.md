@@ -220,7 +220,7 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
   - `roleid=2`
 - [Request Header](../port-swigger/access-control.md#lab-url-based-access-control-can-be-circumvented)
   - `X-Original-URL`
-  - [403 Bypasser](<(https://github.com/sting8k/BurpSuite_403Bypasser)>)
+  - [403 Bypasser](https://github.com/sting8k/BurpSuite_403Bypasser)
 - [Casing, File Extension, Trailing Slash](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter)
 - [30x With Sensitive Data](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter-with-data-leakage-in-redirect)
 - [IDOR](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter-with-password-disclosure)
