@@ -2367,6 +2367,8 @@ Pause-based desync vulnerabilities can occur when a server times out a request b
 
 基本上按照 Document 的方法走，這題沒有到很難
 
+P.S. 這題應該就是 [CVE-2022-22720](https://nvd.nist.gov/vuln/detail/cve-2022-22720)，可參考 [Hackerone](https://hackerone.com/reports/1667974)
+
 Attack Request
 
 ```
