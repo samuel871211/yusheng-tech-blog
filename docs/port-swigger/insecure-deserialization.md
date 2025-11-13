@@ -349,7 +349,7 @@ Internal Server Error: Symfony Version: 4.3.6
 PHP Fatal error: Uncaught Exception: Signature does not match session in /var/www/index.php:7 Stack trace: #0 {main} thrown in /var/www/index.php on line 7
 ```
 
-前面有說到可以用 (PHP Generic Gadget Chains)[https://github.com/ambionics/phpggc]，在終端機執行
+前面有說到可以用 [PHP Generic Gadget Chains](https://github.com/ambionics/phpggc)，在終端機執行
 
 ```
 git clone https://github.com/ambionics/phpggc.git
@@ -898,7 +898,7 @@ encodeURIComponent(
 這題我主要有幾個卡點
 
 1. 沒看過的 function 或是 method，直接上網查 `PHP ${function}` 最快，例如 `PHP call_user_func`
-2. serialize class 的階段，只會保留 class 的狀態，可以想像成是 React.useState
+2. serialize class 的階段，只會保留 class 的狀態，可以想像成是 `React.useState`
 3. deserialize class 的階段，會嘗試呼叫 `__wakeup`，但不會呼叫 `__construct`
 
 ## Lab: Using PHAR deserialization to deploy a custom gadget chain
