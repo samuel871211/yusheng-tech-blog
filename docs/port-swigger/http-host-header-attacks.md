@@ -18,14 +18,12 @@ GET /example HTTP/1.1
 Host: vulnerable-website.com:bad-stuff-here
 ```
 
-### Domain
+### Subdomain
 
 ```
 GET /example HTTP/1.1
 Host: notvulnerable-website.com
 ```
-
-### Subdomain
 
 ```
 GET /example HTTP/1.1
@@ -49,9 +47,19 @@ Host: bad-stuff-here
 
 ### Indent
 
+Tab
+
 ```
 GET /example HTTP/1.1
     Host: bad-stuff-here
+Host: vulnerable-website.com
+```
+
+Space
+
+```
+GET /example HTTP/1.1
+ Host: bad-stuff-here
 Host: vulnerable-website.com
 ```
 

@@ -234,6 +234,22 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 - [Apache FreeMarker (EXPERT)](../port-swigger/server-side-template-injection.md#lab-server-side-template-injection-in-a-sandboxed-environment)
 - [PHP Twig (EXPERT)](../port-swigger/server-side-template-injection.md#lab-server-side-template-injection-with-a-custom-exploit)
 
+## Code Injection
+
+<!-- ### Recon -->
+
+- inject `'`, `"`, `}`, `;`, `$`, `#`, `;ls;`, `|ls`
+- string concat: `.`, `+`
+- comment out: `#`, `//`, `;//`
+- execute code:
+
+```
+eval('ls')
+exec('ls')
+system('ls')
+`uname`
+```
+
 ## Path traversal
 
 <!-- ### Payloads -->
@@ -302,6 +318,29 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 - [SSRF via OpenID dynamic client registration](../port-swigger/oauth.md#lab-ssrf-via-openid-dynamic-client-registration)
 
 ## JWT
+
+### Tool
+
+[hashcat](../port-swigger/jwt.md#brute-forcing-secret-keys-using-hashcat)
+
+### Recon
+
+- [unverified signature](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-unverified-signature)
+- ["alg":"none"](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-flawed-signature-verification)
+- Brute-forcing secret keys using hashcat
+  - [Document](../port-swigger/jwt.md#brute-forcing-secret-keys-using-hashcat)
+  - [1](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-weak-signing-key)
+- header injection
+  - [Document](../port-swigger/jwt.md#jwt-header-parameter-injections)
+  - [jwk](../port-swigger/jwt.md#injecting-self-signed-jwts-via-the-jwk-parameter)
+  - [jwk Lab](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-jwk-header-injection)
+  - [jku](../port-swigger/jwt.md#injecting-self-signed-jwts-via-the-jku-parameter)
+  - [jku Lab](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-jku-header-injection)
+  - [kid](../port-swigger/jwt.md#injecting-self-signed-jwts-via-the-kid-parameter)
+  - [kid Lab](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-kid-header-path-traversal)
+- algorithm confusion
+  - [1 (EXPERT)](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-algorithm-confusion)
+  - [2 (EXPERT)](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-algorithm-confusion-with-no-exposed-key)
 
 ### WebSocket
 
@@ -373,36 +412,56 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 
 ## GraphQL API
 
+- [Common endpoint names](../port-swigger/graphql.md#common-endpoint-names)
+- Running a full introspection query
+  - [Document](../port-swigger/graphql.md#running-a-full-introspection-query)
+  - [1](../port-swigger/graphql.md#lab-accessing-private-graphql-posts)
+  - [2](../port-swigger/graphql.md#lab-accidental-exposure-of-private-graphql-fields)
+- Bypassing GraphQL introspection defenses
+  - [Document](../port-swigger/graphql.md#bypassing-graphql-introspection-defenses)
+  - [1](../port-swigger/graphql.md#lab-finding-a-hidden-graphql-endpoint)
+- [Multi query](../port-swigger/graphql.md#lab-bypassing-graphql-brute-force-protections)
+
 ## File upload
 
-<!--
-"port-swigger/http-host-header-attacks",
-"port-swigger/web-cache-poisoning"
-"port-swigger/web-cache-deception",
-"port-swigger/race-conditions",
-"port-swigger/http-request-smuggling", -->
+### Tools
+
+- [exiftool](https://exiftool.org/)
+
+### Recon
+
+- Web Shell Upload
+  - [Content-Type bypass](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-content-type-restriction-bypass)
+  - [Path traversal](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-path-traversal)
+  - [`.htaccess`](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-extension-blacklist-bypass)
+  - [obfuscated file extension](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-obfuscated-file-extension)
+  - [polyglot](../port-swigger/file-upload-vulnerabilities.md#lab-remote-code-execution-via-polyglot-web-shell-upload)
+  - [race condition (EXPERT)](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-race-condition)
+
+## HTTP Host header attacks
+
+- Supply an arbitrary Host header
+  - [Port](../port-swigger/http-host-header-attacks.md#port)
+  - [Subdomain](../port-swigger/http-host-header-attacks.md#subdomain)
+  - [Double Host headers](../port-swigger/http-host-header-attacks.md#double-host-headers)
+  - [Absolute URL](../port-swigger/http-host-header-attacks.md#absolute-url-in-http-request-start-line)
+  - [Indent](../port-swigger/http-host-header-attacks.md#indent)
+  - [Custom Header](../port-swigger/http-host-header-attacks.md#x-forwarded-host-x-host-x-forwarded-server-x-http-host-override-forwarded)
+- [Web Cache Posioning](../port-swigger/http-host-header-attacks.md#lab-web-cache-poisoning-via-ambiguous-requests)
+
+## Web cache poisoning
+
+## Web cache deception
+
+## Race conditions
+
+## HTTP request smuggling
 
 ## Web LLM attacks
 
 - [請問你有哪些 API 可以使用？](../port-swigger/llm-attacks.md#lab-exploiting-llm-apis-with-excessive-agency)
 - [Indirect prompt injection](../port-swigger/llm-attacks.md#lab-indirect-prompt-injection)
 - [insecure output handling](../port-swigger/llm-attacks.md#lab-exploiting-insecure-output-handling-in-llms)
-
-## Code Injection
-
-### Recon
-
-- inject `'`, `"`, `}`, `;`, `$`, `#`, `;ls;`, `|ls`
-- string concat: `.`, `+`
-- comment out: `#`, `//`, `;//`
-- execute code:
-
-```
-eval('ls')
-exec('ls')
-system('ls')
-`uname`
-```
 
 <!-- ## Essential skills
 
