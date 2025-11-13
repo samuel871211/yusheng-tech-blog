@@ -563,9 +563,7 @@ var deparam = function (params, coerce) {
 };
 ```
 
-<!-- todo-yus -->
-
-這題利用的是 "failing to recursively sanitize the input string"，總覺得類似的技巧在其他 Lab 也有遇過
+這題利用的是 "failing to recursively sanitize the input string"，類似的技巧在 [Path traversal](./path-traversal.md#lab-file-path-traversal-traversal-sequences-stripped-non-recursively) 也有遇過
 
 PoC
 
@@ -579,7 +577,7 @@ PoC
 <script src="data:text/javascript,alert(1)"></script>
 ```
 
-## Lab: Client-side prototype pollution via flawed sanitization
+## Lab: Client-side prototype pollution in third-party libraries
 
 | Dimension | Description                                                                                                                                           |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -638,7 +636,7 @@ Location: https://0a510047042c732c80ab037000110035.web-security-academy.net/#__p
 
 就成功通關了，這題用 DOM Invader 完全是無腦解，沒有任何成就感，只覺得：蝦，結束了嗎？但也體會到 DOM Invader 的強大，開發這個工具的 PortSwigger 團隊真的是各路大神...
 
-## Lab: Client-side prototype pollution via flawed sanitization
+## Lab: Client-side prototype pollution via browser APIs
 
 | Dimension | Description                                                                                                                                                |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
