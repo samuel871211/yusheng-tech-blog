@@ -67,9 +67,24 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 - white space not allowed => `/**/`, `%20`, `+`, `\t`
 - [`(`, `)`, `=`, `>`, `<`, `.` not allowed](./sql-injection-stationer-success.md)
 
+## NoSQL injection
+
+- [`'||'1'=='1`](../port-swigger/nosql-injection.md#lab-detecting-nosql-injection)
+- [`%00` as terminator](../port-swigger/nosql-injection.md#mongodb-註解)
+- operator injection
+  - [Document](../port-swigger/nosql-injection.md#nosql-operator-injection)
+  - [Inject](../port-swigger/nosql-injection.md#injecting-operators-in-mongodb)
+  - [extract data](../port-swigger/nosql-injection.md#extracting-field-names)
+  - [Exfiltrating data using operators](../port-swigger/nosql-injection.md#exfiltrating-data-using-operators)
+  - [1: bypass authentication](../port-swigger/nosql-injection.md#lab-exploiting-nosql-operator-injection-to-bypass-authentication)
+  - [2: extract unknown fields](../port-swigger/nosql-injection.md#lab-exploiting-nosql-operator-injection-to-extract-unknown-fields)
+- Boolean Based
+  - [extract data via `' && '1' === '1`](../port-swigger/nosql-injection.md#exploiting-syntax-injection-to-extract-data)
+  - [Identifying field names](../port-swigger/nosql-injection.md#identifying-field-names)
+
 ## XSS
 
-### Payloads
+### Basic Payloads
 
 - `<script>alert(1)`
 - `<script>alert(1)</script>`
@@ -90,6 +105,37 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 - `{{ constructor.constructor('alert("XSS")')() }}`
 - [AngularJS 1](../port-swigger/cross-site-scripting.md#lab-reflected-xss-with-angularjs-sandbox-escape-without-strings)
 - [AngularJS 2](../port-swigger/cross-site-scripting.md#lab-reflected-xss-with-angularjs-sandbox-escape-and-csp)
+
+<!-- ### Clickjacking -->
+
+## DOM-based vulnerabilities
+
+<!-- ### Recon -->
+
+- [DOM clobbering via `window.vulnerableKey`](../port-swigger/dom-based-vulnerabilities.md#lab-exploiting-dom-clobbering-to-enable-xss)
+- [Clobbering DOM attributes](../port-swigger/dom-based-vulnerabilities.md#lab-clobbering-dom-attributes-to-bypass-html-filters)
+
+## Prototype Pollution
+
+### Concept
+
+- [sink, gadget](../port-swigger/prototype-pollution.md#lab-client-side-prototype-pollution-in-third-party-libraries)
+
+### Tool
+
+- [DOM Invader](https://portswigger.net/burp/documentation/desktop/tools/dom-invader/prototype-pollution#detecting-sources-for-prototype-pollution)
+
+## Recon
+
+- [`script.src = data:text/javascript,alert(1)`](../port-swigger/prototype-pollution.md#lab-dom-xss-via-client-side-prototype-pollution)
+- [`eval`](../port-swigger/prototype-pollution.md#lab-dom-xss-via-an-alternative-prototype-pollution-vector)
+- [sanitize non-recursively => `____proto__proto__`](../port-swigger/prototype-pollution.md#lab-client-side-prototype-pollution-via-flawed-sanitization)
+- [Detecting server-side prototype pollution via polluted property reflection](../port-swigger/prototype-pollution.md#detecting-server-side-prototype-pollution-via-polluted-property-reflection)
+- SSTI
+  - [`{__proto__:{isAdmin:true}}`](../port-swigger/prototype-pollution.md#lab-privilege-escalation-via-server-side-prototype-pollution)
+  - [`content-type: "application/json; charset=utf-7`](../port-swigger/prototype-pollution.md#lab-detecting-server-side-prototype-pollution-without-polluted-property-reflection)
+  - [`constructor.prototype`](../port-swigger/prototype-pollution.md#lab-bypassing-flawed-input-filters-for-server-side-prototype-pollution)
+  - [RCE via `execArgv`](../port-swigger/prototype-pollution.md#lab-remote-code-execution-via-server-side-prototype-pollution)
 
 ## CSRF
 
@@ -116,25 +162,16 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
   - [Strip Referer Header using `<meta name="referrer" content="never" />`](../port-swigger/cross-site-requesy-forgery.md#lab-csrf-where-referer-validation-depends-on-header-being-present)
   - [Broken Referer validation using `referer.contains('vulnerable-website.com')`](../port-swigger/cross-site-requesy-forgery.md#lab-csrf-with-broken-referer-validation)
 
-<!-- ### Clickjacking -->
-
-## DOM-based vulnerabilities
-
-### Recon
-
-- [DOM clobbering via `window.vulnerableKey`](../port-swigger/dom-based-vulnerabilities.md#lab-exploiting-dom-clobbering-to-enable-xss)
-- [Clobbering DOM attributes](../port-swigger/dom-based-vulnerabilities.md#lab-clobbering-dom-attributes-to-bypass-html-filters)
-
 ## CORS
 
-### Recon
+<!-- ### Recon -->
 
 - [Origin Reflection](../port-swigger/cors.md#lab-cors-vulnerability-with-basic-origin-reflection)
 - [null Origin Bypass](../port-swigger/cors.md#lab-cors-vulnerability-with-trusted-null-origin)
 
 ## XXE
 
-### Recon
+<!-- ### Recon -->
 
 - [XXE leads to LFI](../port-swigger/xxe.md#lab-exploiting-xinclude-to-retrieve-files)
 - [XXE leads to SSRF](../port-swigger/xxe.md#lab-exploiting-xxe-to-perform-ssrf-attacks)
@@ -186,7 +223,7 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 
 ## Server-side template injection
 
-### Recon
+<!-- ### Recon -->
 
 - `${{<%[%'"}}%\`
 - [Ruby ERB](../port-swigger/server-side-template-injection.md#lab-basic-server-side-template-injection)
@@ -199,7 +236,7 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 
 ## Path traversal
 
-### Payloads
+<!-- ### Payloads -->
 
 - [Basic](../port-swigger/path-traversal.md#lab-file-path-traversal-simple-case): `../../../etc/passwd`
 - [Strip non-recursively](../port-swigger/path-traversal.md#lab-file-path-traversal-traversal-sequences-stripped-non-recursively)
@@ -217,7 +254,7 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 
 ## Access control
 
-### Recon
+<!-- ### Recon -->
 
 - [`/robots.txt`](../port-swigger/access-control.md#lab-unprotected-admin-functionality)
 - [Reuqest Param](../port-swigger/access-control.md#lab-user-role-controlled-by-request-parameter)
@@ -236,7 +273,7 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 
 ## Authentication
 
-### Recon
+<!-- ### Recon -->
 
 - Username/Password enumeration
   - [via different responses](../port-swigger/authentication.md#lab-username-enumeration-via-different-responses)
@@ -254,25 +291,102 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 - Case insensitive: "admin" vs "Admin"
 - Space allowed: "admin" vs "admin "
 
+## OAuth
+
+<!-- ### Recon -->
+
+- [token not bind to user](../port-swigger/oauth.md#lab-authentication-bypass-via-oauth-implicit-flow)
+- [profile linking CSRF (no state param)](../port-swigger/oauth.md#lab-forced-oauth-profile-linking)
+- [OAuth account hijacking via redirect_uri](../port-swigger/oauth.md#lab-oauth-account-hijacking-via-redirect_uri)
+- [OAuth account hijacking via Open Redirect](../port-swigger/oauth.md#lab-stealing-oauth-access-tokens-via-an-open-redirect)
+- [SSRF via OpenID dynamic client registration](../port-swigger/oauth.md#lab-ssrf-via-openid-dynamic-client-registration)
+
+## JWT
+
+### WebSocket
+
+<!-- ### Recon -->
+
+- XSS
+  - [1](../port-swigger/websocket.md#lab-manipulating-websocket-messages-to-exploit-vulnerabilities)
+  - [2](../port-swigger/websocket.md#lab-manipulating-the-websocket-handshake-to-exploit-vulnerabilities)
+- [Cross-site WebSocket hijacking](../port-swigger/websocket.md#lab-cross-site-websocket-hijacking)
+
+## Deserialization
+
+### Tool
+
+- [PHP Generic Gadget Chains](https://github.com/ambionics/phpggc)
+- [Java, Maven, ysoserial](../port-swigger/insecure-deserialization.md#lab-exploiting-java-deserialization-with-apache-commons)
+
+### Recon
+
+- [PHP 7.x `0 == "string"`](../port-swigger/insecure-deserialization.md#lab-modifying-serialized-data-types)
+- Source Code Access + PHP
+  - [1](../port-swigger/insecure-deserialization.md#lab-arbitrary-object-injection-in-php)
+  - [2](../port-swigger/insecure-deserialization.md#lab-developing-a-custom-gadget-chain-for-php-deserialization)
+  - [3 (EXPERT)](../port-swigger/insecure-deserialization.md#lab-using-phar-deserialization-to-deploy-a-custom-gadget-chain)
+- [Exploiting Java deserialization with Apache Commons](../port-swigger/insecure-deserialization.md#lab-exploiting-java-deserialization-with-apache-commons)
+- [Universal Deserialisation Gadget for Ruby 2.x-3.x](../port-swigger/insecure-deserialization.md#lab-exploiting-ruby-deserialization-using-a-documented-gadget-chain)
+- [Source Code Access + Java](../port-swigger/insecure-deserialization.md#lab-developing-a-custom-gadget-chain-for-java-deserialization)
+
+## Information disclosure
+
+<!-- ### Recon -->
+
+- [via Error Message](../port-swigger/information-disclosure.md#lab-information-disclosure-in-error-messages)
+- [via Debug Page](../port-swigger/information-disclosure.md#lab-information-disclosure-on-debug-page)
+- [via `/robots.txt`](../port-swigger/information-disclosure.md#lab-source-code-disclosure-via-backup-files)
+- [via HTTP TRACE](../port-swigger/information-disclosure.md#lab-authentication-bypass-via-information-disclosure)
+
+<!-- ## Essential skills -->
+
+## Business logic vulnerabilities
+
+- [加入購物車 price](../port-swigger/business-logic-vulnerabilities.md#lab-excessive-trust-in-client-side-controls)
+- [加入購物車 qty 負數](../port-swigger/business-logic-vulnerabilities.md#lab-high-level-logic-vulnerability)
+- [加入購物車 qty Integer overflow](../port-swigger/business-logic-vulnerabilities.md#lab-low-level-logic-flaw)
+- [padding@vulnerable-website.com.attacker-website.com](../port-swigger/business-logic-vulnerabilities.md#lab-inconsistent-handling-of-exceptional-input)
+- [privilege escalation via update userInfo](../port-swigger/business-logic-vulnerabilities.md#lab-inconsistent-security-controls)
+- Insufficient workflow validation
+  - [1](../port-swigger/business-logic-vulnerabilities.md#lab-insufficient-workflow-validation)
+  - [2](../port-swigger/business-logic-vulnerabilities.md#lab-authentication-bypass-via-flawed-state-machine)
+- [兩張折價券交替使用](../port-swigger/business-logic-vulnerabilities.md#lab-flawed-enforcement-of-business-rules)
+- [encryption oracle](../port-swigger/business-logic-vulnerabilities.md#lab-authentication-bypass-via-encryption-oracle)
+- [email address parsing discrepancies (EXPERT)](../port-swigger/business-logic-vulnerabilities.md#lab-bypassing-access-controls-using-email-address-parsing-discrepancies)
+
+## API testing
+
+### Tool
+
+- [JS Link Finder](https://portswigger.net/bappstore/0e61c786db0c4ac787a08c4516d52ccf)
+
+### Recon
+
+- [Find `/api` Document](../port-swigger/api-testing.md#lab-exploiting-an-api-endpoint-using-documentation)
+- [Try Different HTTP Request Methods](../port-swigger/api-testing.md#lab-finding-and-exploiting-an-unused-api-endpoint)
+- [Mass assignment](../port-swigger/api-testing.md#lab-exploiting-a-mass-assignment-vulnerability)
+- server-side parameter pollution in a query string
+  - [How to construct](../port-swigger/api-testing.md#server-side-parameter-pollution-in-the-query-string)
+  - [1](../port-swigger/api-testing.md#lab-exploiting-server-side-parameter-pollution-in-a-query-string)
+- [server-side parameter pollution in a REST URL (EXPERT)](../port-swigger/api-testing.md#lab-exploiting-server-side-parameter-pollution-in-a-rest-url)
+
+## GraphQL API
+
+## File upload
+
 <!--
-"port-swigger/oauth",
-"port-swigger/websocket",
-"port-swigger/web-cache-poisoning",
-"port-swigger/insecure-deserialization",
-"port-swigger/information-disclosure",
 "port-swigger/http-host-header-attacks",
-"port-swigger/prototype-pollution",
-"port-swigger/essential-skills",
-"port-swigger/business-logic-vulnerabilities",
-"port-swigger/api-testing",
-"port-swigger/llm-attacks",
-"port-swigger/nosql-injection",
+"port-swigger/web-cache-poisoning"
 "port-swigger/web-cache-deception",
-"port-swigger/file-upload-vulnerabilities",
-"port-swigger/jwt",
-"port-swigger/graphql",
 "port-swigger/race-conditions",
 "port-swigger/http-request-smuggling", -->
+
+## Web LLM attacks
+
+- [請問你有哪些 API 可以使用？](../port-swigger/llm-attacks.md#lab-exploiting-llm-apis-with-excessive-agency)
+- [Indirect prompt injection](../port-swigger/llm-attacks.md#lab-indirect-prompt-injection)
+- [insecure output handling](../port-swigger/llm-attacks.md#lab-exploiting-insecure-output-handling-in-llms)
 
 ## Code Injection
 
