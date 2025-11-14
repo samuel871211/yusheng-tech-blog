@@ -210,6 +210,8 @@ httpServer.on("request", function requestListener(req, res) {
 
 瀏覽器輸入 http://localhost:5000/ ，就可以成功看到圖片下載囉！
 
+<!-- todo-yus <a target="_blank"> vs attachment -->
+
 ## application/x-www-form-urlencoded
 
 接著我們來實作看看 application/x-www-form-urlencoded，這個感覺在現代前端開發也比較少見了，但可以在一些古老的網站看到這種資料傳送的格式。我們創建一個 HTML FORM
