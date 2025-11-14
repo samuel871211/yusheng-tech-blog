@@ -241,6 +241,8 @@ function lab3() {
 
 按照 [race-conditions-password-reset-collision](https://portswigger.net/web-security/race-conditions/images/race-conditions-password-reset-collision.png) 的做法
 
+<!-- todo-yus 重打 + 時間軸 -->
+
 PoC
 
 ```ts
@@ -311,6 +313,8 @@ stream.end();
 沒辦法控制 TCP Packet 的大小，所以這種情況還是建議用 Turbo Intruder 這種專門的工具QQ
 
 ## Lab: Exploiting time-sensitive vulnerabilities
+
+<!-- todo-yus 重打 + 時間軸 -->
 
 | Dimension | Description                                                                                                        |
 | --------- | ------------------------------------------------------------------------------------------------------------------ |

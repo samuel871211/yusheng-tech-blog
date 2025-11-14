@@ -447,15 +447,99 @@ system('ls')
   - [Absolute URL](../port-swigger/http-host-header-attacks.md#absolute-url-in-http-request-start-line)
   - [Indent](../port-swigger/http-host-header-attacks.md#indent)
   - [Custom Header](../port-swigger/http-host-header-attacks.md#x-forwarded-host-x-host-x-forwarded-server-x-http-host-override-forwarded)
+  - [SQLi Payload](../port-swigger/http-host-header-attacks.md#exploiting-classic-server-side-vulnerabilities)
+  - [malformed request line](../port-swigger/http-host-header-attacks.md#ssrf-via-a-malformed-request-line)
 - [Web Cache Posioning](../port-swigger/http-host-header-attacks.md#lab-web-cache-poisoning-via-ambiguous-requests)
+- [authentication bypass](../port-swigger/http-host-header-attacks.md#lab-host-header-authentication-bypass)
+- [virtual host brute-forcing](../port-swigger/http-host-header-attacks.md#accessing-internal-websites-with-virtual-host-brute-forcing)
+- Routing-based SSRF
+  - [Document](../port-swigger/http-host-header-attacks.md#routing-based-ssrf)
+  - [1](../port-swigger/http-host-header-attacks.md#lab-routing-based-ssrf)
+  - [2](../port-swigger/http-host-header-attacks.md#lab-ssrf-via-flawed-request-parsing)
+- Connection state attacks
+  - [Document](../port-swigger/http-host-header-attacks.md#connection-state-attacks)
+  - [1](../port-swigger/http-host-header-attacks.md#lab-host-validation-bypass-via-connection-state-attack)
+- SSRF via a malformed request line
+  - [Document](../port-swigger/http-host-header-attacks.md#ssrf-via-a-malformed-request-line)
+  - [1](../port-swigger/http-host-header-attacks.md)
+- Password reset poisoning
+  - [1](../port-swigger/http-host-header-attacks.md#lab-basic-password-reset-poisoning)
+  - [2](../port-swigger/http-host-header-attacks.md#lab-password-reset-poisoning-via-middleware)
 
 ## Web cache poisoning
 
+- unkeyed input
+  - [Header: `X-Forwarded-Host`](../port-swigger/web-cache-poisoning.md#lab-web-cache-poisoning-with-an-unkeyed-header)
+  - [Header: `X-Forwarded-Host` + DOM Based XSS (EXPERT)](../port-swigger/web-cache-poisoning.md#lab-web-cache-poisoning-to-exploit-a-dom-vulnerability-via-a-cache-with-strict-cacheability-criteria)
+  - [Cookie](../port-swigger/web-cache-poisoning.md#lab-web-cache-poisoning-with-an-unkeyed-cookie)
+  - [Headers: `X-Forwarded-Host` + `X-Forwarded-Scheme`](../port-swigger/web-cache-poisoning.md#lab-web-cache-poisoning-with-multiple-headers)
+  - [Headers: `X-host` + `Vary: User-Agent`](../port-swigger/web-cache-poisoning.md#lab-targeted-web-cache-poisoning-using-an-unknown-header)
+  - [Headers: `X-Forwarded-Host` + `X-Original-URL` (EXPERT)](../port-swigger/web-cache-poisoning.md#lab-combining-web-cache-poisoning-vulnerabilities)
+  - [QueryString](../port-swigger/web-cache-poisoning.md#lab-web-cache-poisoning-via-an-unkeyed-query-string)
+  - [utm_content](../port-swigger/web-cache-poisoning.md#lab-web-cache-poisoning-via-an-unkeyed-query-parameter)
+  - [GET request with body](../port-swigger/web-cache-poisoning.md#lab-web-cache-poisoning-via-a-fat-get-request)
+- [`Pragma: akamai-x-get-cache-key`, `Pragma: x-get-cache-key`](../port-swigger/web-cache-poisoning.md#akamai-based-websites)
+- [Path normalization](../port-swigger/web-cache-poisoning.md#path-normalization)
+- Parameter cloaking
+  - [?a=1?b=2](../port-swigger/web-cache-poisoning.md#cache-parameter-cloaking)
+  - [?a=1;b=2](../port-swigger/web-cache-poisoning.md#lab-parameter-cloaking)
+- URL normalization
+  - [Document](../port-swigger/web-cache-poisoning.md#normalized-cache-keys)
+  - [1](../port-swigger/web-cache-poisoning.md#lab-url-normalization)
+- Cache Key Injection
+  - [Document](../port-swigger/web-cache-poisoning.md#cache-key-injection)
+  - [1 (EXPERT)](../port-swigger/web-cache-poisoning.md#lab-cache-key-injection)
+- [Internal cache poisoning (EXPERT)](../port-swigger/web-cache-poisoning.md#lab-internal-cache-poisoning)
+
 ## Web cache deception
+
+- Path mapping discrepancies: `/user/1` vs `/user/1/style.css`
+  - [Document](../port-swigger/web-cache-deception.md#path-mapping-discrepancies)
+  - [1](../port-swigger/web-cache-deception.md#lab-exploiting-path-mapping-for-web-cache-deception)
+- Delimiter discrepancies: `/profile` vs `/profile;foo.css`
+  - [Document](../port-swigger/web-cache-deception.md#delimiter-discrepancies)
+  - [1](../port-swigger/web-cache-deception.md#lab-exploiting-path-delimiters-for-web-cache-deception)
+- [Delimiter decoding discrepancies: `/profile` vs `/profile%23style.css`](../port-swigger/web-cache-deception.md#delimiter-decoding-discrepancies)
+- Normalization discrepancies
+  - [Document](../port-swigger/web-cache-deception.md#normalization-discrepancies)
+  - [by the origin server](../port-swigger/web-cache-deception.md#detecting-normalization-by-the-origin-server)
+  - [1](../port-swigger/web-cache-deception.md#lab-exploiting-origin-server-normalization-for-web-cache-deception)
+  - [by the cache server (1)](../port-swigger/web-cache-deception.md#detecting-normalization-by-the-cache-server)
+  - [by the cache server (2)](../port-swigger/web-cache-deception.md#exploiting-normalization-by-the-cache-server)
+  - [1](../port-swigger/web-cache-deception.md#lab-exploiting-cache-server-normalization-for-web-cache-deception)
+- [exact-match cache rules (EXPERT)](../port-swigger/web-cache-deception.md#lab-exploiting-exact-match-cache-rules-for-web-cache-deception)
 
 ## Race conditions
 
+- TOCTOU
+  - [CWE-367: Time-of-check Time-of-use (TOCTOU) Race Condition](https://cwe.mitre.org/data/definitions/367.html)
+  - [1](../port-swigger/race-conditions.md#lab-limit-overrun-race-conditions)
+  - [2](../port-swigger/race-conditions.md#lab-bypassing-rate-limits-via-race-conditions)
+- [加車 + 結帳](../port-swigger/race-conditions.md#lab-multi-endpoint-race-conditions)
+- [todo-yus](../port-swigger/race-conditions.md#lab-single-endpoint-race-conditions)
+- [Partial construction (EXPERT)](../port-swigger/race-conditions.md#lab-partial-construction-race-conditions)
+- [time-sensitive](../port-swigger/race-conditions.md#lab-exploiting-time-sensitive-vulnerabilities)
+
 ## HTTP request smuggling
+
+## Note
+
+- [Use CL.TE First](../port-swigger/http-request-smuggling.md#you-should-use-clte-first)
+- [Real World Situation](../port-swigger/http-request-smuggling.md#真實世界情況)
+
+## Recon
+
+- HTTP/1.1
+  - [Find CL.TE](../port-swigger/http-request-smuggling.md#finding-clte-vulnerabilities-using-timing-techniques)
+  - [CL.TE (1)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-basic-clte-vulnerability)
+  - [CL.TE (2)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-confirming-a-clte-vulnerability-via-differential-responses)
+  - [CL.TE (3) bypass front-end security controls](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-bypass-front-end-security-controls-clte-vulnerability)
+  - [Find TE.CL](../port-swigger/http-request-smuggling.md#finding-tecl-vulnerabilities-using-timing-techniques)
+  - [TE.CL (1)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-basic-tecl-vulnerability)
+  - [TE.CL (2)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-confirming-a-tecl-vulnerability-via-differential-responses)
+  - [TE.CL (3) bypass front-end security controls](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-bypass-front-end-security-controls-tecl-vulnerability)
+  - [TE.TE (obfuscating the TE header)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-obfuscating-the-te-header)
+- HTTP/2
 
 ## Web LLM attacks
 
