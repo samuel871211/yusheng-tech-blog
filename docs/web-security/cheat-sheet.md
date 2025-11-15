@@ -161,7 +161,7 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 
 - [sink, gadget](../port-swigger/prototype-pollution.md#lab-client-side-prototype-pollution-in-third-party-libraries)
 
-### Tool
+### Tools
 
 - [DOM Invader](https://portswigger.net/burp/documentation/desktop/tools/dom-invader/prototype-pollution#detecting-sources-for-prototype-pollution)
 
@@ -249,13 +249,17 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
   - `http://vulnerable-website.com.hackingwithpentesterlab.link`
   - `https://whatever-hostname.hackingwithpentesterlab.link`
 
-### Tool: URL Encode All Characters
+### Tools
+
+- URL Encode All Characters
 
 ```ts
 function encodeSingleStringToURIComponent(str) {
   return "%" + str.charCodeAt(0).toString(16);
 }
 ```
+
+- [String to Hex](https://www.hextostring.com/string-to-hex)
 
 ## OS command injection
 
@@ -301,7 +305,7 @@ system('ls')
 
 ## Deserialization
 
-### Tool
+### Tools
 
 - [PHP Generic Gadget Chains](https://github.com/ambionics/phpggc)
 - [Java, Maven, ysoserial](../port-swigger/insecure-deserialization.md#lab-exploiting-java-deserialization-with-apache-commons)
@@ -338,7 +342,7 @@ system('ls')
 
 ## API testing
 
-### Tool
+### Tools
 
 - [JS Link Finder](https://portswigger.net/bappstore/0e61c786db0c4ac787a08c4516d52ccf)
 
@@ -432,7 +436,7 @@ system('ls')
 
 ## JWT
 
-### Tool
+### Tools
 
 [hashcat](../port-swigger/jwt.md#brute-forcing-secret-keys-using-hashcat)
 
@@ -635,3 +639,8 @@ system('ls')
 - hex escaping
 - octal escaping
 - multiple encodings -->
+
+<!-- solved practitioner labs 2 times:
+- ssrf
+- os command
+- ssti x2 -->
