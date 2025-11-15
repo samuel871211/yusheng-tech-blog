@@ -41,8 +41,8 @@ https://www.google.com/user/123/style.css
 
 這題的 /my-account 頁面含有 API Key，嘗試讓 /my-account 頁面也被快取
 
-```js
-https://0a8200f303c345b2825b92e200480080.web-security-academy.net/my-account/hello.js
+```
+/my-account/hello.js
 ```
 
 有正確被快取

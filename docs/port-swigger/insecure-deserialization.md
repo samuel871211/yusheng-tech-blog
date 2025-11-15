@@ -153,7 +153,7 @@ users/carlos/disabled in /home/carlos/User.php:46 Stack trace: #0 Command line
 code(5): User->delete() #1 {main} thrown in /home/carlos/User.php on line 46
 ```
 
-剛才被導回登入頁，其實是因為我網址沒換，改成 https://0a880087032ab8d38411189b007500e1.web-security-academy.net/my-account?id=carlos 就可以成功看到 carlos 的帳號
+剛才被導回登入頁，其實是因為我網址沒換，改成 `/my-account?id=carlos` 就可以成功看到 carlos 的帳號
 
 用 carlos 的帳號上傳照片後，再刪除帳號，還是沒辦法解題，感覺就差臨門一腳了，忍住不要看答案～但既然 carlos 的帳號被我刪掉，應該就只能重啟 Lab 了QQ
 
@@ -191,7 +191,7 @@ invoked automatically during the deserialization process
 | Document  | https://portswigger.net/web-security/deserialization/exploiting#injecting-arbitrary-objects                           |
 | Lab       | https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-arbitrary-object-injection-in-php |
 
-登入後，立馬在 HTML 看到 `<!-- TODO: Refactor once /libs/CustomTemplate.php is updated -->`，訪問 https://0acf0038046a7df381280746006f009c.web-security-academy.net/libs/CustomTemplate.php~ 就可以看到原始碼
+登入後，立馬在 HTML 看到 `<!-- TODO: Refactor once /libs/CustomTemplate.php is updated -->`，訪問 /libs/CustomTemplate.php~ 就可以看到原始碼
 
 ```php
 <?php
@@ -342,7 +342,7 @@ encodeURIComponent(
 // %7B%22token%22%3A%22Tzo0OiJVc2VyIjoyOntzOjg6InVzZXJuYW1lIjtzOjY6ImNhcmxvcyI7czoxMjoiYWNjZXNzX3Rva2VuIjtzOjMyOiJlaTdkdDByNXJmMnMwdm9lbWJtNXVtNmE4dGt1MXQ2dSI7fQ%3D%3D%22%2C%22sig_hmac_sha1%22%3A%22fbfe3e16e1ed8b3b73f20a34d34cbc216fc17b91%22%7D
 ```
 
-進入 https://0ad500d5042bb3208005fdb900ea0087.web-security-academy.net/my-account 後，看到
+進入 `/my-account` 後，看到
 
 ```
 Internal Server Error: Symfony Version: 4.3.6
@@ -377,7 +377,7 @@ PHP Fatal error: Uncaught Exception: Signature does not match session in /var/ww
 
 看來是要想辦法知道 [HmacSHA1 Hash](https://tools.onecompiler.com/hmac-sha1) 的 Key
 
-這題也有留註解 `<!-- <a href=/cgi-bin/phpinfo.php>Debug</a> -->`，訪問 https://0a37007b03c87c4481a5169c00030086.web-security-academy.net/cgi-bin/phpinfo.php ，直接搜尋 key，看到 `SECRET_KEY: t5pzxaqlqctedvnx90d847bu0rby1dxu`
+這題也有留註解 `<!-- <a href=/cgi-bin/phpinfo.php>Debug</a> -->`，訪問 `/cgi-bin/phpinfo.php` ，直接搜尋 key，看到 `SECRET_KEY: t5pzxaqlqctedvnx90d847bu0rby1dxu`
 
 使用 [HmacSHA1 Hash Generator](https://tools.onecompiler.com/hmac-sha1) 構造 `sig_hmac_sha1` 欄位的值，並且在瀏覽器構造
 
@@ -494,7 +494,7 @@ LnR4dAY7DFQ7EjoMcmVzb2x2ZQ==`);
 | Document  | https://portswigger.net/web-security/deserialization/exploiting#creating-your-own-exploit                                                     |
 | Lab       | https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-developing-a-custom-gadget-chain-for-java-deserialization |
 
-在 HTML 的註解有看到 `<!-- <a href=/backup/AccessTokenUser.java>Example user</a> -->`，訪問 https://0a58004e04fa9310806044b4004400ba.web-security-academy.net/backup/AccessTokenUser.java 後
+在 HTML 的註解有看到 `<!-- <a href=/backup/AccessTokenUser.java>Example user</a> -->`，訪問 `/backup/AccessTokenUser.java` 後
 
 https://replit.com/@samuel871211/java-serialization-example
 
@@ -613,7 +613,7 @@ System.out.println("Serialized object: " + serializedObject);
 To solve the lab, gain access to the source code and use it to construct a gadget chain to obtain the administrator's password.
 ```
 
-嘗試訪問 https://0a9500f204e4412282cdbafc004200e9.web-security-academy.net/backup，結果有 Directory Listing，看到 ProductTemplate.java
+嘗試訪問 `/backup`，結果有 Directory Listing，看到 ProductTemplate.java
 
 ```java
 package data.productcatalog;
@@ -803,7 +803,7 @@ java.io.IOException: org.postgresql.util.PSQLException: ERROR: invalid input syn
 
 進到首頁，看到 HTML 的內容有 `<!-- TODO: Refactor once /cgi-bin/libs/CustomTemplate.php is updated -->`
 
-訪問 https://0a3e00020448e6b9805f2bcd00750040.web-security-academy.net/cgi-bin/libs/CustomTemplate.php~
+訪問 `/cgi-bin/libs/CustomTemplate.php~`
 
 ```php
 class CustomTemplate {
@@ -908,11 +908,11 @@ encodeURIComponent(
 | Document  | https://portswigger.net/web-security/deserialization/exploiting#phar-deserialization                                                           |
 | Lab       | https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-using-phar-deserialization-to-deploy-a-custom-gadget-chain |
 
-這題有上傳頭像的功能，想像上 `.phar` 檔案就是要從這邊注入，上傳一個正常的頭像後，網址是 https://0a24000404a1f1c0814fee15005500ef.web-security-academy.net/cgi-bin/avatar.php?avatar=wiener
+這題有上傳頭像的功能，想像上 `.phar` 檔案就是要從這邊注入，上傳一個正常的頭像後，網址是 /cgi-bin/avatar.php?avatar=wiener
 
-嘗試訪問 https://0a24000404a1f1c0814fee15005500ef.web-security-academy.net/cgi-bin/avatar.php~ 但得到 404 Not Found
+嘗試訪問 `/cgi-bin/avatar.php~` 但得到 404 Not Found
 
-後來在 https://0a24000404a1f1c0814fee15005500ef.web-security-academy.net/cgi-bin 找到 Directory Listing
+後來在 `/cgi-bin` 找到 Directory Listing
 
 CustomTemplate.php
 

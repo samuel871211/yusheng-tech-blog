@@ -475,7 +475,7 @@ username=carlos&csrf=HQHgq9K9G7JvzBKQFOG9NVrJqaxqxOzj
 10.0.3.70       2025-10-09 10:57:55 +0000 "GET /forgot-password?temp-forgot-password-token=eltc9c54h6jvgqzj7u9pld3fzzgla5o4 HTTP/1.1" 404 "user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 ```
 
-之後訪問 https://0aaf00ed0338460881cf850a00b60072.web-security-academy.net/forgot-password?temp-forgot-password-token=eltc9c54h6jvgqzj7u9pld3fzzgla5o4 ，就可以成功更換密碼～
+之後訪問 `/forgot-password?temp-forgot-password-token=eltc9c54h6jvgqzj7u9pld3fzzgla5o4` ，就可以成功更換密碼～
 
 ## Lab: Password reset poisoning via middleware
 

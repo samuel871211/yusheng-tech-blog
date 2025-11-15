@@ -30,7 +30,7 @@ returnUrl = /url=(https?:\/\/.+)/.exec(location);
 location.href = returnUrl ? returnUrl[1] : "/";
 ```
 
-構造 `https://0a130030047030c880bdc72300910016.web-security-academy.net/post?postId=6&url=https://exploit-0aeb00cd0416304980e8c6bc01cd00d9.exploit-server.net`，並且點擊 Back to Blog，即可完成
+構造 `/post?postId=6&url=https://exploit-0aeb00cd0416304980e8c6bc01cd00d9.exploit-server.net`，並且點擊 Back to Blog，即可完成
 
 ## Lab: DOM-based cookie manipulation
 

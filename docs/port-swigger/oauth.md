@@ -26,7 +26,7 @@ Just complete the "Log in with social media" option while proxying traffic throu
 
 ```js
 fetch(`${location.origin}/authenticate`, {
-  method: "post",
+  method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     email: "carlos@carlos-montoya.net",

