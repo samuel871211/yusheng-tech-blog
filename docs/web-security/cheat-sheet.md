@@ -2,8 +2,46 @@
 title: Cheat Sheet
 description: Cheat Sheet
 last_update:
-  date: "2025-11-10T08:00:00+08:00"
+  date: "2025-11-15T08:00:00+08:00"
 ---
+
+- Database
+  - [SQLi](#sql-injection)
+  - [NoSQLi](#nosql-injection)
+- HTML, JS, Browser
+  - [XSS](#xss)
+  - [DOM](#dom-based-vulnerabilities)
+  - [Prototype Pollution](#prototype-pollution)
+  - [CSRF](#csrf)
+  - [CORS](#cors)
+  - [Websocket](#websocket)
+- Server Side
+  - [XXE](#xxe)
+  - [SSRF](#ssrf)
+  - [OS Command Injection](#os-command-injection)
+  - [SSTI](#server-side-template-injection)
+  - [Code Injection](#code-injection)
+  - [Deserialization](#deserialization)
+- API Testing
+  - [Access Control](#access-control)
+  - [API Testing](#api-testing)
+  - [Business logic](#business-logic-vulnerabilities)
+  - [GraphQL](#graphql-api)
+  - [File Upload](#file-upload)
+  - [LLM](#web-llm-attacks)
+- Auth
+  - [Authentication](#authentication)
+  - [OAuth](#oauth)
+  - [JWT](#jwt)
+- Basic
+  - [Path Traversal](#path-traversal)
+  - [Information Disclosure](#information-disclosure)
+- HTTP
+  - [Host](#http-host-header-attacks)
+  - [Web Cache Poisoning](#web-cache-poisoning)
+  - [Web Cache Deception](#web-cache-deception)
+  - [Race Conditions](#race-conditions)
+  - [HTTP Request Smuggling](#http-request-smuggling)
 
 ## SQL Injection
 
@@ -17,7 +55,7 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 - `' OR 1=1#`
 - `' OR '1'='1`
 - `" OR "1"="1"-- 123`
-- - `" OR "1"="1" LIMIT 1#`
+- `" OR "1"="1" LIMIT 1#`
 
 ### UNION Based
 
@@ -66,6 +104,8 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 
 - white space not allowed => `/**/`, `%20`, `+`, `\t`
 - [`(`, `)`, `=`, `>`, `<`, `.` not allowed](./sql-injection-stationer-success.md)
+- CRLF Injection: `\r\n`, `%0d%0a`
+- `Char()`
 
 ## NoSQL injection
 
@@ -125,7 +165,7 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 
 - [DOM Invader](https://portswigger.net/burp/documentation/desktop/tools/dom-invader/prototype-pollution#detecting-sources-for-prototype-pollution)
 
-## Recon
+### Recon
 
 - [`script.src = data:text/javascript,alert(1)`](../port-swigger/prototype-pollution.md#lab-dom-xss-via-client-side-prototype-pollution)
 - [`eval`](../port-swigger/prototype-pollution.md#lab-dom-xss-via-an-alternative-prototype-pollution-vector)
@@ -168,6 +208,15 @@ https://portswigger.net/web-security/sql-injection/cheat-sheet
 
 - [Origin Reflection](../port-swigger/cors.md#lab-cors-vulnerability-with-basic-origin-reflection)
 - [null Origin Bypass](../port-swigger/cors.md#lab-cors-vulnerability-with-trusted-null-origin)
+
+## WebSocket
+
+<!-- ### Recon -->
+
+- XSS
+  - [1](../port-swigger/websocket.md#lab-manipulating-websocket-messages-to-exploit-vulnerabilities)
+  - [2](../port-swigger/websocket.md#lab-manipulating-the-websocket-handshake-to-exploit-vulnerabilities)
+- [Cross-site WebSocket hijacking](../port-swigger/websocket.md#lab-cross-site-websocket-hijacking)
 
 ## XXE
 
@@ -250,23 +299,23 @@ system('ls')
 `uname`
 ```
 
-## Path traversal
+## Deserialization
 
-<!-- ### Payloads -->
+### Tool
 
-- [Basic](../port-swigger/path-traversal.md#lab-file-path-traversal-simple-case): `../../../etc/passwd`
-- [Strip non-recursively](../port-swigger/path-traversal.md#lab-file-path-traversal-traversal-sequences-stripped-non-recursively)
-- [URL Encode](../port-swigger/path-traversal.md#lab-file-path-traversal-traversal-sequences-stripped-with-superfluous-url-decode)
-  - Partial URL Encode: `..%2F..%2F..%2Fetc%2Fpasswd`
-  - URL Encode: `%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd`
-  - Double URL Encode: `%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd`
-- [Start Path](../port-swigger/path-traversal.md#lab-file-path-traversal-validation-of-start-of-path): `/var/www/images/../../../etc/passwd`
-- [Null Byte](../port-swigger/path-traversal.md#lab-file-path-traversal-validation-of-file-extension-with-null-byte-bypass): `../../../etc/passwd%00.jpg`
-- `/etc/./passwd`
-- `/etc/../etc/passwd`
-- `/etc/../ETC/passwd`
-- `/pentesterlab;pentesterlab`
-- Windows: `non-exist-dir/../../../file.txt`
+- [PHP Generic Gadget Chains](https://github.com/ambionics/phpggc)
+- [Java, Maven, ysoserial](../port-swigger/insecure-deserialization.md#lab-exploiting-java-deserialization-with-apache-commons)
+
+### Recon
+
+- [PHP 7.x `0 == "string"`](../port-swigger/insecure-deserialization.md#lab-modifying-serialized-data-types)
+- Source Code Access + PHP
+  - [1](../port-swigger/insecure-deserialization.md#lab-arbitrary-object-injection-in-php)
+  - [2](../port-swigger/insecure-deserialization.md#lab-developing-a-custom-gadget-chain-for-php-deserialization)
+  - [3 (EXPERT)](../port-swigger/insecure-deserialization.md#lab-using-phar-deserialization-to-deploy-a-custom-gadget-chain)
+- [Exploiting Java deserialization with Apache Commons](../port-swigger/insecure-deserialization.md#lab-exploiting-java-deserialization-with-apache-commons)
+- [Universal Deserialisation Gadget for Ruby 2.x-3.x](../port-swigger/insecure-deserialization.md#lab-exploiting-ruby-deserialization-using-a-documented-gadget-chain)
+- [Source Code Access + Java](../port-swigger/insecure-deserialization.md#lab-developing-a-custom-gadget-chain-for-java-deserialization)
 
 ## Access control
 
@@ -286,6 +335,70 @@ system('ls')
   - `?id=administrator`
   - `?userId=1`
 - [Referer Based](../port-swigger/access-control.md#lab-referer-based-access-control)
+
+## API testing
+
+### Tool
+
+- [JS Link Finder](https://portswigger.net/bappstore/0e61c786db0c4ac787a08c4516d52ccf)
+
+### Recon
+
+- [Find `/api` Document](../port-swigger/api-testing.md#lab-exploiting-an-api-endpoint-using-documentation)
+- [Try Different HTTP Request Methods](../port-swigger/api-testing.md#lab-finding-and-exploiting-an-unused-api-endpoint)
+- [Mass assignment](../port-swigger/api-testing.md#lab-exploiting-a-mass-assignment-vulnerability)
+- server-side parameter pollution in a query string
+  - [How to construct](../port-swigger/api-testing.md#server-side-parameter-pollution-in-the-query-string)
+  - [1](../port-swigger/api-testing.md#lab-exploiting-server-side-parameter-pollution-in-a-query-string)
+- [server-side parameter pollution in a REST URL (EXPERT)](../port-swigger/api-testing.md#lab-exploiting-server-side-parameter-pollution-in-a-rest-url)
+
+## Business logic vulnerabilities
+
+- [加入購物車 price](../port-swigger/business-logic-vulnerabilities.md#lab-excessive-trust-in-client-side-controls)
+- [加入購物車 qty 負數](../port-swigger/business-logic-vulnerabilities.md#lab-high-level-logic-vulnerability)
+- [加入購物車 qty Integer overflow](../port-swigger/business-logic-vulnerabilities.md#lab-low-level-logic-flaw)
+- [padding@vulnerable-website.com.attacker-website.com](../port-swigger/business-logic-vulnerabilities.md#lab-inconsistent-handling-of-exceptional-input)
+- [privilege escalation via update userInfo](../port-swigger/business-logic-vulnerabilities.md#lab-inconsistent-security-controls)
+- Insufficient workflow validation
+  - [1](../port-swigger/business-logic-vulnerabilities.md#lab-insufficient-workflow-validation)
+  - [2](../port-swigger/business-logic-vulnerabilities.md#lab-authentication-bypass-via-flawed-state-machine)
+- [兩張折價券交替使用](../port-swigger/business-logic-vulnerabilities.md#lab-flawed-enforcement-of-business-rules)
+- [encryption oracle](../port-swigger/business-logic-vulnerabilities.md#lab-authentication-bypass-via-encryption-oracle)
+- [email address parsing discrepancies (EXPERT)](../port-swigger/business-logic-vulnerabilities.md#lab-bypassing-access-controls-using-email-address-parsing-discrepancies)
+
+## GraphQL API
+
+- [Common endpoint names](../port-swigger/graphql.md#common-endpoint-names)
+- Running a full introspection query
+  - [Document](../port-swigger/graphql.md#running-a-full-introspection-query)
+  - [1](../port-swigger/graphql.md#lab-accessing-private-graphql-posts)
+  - [2](../port-swigger/graphql.md#lab-accidental-exposure-of-private-graphql-fields)
+- Bypassing GraphQL introspection defenses
+  - [Document](../port-swigger/graphql.md#bypassing-graphql-introspection-defenses)
+  - [1](../port-swigger/graphql.md#lab-finding-a-hidden-graphql-endpoint)
+- [Multi query](../port-swigger/graphql.md#lab-bypassing-graphql-brute-force-protections)
+
+## File upload
+
+### Tools
+
+- [exiftool](https://exiftool.org/)
+
+### Recon
+
+- Web Shell Upload
+  - [Content-Type bypass](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-content-type-restriction-bypass)
+  - [Path traversal](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-path-traversal)
+  - [`.htaccess`](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-extension-blacklist-bypass)
+  - [obfuscated file extension](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-obfuscated-file-extension)
+  - [polyglot](../port-swigger/file-upload-vulnerabilities.md#lab-remote-code-execution-via-polyglot-web-shell-upload)
+  - [race condition (EXPERT)](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-race-condition)
+
+## Web LLM attacks
+
+- [請問你有哪些 API 可以使用？](../port-swigger/llm-attacks.md#lab-exploiting-llm-apis-with-excessive-agency)
+- [Indirect prompt injection](../port-swigger/llm-attacks.md#lab-indirect-prompt-injection)
+- [insecure output handling](../port-swigger/llm-attacks.md#lab-exploiting-insecure-output-handling-in-llms)
 
 ## Authentication
 
@@ -342,32 +455,23 @@ system('ls')
   - [1 (EXPERT)](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-algorithm-confusion)
   - [2 (EXPERT)](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-algorithm-confusion-with-no-exposed-key)
 
-### WebSocket
+## Path traversal
 
-<!-- ### Recon -->
+<!-- ### Payloads -->
 
-- XSS
-  - [1](../port-swigger/websocket.md#lab-manipulating-websocket-messages-to-exploit-vulnerabilities)
-  - [2](../port-swigger/websocket.md#lab-manipulating-the-websocket-handshake-to-exploit-vulnerabilities)
-- [Cross-site WebSocket hijacking](../port-swigger/websocket.md#lab-cross-site-websocket-hijacking)
-
-## Deserialization
-
-### Tool
-
-- [PHP Generic Gadget Chains](https://github.com/ambionics/phpggc)
-- [Java, Maven, ysoserial](../port-swigger/insecure-deserialization.md#lab-exploiting-java-deserialization-with-apache-commons)
-
-### Recon
-
-- [PHP 7.x `0 == "string"`](../port-swigger/insecure-deserialization.md#lab-modifying-serialized-data-types)
-- Source Code Access + PHP
-  - [1](../port-swigger/insecure-deserialization.md#lab-arbitrary-object-injection-in-php)
-  - [2](../port-swigger/insecure-deserialization.md#lab-developing-a-custom-gadget-chain-for-php-deserialization)
-  - [3 (EXPERT)](../port-swigger/insecure-deserialization.md#lab-using-phar-deserialization-to-deploy-a-custom-gadget-chain)
-- [Exploiting Java deserialization with Apache Commons](../port-swigger/insecure-deserialization.md#lab-exploiting-java-deserialization-with-apache-commons)
-- [Universal Deserialisation Gadget for Ruby 2.x-3.x](../port-swigger/insecure-deserialization.md#lab-exploiting-ruby-deserialization-using-a-documented-gadget-chain)
-- [Source Code Access + Java](../port-swigger/insecure-deserialization.md#lab-developing-a-custom-gadget-chain-for-java-deserialization)
+- [Basic](../port-swigger/path-traversal.md#lab-file-path-traversal-simple-case): `../../../etc/passwd`
+- [Strip non-recursively](../port-swigger/path-traversal.md#lab-file-path-traversal-traversal-sequences-stripped-non-recursively)
+- [URL Encode](../port-swigger/path-traversal.md#lab-file-path-traversal-traversal-sequences-stripped-with-superfluous-url-decode)
+  - Partial URL Encode: `..%2F..%2F..%2Fetc%2Fpasswd`
+  - URL Encode: `%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd`
+  - Double URL Encode: `%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd`
+- [Start Path](../port-swigger/path-traversal.md#lab-file-path-traversal-validation-of-start-of-path): `/var/www/images/../../../etc/passwd`
+- [Null Byte](../port-swigger/path-traversal.md#lab-file-path-traversal-validation-of-file-extension-with-null-byte-bypass): `../../../etc/passwd%00.jpg`
+- `/etc/./passwd`
+- `/etc/../etc/passwd`
+- `/etc/../ETC/passwd`
+- `/pentesterlab;pentesterlab`
+- Windows: `non-exist-dir/../../../file.txt`
 
 ## Information disclosure
 
@@ -379,64 +483,6 @@ system('ls')
 - [via HTTP TRACE](../port-swigger/information-disclosure.md#lab-authentication-bypass-via-information-disclosure)
 
 <!-- ## Essential skills -->
-
-## Business logic vulnerabilities
-
-- [加入購物車 price](../port-swigger/business-logic-vulnerabilities.md#lab-excessive-trust-in-client-side-controls)
-- [加入購物車 qty 負數](../port-swigger/business-logic-vulnerabilities.md#lab-high-level-logic-vulnerability)
-- [加入購物車 qty Integer overflow](../port-swigger/business-logic-vulnerabilities.md#lab-low-level-logic-flaw)
-- [padding@vulnerable-website.com.attacker-website.com](../port-swigger/business-logic-vulnerabilities.md#lab-inconsistent-handling-of-exceptional-input)
-- [privilege escalation via update userInfo](../port-swigger/business-logic-vulnerabilities.md#lab-inconsistent-security-controls)
-- Insufficient workflow validation
-  - [1](../port-swigger/business-logic-vulnerabilities.md#lab-insufficient-workflow-validation)
-  - [2](../port-swigger/business-logic-vulnerabilities.md#lab-authentication-bypass-via-flawed-state-machine)
-- [兩張折價券交替使用](../port-swigger/business-logic-vulnerabilities.md#lab-flawed-enforcement-of-business-rules)
-- [encryption oracle](../port-swigger/business-logic-vulnerabilities.md#lab-authentication-bypass-via-encryption-oracle)
-- [email address parsing discrepancies (EXPERT)](../port-swigger/business-logic-vulnerabilities.md#lab-bypassing-access-controls-using-email-address-parsing-discrepancies)
-
-## API testing
-
-### Tool
-
-- [JS Link Finder](https://portswigger.net/bappstore/0e61c786db0c4ac787a08c4516d52ccf)
-
-### Recon
-
-- [Find `/api` Document](../port-swigger/api-testing.md#lab-exploiting-an-api-endpoint-using-documentation)
-- [Try Different HTTP Request Methods](../port-swigger/api-testing.md#lab-finding-and-exploiting-an-unused-api-endpoint)
-- [Mass assignment](../port-swigger/api-testing.md#lab-exploiting-a-mass-assignment-vulnerability)
-- server-side parameter pollution in a query string
-  - [How to construct](../port-swigger/api-testing.md#server-side-parameter-pollution-in-the-query-string)
-  - [1](../port-swigger/api-testing.md#lab-exploiting-server-side-parameter-pollution-in-a-query-string)
-- [server-side parameter pollution in a REST URL (EXPERT)](../port-swigger/api-testing.md#lab-exploiting-server-side-parameter-pollution-in-a-rest-url)
-
-## GraphQL API
-
-- [Common endpoint names](../port-swigger/graphql.md#common-endpoint-names)
-- Running a full introspection query
-  - [Document](../port-swigger/graphql.md#running-a-full-introspection-query)
-  - [1](../port-swigger/graphql.md#lab-accessing-private-graphql-posts)
-  - [2](../port-swigger/graphql.md#lab-accidental-exposure-of-private-graphql-fields)
-- Bypassing GraphQL introspection defenses
-  - [Document](../port-swigger/graphql.md#bypassing-graphql-introspection-defenses)
-  - [1](../port-swigger/graphql.md#lab-finding-a-hidden-graphql-endpoint)
-- [Multi query](../port-swigger/graphql.md#lab-bypassing-graphql-brute-force-protections)
-
-## File upload
-
-### Tools
-
-- [exiftool](https://exiftool.org/)
-
-### Recon
-
-- Web Shell Upload
-  - [Content-Type bypass](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-content-type-restriction-bypass)
-  - [Path traversal](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-path-traversal)
-  - [`.htaccess`](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-extension-blacklist-bypass)
-  - [obfuscated file extension](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-obfuscated-file-extension)
-  - [polyglot](../port-swigger/file-upload-vulnerabilities.md#lab-remote-code-execution-via-polyglot-web-shell-upload)
-  - [race condition (EXPERT)](../port-swigger/file-upload-vulnerabilities.md#lab-web-shell-upload-via-race-condition)
 
 ## HTTP Host header attacks
 
@@ -522,30 +568,61 @@ system('ls')
 
 ## HTTP request smuggling
 
-## Note
+### Note
 
 - [Use CL.TE First](../port-swigger/http-request-smuggling.md#you-should-use-clte-first)
 - [Real World Situation](../port-swigger/http-request-smuggling.md#真實世界情況)
 
-## Recon
+### Recon
 
 - HTTP/1.1
-  - [Find CL.TE](../port-swigger/http-request-smuggling.md#finding-clte-vulnerabilities-using-timing-techniques)
-  - [CL.TE (1)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-basic-clte-vulnerability)
-  - [CL.TE (2)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-confirming-a-clte-vulnerability-via-differential-responses)
-  - [CL.TE (3) bypass front-end security controls](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-bypass-front-end-security-controls-clte-vulnerability)
-  - [Find TE.CL](../port-swigger/http-request-smuggling.md#finding-tecl-vulnerabilities-using-timing-techniques)
-  - [TE.CL (1)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-basic-tecl-vulnerability)
-  - [TE.CL (2)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-confirming-a-tecl-vulnerability-via-differential-responses)
-  - [TE.CL (3) bypass front-end security controls](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-bypass-front-end-security-controls-tecl-vulnerability)
+  - CL.TE
+    - [Document](../port-swigger/http-request-smuggling.md#finding-clte-vulnerabilities-using-timing-techniques)
+    - [CL.TE (1)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-basic-clte-vulnerability)
+    - [CL.TE (2)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-confirming-a-clte-vulnerability-via-differential-responses)
+    - [CL.TE (3) bypass front-end security controls](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-bypass-front-end-security-controls-clte-vulnerability)
+  - TE.CL
+    - [Document](../port-swigger/http-request-smuggling.md#finding-tecl-vulnerabilities-using-timing-techniques)
+    - [TE.CL (1)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-basic-tecl-vulnerability)
+    - [TE.CL (2)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-confirming-a-tecl-vulnerability-via-differential-responses)
+    - [TE.CL (3) bypass front-end security controls](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-bypass-front-end-security-controls-tecl-vulnerability)
   - [TE.TE (obfuscating the TE header)](../port-swigger/http-request-smuggling.md#lab-http-request-smuggling-obfuscating-the-te-header)
+  - [0.CL (EXPERT)](../port-swigger/http-request-smuggling.md#lab-0cl-request-smuggling)
+  - Browser-powered
+    - CL.0
+      - [Document](../port-swigger/http-request-smuggling.md#testing-for-cl0-vulnerabilities)
+      - [1](../port-swigger/http-request-smuggling.md#lab-cl0-request-smuggling)
+    - client side desync
+      - [Document](../port-swigger/http-request-smuggling.md#what-is-a-client-side-desync-attack)
+      - [1 (EXPERT)](../port-swigger/http-request-smuggling.md#lab-client-side-desync)
+    - Server-side pause-based desync
+      - [Document](../port-swigger/http-request-smuggling.md#pause-based-desync-attacks)
+      - [1 (EXPERT)](../port-swigger/http-request-smuggling.md#lab-server-side-pause-based-request-smuggling)
+  -
 - HTTP/2
-
-## Web LLM attacks
-
-- [請問你有哪些 API 可以使用？](../port-swigger/llm-attacks.md#lab-exploiting-llm-apis-with-excessive-agency)
-- [Indirect prompt injection](../port-swigger/llm-attacks.md#lab-indirect-prompt-injection)
-- [insecure output handling](../port-swigger/llm-attacks.md#lab-exploiting-insecure-output-handling-in-llms)
+  - [H2.CL + Web Cache Poisoning](../port-swigger/http-request-smuggling.md#lab-h2cl-request-smuggling)
+  - [H2.CL + CRLF Injection](../port-swigger/http-request-smuggling.md#lab-http2-request-smuggling-via-crlf-injection)
+  - [H2.TE](../port-swigger/http-request-smuggling.md#h2te-vulnerabilities)
+  - [Response queue poisoning](../port-swigger/http-request-smuggling.md#response-queue-poisoning)
+  - [H2.TE + Response queue poisoning](../port-swigger/http-request-smuggling.md#lab-response-queue-poisoning-via-h2te-request-smuggling)
+  - [request splitting](../port-swigger/http-request-smuggling.md#http2-request-splitting)
+  - [request splitting + CRLF Injection](../port-swigger/http-request-smuggling.md#lab-http2-request-splitting-via-crlf-injection)
+  - request tunnelling
+    - [Document](../port-swigger/http-request-smuggling.md#http-request-tunnelling)
+    - [Leaking internal headers](../port-swigger/http-request-smuggling.md#leaking-internal-headers-via-http2-request-tunnelling)
+    - [Blind](../port-swigger/http-request-smuggling.md#blind-request-tunnelling)
+    - [Non-blind request using HEAD](../port-swigger/http-request-smuggling.md#non-blind-request-tunnelling-using-head)
+    - [Bypassing access controls (EXPERT)](../port-swigger/http-request-smuggling.md#lab-bypassing-access-controls-via-http2-request-tunnelling)
+    - [Web cache poisoning (EXPERT)](../port-swigger/http-request-smuggling.md#lab-web-cache-poisoning-via-http2-request-tunnelling)
+- Revealing front-end request rewriting
+  - [Document](../port-swigger/http-request-smuggling.md#revealing-front-end-request-rewriting)
+  - [1](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-reveal-front-end-request-rewriting)
+- Capturing other users' requests
+  - [Document](../port-swigger/http-request-smuggling.md#capturing-other-users-requests)
+  - [1](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-capture-other-users-requests)
+- [User Agent Reflected XSS](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-deliver-reflected-xss)
+- [Web Cache Poisoning (EXPERT)](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-perform-web-cache-poisoning)
+- [Web Cache Deception (EXPERT)](../port-swigger/http-request-smuggling.md#lab-exploiting-http-request-smuggling-to-perform-web-cache-deception)
 
 <!-- ## Essential skills
 
@@ -557,5 +634,4 @@ system('ls')
 - unicode escaping
 - hex escaping
 - octal escaping
-- multiple encodings
-- SQL CHAR() function -->
+- multiple encodings -->
