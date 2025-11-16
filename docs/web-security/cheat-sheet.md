@@ -643,4 +643,12 @@ system('ls')
 <!-- solved practitioner labs 2 times:
 - ssrf
 - os command
-- ssti x2 -->
+- ssti
+
+體感最難的:
+- [Deserialization](#deserialization)
+- [Host](#http-host-header-attacks)
+- [Web Cache Poisoning](#web-cache-poisoning)
+- [Web Cache Deception](#web-cache-deception)
+- [Race Conditions](#race-conditions)
+- [HTTP Request Smuggling](#http-request-smuggling) -->
