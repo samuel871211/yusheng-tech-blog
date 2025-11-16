@@ -2,7 +2,7 @@
 title: Cheat Sheet
 description: Cheat Sheet
 last_update:
-  date: "2025-11-15T08:00:00+08:00"
+  date: "2025-11-16T08:00:00+08:00"
 ---
 
 - Database
@@ -42,6 +42,14 @@ last_update:
   - [Web Cache Deception](#web-cache-deception)
   - [Race Conditions](#race-conditions)
   - [HTTP Request Smuggling](#http-request-smuggling)
+
+```mermaid
+flowchart TD
+    A[Recon] --> B{nmap Port Scanning}
+    A[Recon] --> C{Reverse IP,<br/>Securitytrails}
+    A[Recon] --> D{web.archive.org}
+    A[Recon] --> E{Zoomeye,<br/>Shodan,<br/>Google Dork}
+```
 
 ## SQL Injection
 
@@ -330,9 +338,7 @@ system('ls')
   - `Cookie: admin=true`
   - `?role=1`
   - `roleid=2`
-- [Request Header](../port-swigger/access-control.md#lab-url-based-access-control-can-be-circumvented)
-  - `X-Original-URL`
-  - [403 Bypasser](https://github.com/sting8k/BurpSuite_403Bypasser)
+- [`X-Original-URL`](../port-swigger/access-control.md#lab-url-based-access-control-can-be-circumvented)
 - [Casing, File Extension, Trailing Slash](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter)
 - [30x With Sensitive Data](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter-with-data-leakage-in-redirect)
 - [IDOR](../port-swigger/access-control.md#lab-user-id-controlled-by-request-parameter-with-password-disclosure)
@@ -342,11 +348,11 @@ system('ls')
 
 ## API testing
 
-### Tools
+<!-- ### Tools
 
 - [JS Link Finder](https://portswigger.net/bappstore/0e61c786db0c4ac787a08c4516d52ccf)
 
-### Recon
+### Recon -->
 
 - [Find `/api` Document](../port-swigger/api-testing.md#lab-exploiting-an-api-endpoint-using-documentation)
 - [Try Different HTTP Request Methods](../port-swigger/api-testing.md#lab-finding-and-exploiting-an-unused-api-endpoint)
@@ -481,11 +487,13 @@ system('ls')
 
 <!-- ### Recon -->
 
-- [via Error Message](../port-swigger/information-disclosure.md#lab-information-disclosure-in-error-messages)
-- [via Debug Page](../port-swigger/information-disclosure.md#lab-information-disclosure-on-debug-page)
-- [via `/robots.txt`](../port-swigger/information-disclosure.md#lab-source-code-disclosure-via-backup-files)
-- [via HTTP TRACE](../port-swigger/information-disclosure.md#lab-authentication-bypass-via-information-disclosure)
-
+- Fingerprint (Response Headers, 404 Page, Malformed Request)
+- [Error Message](../port-swigger/information-disclosure.md#lab-information-disclosure-in-error-messages)
+- [Debug Page](../port-swigger/information-disclosure.md#lab-information-disclosure-on-debug-page)
+- [`/robots.txt`](../port-swigger/information-disclosure.md#lab-source-code-disclosure-via-backup-files)
+- [HTTP TRACE](../port-swigger/information-disclosure.md#lab-authentication-bypass-via-information-disclosure)
+- HTML comment, JS Links, API & Secret Key, Source Map
+- ffuf, nmap http-enum
 <!-- ## Essential skills -->
 
 ## HTTP Host header attacks
