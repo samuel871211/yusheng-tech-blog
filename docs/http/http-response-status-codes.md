@@ -31,6 +31,42 @@ description: HTTP response status codes
 
 ## 417 Expectation Failed
 
+Request
+
+```
+POST / HTTP/2
+Host: www.wanhsyan.com.tw
+Expect: 123
+
+
+```
+
+Response
+
+```
+HTTP/2 417 Expectation Failed
+Date: Sun, 16 Nov 2025 11:42:49 GMT
+Server: Apache
+Content-Length: 483
+Content-Type: text/html; charset=iso-8859-1
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>417 Expectation Failed</title>
+</head><body>
+<h1>Expectation Failed</h1>
+<p>The expectation given in the Expect request-header
+field could not be met by this server.
+The client sent<pre>
+    Expect: 123
+</pre>
+</p><p>Only the 100-continue expectation is supported.</p>
+<p>Additionally, a 417 Expectation Failed
+error was encountered while trying to use an ErrorDocument to handle the request.</p>
+</body></html>
+
+```
+
 ## 421 Misdirected Request
 
 ## 423 Locked
