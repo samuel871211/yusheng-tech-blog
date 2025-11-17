@@ -55,6 +55,7 @@ const sidebars: SidebarsConfig = {
         "http/http-caching-3",
         "http/articles-30-end",
         "http/http-2",
+        "http/a-download-and-content-disposition",
         // "http/pipelining", // http request smuggling 延伸的
         // "http/request-target-and-host" // port swigger 延伸的
         // "http/cookie", // 必讀
