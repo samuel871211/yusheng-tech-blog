@@ -220,3 +220,27 @@ Server: APISIX
 ```
 
 ## https://developers.shoplineapp.com
+
+## https://plus-shoplineapp-com.s3.ap-southeast-1.amazonaws.com
+
+- Directory Listing
+- Find `.shoplineapp.com` subdomain ?
+- Upload HTML ?
+
+## https://apps.shopline.tw
+
+### Fingerprint
+
+- Frontend: 15.4.0-canary.94
+
+### Interesting Endpoints
+
+1. 研究 x-nextjs-cache: https://apps.shopline.tw/_next/image?url=https%3A%2F%2Fd31xv78q8gnfco.cloudfront.net%2Fdeveloper-center%2Fimages%2F667d6c3ff0b05be6ff3d58fc.jpg&w=128&q=75
+
+2. 研究 https://apps.shopline.tw/zh-hant/apps?keyword=%27 => 500
+
+3. 研究 `vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Accept-Encoding`
+
+4. https://apps.shopline.tw/zh-hant/apps?keyword=%27%20OR%20%271%27%20=%20%271 => 200 => client side error (?)
+
+## https://marketing.shopline.tw/anti-fraud
