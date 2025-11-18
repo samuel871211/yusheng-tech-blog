@@ -89,6 +89,8 @@ btoa(`{"iss":"portswigger","exp":1761480707,"sub":"administrator"}`);
 
 然後拼起來，塞回 cookie，就可以成功通關
 
+P.S. 也可以嘗試 `"alg": "None"`
+
 ## Brute-forcing secret keys using hashcat
 
 https://portswigger.net/web-security/jwt#brute-forcing-secret-keys-using-hashcat

