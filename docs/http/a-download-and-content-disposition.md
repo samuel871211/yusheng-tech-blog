@@ -34,7 +34,7 @@ download only works for same-origin URLs, or the blob: and data: schemes.
 
 ## cross-origin + no CD + `<a download>`
 
-這是我同事遇到的情況 => 用 `<a download>` 下載一張 cross-origin 的圖片
+這是我同事遇到的情況 => 用 `<a download>` 下載一張 cross-origin 的圖片；沒有設定 `Content-Disposition` 的情況，預設值是 `inline`
 
 寫個 NodeJS http 的 PoC
 
@@ -51,7 +51,7 @@ httpServer.on("request", function requestListener(req, res) {
 });
 ```
 
-實測後，確實沒有下載，而是直接原頁導轉
+Chrome V142 實測後，確實沒有下載，而是直接原頁導轉
 ![a-download-cross-origin-no-cd](../../static/img/a-download-cross-origin-no-cd.jpg)
 
 ## same-origin + no CD + `<a download>`
@@ -224,16 +224,175 @@ if (req.url === "/test") {
 實測後，Chrome 直接把 `Content-Length` 跟對應的 Response Body 都拔掉了
 ![a-download-cross-origin-cd-attachment-404](../../static/img/a-download-cross-origin-cd-attachment-404.jpg)
 
-##
-
 ## filename charset
 
-<!-- todo-yus -->
-<!-- https://datatracker.ietf.org/doc/html/rfc5987 -->
-<!-- https://datatracker.ietf.org/doc/html/rfc6266 -->
+### 範例
+
+```
+Content-Disposition: attachment; filename=filename.jpg
+Content-Disposition: attachment; filename="file name.jpg"
+Content-Disposition: attachment; filename*=UTF-8''file%20name.jpg
+```
+
+### 概念
+
+- filename 預設的 charset 是 [ISO-8859-1](https://www.w3schools.com/CHARSETS/ref_html_8859.asp)，也就是 ASCII 定義的 0 ~ 127，再擴展到 128 ~ 255 對應的歐洲字元
+- 若 filename 有包含特殊字元，則需要用雙引號包起來
+- 若 filename 有包含 [ISO-8859-1](https://www.w3schools.com/CHARSETS/ref_html_8859.asp) 以外的字元，則可以用 `filename*=UTF-8''URL-Encoded-Value` 的格式
+
+### 實務建議
+
+根據 [RFC6266 section-5](https://datatracker.ietf.org/doc/html/rfc6266#section-5) 的範例，建議兩者同時設定，確保向後兼容性
+
+```
+Content-Disposition: attachment; filename="EURO rates"; filename*=utf-8''%e2%82%ac%20rates
+```
+
+而 [RFC6266](https://datatracker.ietf.org/doc/html/rfc6266#section-4.3) 的原文是這樣說的
+
+```
+when both "filename" and "filename*" are present in a single header field value, recipients SHOULD pick "filename*" and ignore "filename"
+```
+
+### 實測環節 - edge case 1: `filename=中文.jpg`
+
+PoC
+
+```ts
+res.setHeader("Content-Type", "image/jpeg");
+res.setHeader("Content-Disposition", "attachment; filename=中文.jpg");
+res.end(image);
+return;
+```
+
+瀏覽器打開 http://localhost:5001/ ，點選 download 後，會顯示 "ERR_CONNECTION_REFUSED"，查看 NodeJS log
+
+```
+TypeError: Invalid character in header content ["Content-Disposition"]
+    at ServerResponse.setHeader (node:_http_outgoing:702:3)
+    at Server.requestListener (/PATH/TO/YOUR/index.ts:49:9)
+    at Server.emit (node:events:518:28)
+    at Server.emit (node:domain:489:12)
+    at parserOnIncoming (node:_http_server:1153:12)
+    at HTTPParser.parserOnHeadersComplete (node:_http_common:117:17) {
+  code: 'ERR_INVALID_CHAR'
+}
+```
+
+看來 NodeJS http 模組有遵守某個 RFC 規範 (?)有時候想要測試 malformed HTTP Request/Response，用各個程式語言封裝好的 http 模組，都會被限制，這時候就得用底層一點的模組來控制；以 NodeJS 為例，可以使用 [net.Socket](https://nodejs.org/api/net.html#class-netsocket) 來控制 raw HTTP Response，如果還不熟悉的夥伴們，可以參考我去年寫過的
+
+- [深入解說 HTTP message](./anatomy-of-an-http-message.md)
+- [Transfer-Encoding - 使用 Socket.write 自行處理資料格式](./transfer-encoding.md#使用-socketwrite-自行處理資料格式)
+
+PoC
+
+```ts
+res.socket?.write(`HTTP/1.1 200 Ok\r\n`);
+res.socket?.write(`Content-Length: ${Buffer.byteLength(image)}\r\n`);
+res.socket?.write(`Content-Disposition: attachment; filename=中文.jpg\r\n`);
+res.socket?.write(`Content-Type: image/jpeg\r\n\r\n`);
+res.socket?.end(image);
+```
+
+實測後，檔名在作業系統有正確呈現
+![filename-contains-utf8-2](../../static/img/filename-contains-utf8-2.jpg)
+
+但 F12 > Network 呈現的檔名是錯的(?)
+![filename-contains-utf8-1](../../static/img/filename-contains-utf8-1.jpg)
+
+嘗試用 `curl -v "http://localhost:5000/test" --output test.jpg`，確保上面的 PoC 是正確的
+
+```
+* Request completely sent off
+< HTTP/1.1 200 Ok
+< Content-Length: 1374458
+< Content-Disposition: attachment; filename=中文.jpg
+< Content-Type: image/jpeg
+```
+
+`wc -c test.jpg` 確認 Content-Length 符合
+
+```
+1374458 test.jpg
+```
+
+至於 `ä¸­æ–‡.jpg` 是什麼呢？這其實是編碼轉換的問題，瀏覽器看到 `filename=`，預設用 ISO-8859-1 的編碼來呈現，轉換過程為：
+| UTF-8 | Hex | ISO-8859-1 |
+| ----- | --- | ---------- |
+| 中文 | e4 b8 ad e6 96 87 | ä¸­æ–‡.jpg |
+
+嘗試用最小 PoC 來驗證
+
+```ts
+if (req.url === "/ISO-8859-1") {
+  const buffer = Buffer.from("中文", "utf8");
+  res.setHeader("Content-Type", "text/html; charset=iso-8859-1");
+  res.setHeader("Content-Length", buffer.byteLength);
+  res.flushHeaders();
+  res.socket?.end(buffer);
+  return;
+}
+```
+
+瀏覽器訪問 http://localhost:5000/ISO-8859-1 ，可以正確看到 `ä¸­æ–‡` 了～
+![iso-8859-1-html-poc](../../static/img/iso-8859-1-html-poc.jpg)
+
+P.S. 現在很多網站,工具預設都用 UTF-8，所以創建一個 `Content-Type: text/html; charset=iso-8859-1` 的網頁來測試，會比較準確
+
+### 實測環節 - edge case 2: `filename=hello world.jpg`
+
+PoC
+
+```ts
+res.setHeader("Content-Type", "image/jpeg");
+res.setHeader("Content-Disposition", "attachment; filename=hello world.jpg");
+res.end(image);
+return;
+```
+
+實測後，檔名有正確呈現在 F12 > Network 跟作業系統
+![filename-contains-space-1](../../static/img/filename-contains-space-1.jpg)
+![filename-contains-space-2](../../static/img/filename-contains-space-2.jpg)
+
+### 實測環節 - edge case 3: `filename=hello%0D%0Aworld.jpg`
+
+P.S. `%0D%0A` 是 CRLF 的 URLEncode 版本
+
+PoC
+
+```ts
+res.setHeader("Content-Type", "image/jpeg");
+res.setHeader(
+  "Content-Disposition",
+  "attachment; filename=hello%0D%0Aworld.jpg",
+);
+res.end(image);
+return;
+```
+
+實測後，檔名有正確呈現在 F12 > Network，但下載到作業系統後，`%0D%0A` 被轉換成 `__`
+![filename-contains-url-encoded-crlf-1](../../static/img/filename-contains-url-encoded-crlf-1.jpg)
+![filename-contains-url-encoded-crlf-2](../../static/img/filename-contains-url-encoded-crlf-2.jpg)
+
+根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Disposition#as_a_response_header_for_the_main_body)的描述
+
+```
+Browsers may apply transformations to conform to the file system requirements, such as converting path separators (/ and \) to underscores (_).
+```
+
+瀏覽器這樣做，除了正規化檔名，讓各個作業系統的 file system 可以正確呈現，還可以避免 [Path Traversal](../port-swigger/path-traversal.md)
+
+## 小結
+
+這個章節，我們學到了
+
+- `<a download>` 跟 `Content-Disposition` 的交互情境
+- filename 的 charset
+- 如何正確在瀏覽器呈現 ISO-8859-1 的文字
 
 ## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a#download
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Disposition
 - https://datatracker.ietf.org/doc/html/rfc5987
 - https://datatracker.ietf.org/doc/html/rfc6266
