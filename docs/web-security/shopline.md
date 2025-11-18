@@ -90,6 +90,12 @@ Content-Length: 5
 {"name":"789"}
 ```
 
+3. 加 IP 功能 bulk_create
+
+- bulk_create => Seems like MongoDB
+- "name" length not verify => DoS ?
+- X-Forwarded-For Bypass ? But still need to get admin's cookie and csrf-token
+
 ## https://sso.shoplineapp.com
 
 <!-- ### Fingerprint -->
