@@ -25,7 +25,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "http/anatomy-of-an-http-message",
         "http/keep-alive-and-connection",
-        "http/http-1.1-HOL-blocking",
+        "http/browser-max-tcp-connection-6-per-host",
         "http/origin-and-referer",
         "http/referrer-policy",
         "http/content-type-and-mime-type",

@@ -439,6 +439,8 @@ const clientHttp2Session = http2.connect("Origin");
 clientHttp2Session.request({ ":path": "/path/to/resource" });
 ```
 
+<!-- todo-yus -->
+
 ### HTTP/2 solves HTTP/1.1 HOL Blocking
 
 所謂的 `http2.connect('Origin')`，其實就是建立一個 TCP Connection，並且在 Application Layer 建立一個 HTTP/2 的 Persistent Connection，後續所有 HTTP Request, Response 都在這個 TCP Connection 傳輸。
@@ -593,6 +595,8 @@ A "stream" is an independent, bidirectional sequence of frames exchanged between
 ```
 
 ## NodeJS maxConcurrentStreams
+
+<!-- todo-yus -->
 
 承接 [HTTP/2 solves HTTP/1.1 HOL Blocking](#http2-solves-http11-hol-blocking)，我很好奇，一個 HTTP/2 的連線，到底可以同時發多少請求？
 
