@@ -5,7 +5,86 @@ description: HTTP/1.1 pipelining and HOL Blocking
 
 ## 前言
 
-打完 [portSwigger 的 HTTP Request Smuggling](https://portswigger.net/web-security/request-smuggling) 之後，我開始在真實世界研究這種技巧，結果卻不小心踩到 HTTP/1.1 pipelining 的坑，於是這篇文章就誕生了
+打完 [portSwigger 的 HTTP Request Smuggling](https://portswigger.net/web-security/request-smuggling) 之後，我開始在真實世界研究這種技巧，結果卻不小心踩到 HTTP/1.1 pipelining 的坑，想說趁此機會來研究這個機制，於是這篇文章就誕生了
+
+## Why pipelining ?
+
+[去年的文章](./browser-max-tcp-connection-6-per-host.md)有提到，瀏覽器針對每個 Host 有限制 MaxTCPConnection = 6
+
+```mermaid
+sequenceDiagram
+  participant Browser
+  participant HTTP/1.1 Server
+
+  Browser ->> HTTP/1.1 Server: GET /style.css
+  Browser ->> HTTP/1.1 Server: GET /script.js
+  Browser ->> HTTP/1.1 Server: GET /image.jpg
+  Browser ->> HTTP/1.1 Server: GET /video.mp4
+  Browser ->> HTTP/1.1 Server: GET /translate.json
+  Browser ->> HTTP/1.1 Server: GET /user/me
+```
+
+雖然有 [Keep-Alive](./keep-alive-and-connection.md) 的機制可以讓 TCP Connection 複用，但每條 TCP Connection 同時只能發送一個 HTTP Request，現代前端網站架構複雜，框架 bundle 完 => 動輒十幾個 js, css, img 要載入，從第 7 個 HTTP Request 開始就要等待，導致效能不佳
+
+## pipelining
+
+HTTP/1.1 曾提出了 pipelining 來解決上述問題，根據 [RFC 9112 section-9.3.2](https://datatracker.ietf.org/doc/html/rfc9112#section-9.3.2) 的描述
+
+```
+A client that supports persistent connections MAY "pipeline" its requests (i.e., send multiple requests without waiting for each response).
+```
+
+簡單來說，就是在一個 TCP Connection 發送
+:::info
+去年寫的 [深入解說 HTTP message](./anatomy-of-an-http-message.md) 有提到 HTTP/1.1 的傳輸格式
+:::
+
+```
+GET /style.css HTTP/1.1
+Host: localhost
+
+GET /script.js HTTP/1.1
+Host: localhost
+
+GET /image.jpg HTTP/1.1
+Host: localhost
+
+
+```
+
+HTTP/1.1 Server 就會依序回傳
+
+```
+HTTP/1.1 200 OK
+Content-Length: ...
+Content-Type: text/css
+
+<style>css here...</style>
+```
+
+```
+HTTP/1.1 200 OK
+Content-Length: ...
+Content-Type: text/javascript
+
+console.log('hello world')
+```
+
+```
+HTTP/1.1 200 OK
+Content-Length: ...
+Content-Type: image/jpg
+
+jpg here...
+```
+
+看起來很美好，但是有個 [限制](https://datatracker.ietf.org/doc/html/rfc9112#section-9.3.2)
+
+```
+it MUST send the corresponding responses in the same order that the requests were received.
+```
+
+<!-- 所以如果有個資源在 Server 準備特別久 -->
 
 ## Safe Methods
 

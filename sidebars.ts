@@ -56,13 +56,13 @@ const sidebars: SidebarsConfig = {
         "http/articles-30-end",
         "http/http-2",
         "http/a-download-and-content-disposition",
+        "http/link",
+        "http/http-1.1-pipelining-and-hol-blocking",
         // "http/expect-and-100-continue",
-        // "http/pipelining", // http request smuggling 延伸的
         // "http/request-target-and-host" // port swigger 延伸的
         // "http/cookie", // 必讀
         // "http/http-message-integrity", // 必讀
         // "http/timing-allow-origin", // 必讀
-        // "http/link", // 概念不難，但又可以順便把 <link> 精熟
         // "http/clear-site-data", // 感覺可以水一篇
         // "http/content-security-policy-1", // 必讀，想放後面
         // "http/content-security-policy-2", // 必讀，想放後面
