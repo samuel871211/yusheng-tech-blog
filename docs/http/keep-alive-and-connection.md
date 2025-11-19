@@ -5,7 +5,7 @@ last_update:
   date: "2025-03-09T08:00:00+08:00"
 ---
 
-在 http 1.0 的世界，預設每個請求都會建立一個 TCP Connection，到了 http 1.1，預設行為變成會保留 TCP Connection，這樣下次再請求同一個 origin 時，就可以重複使用該 TCP Connection，節省三方交握的成本，但具體來說是怎麼實現的呢？
+在 HTTP/1.0 的世界，預設每個請求都會建立一個 TCP Connection，而到了 HTTP/1.1，預設行為變成會保留 TCP Connection，這樣下次再請求同一個 origin 時，就可以重複使用該 TCP Connection，節省三方交握的成本，但具體來說是怎麼實現的呢？
 
 那就要來到我們今天的主題：Keep-Alive & Connection
 
@@ -153,7 +153,7 @@ httpServer.keepAliveTimeout = 1000;
 Keep-Alive: timeout=5, max=100
 ```
 
-其中 timeout 前面已經講過，而 max 代表的是這個 TCP Connection 在關閉之前，可以接受多少個請求，不過在 [HTTP 1.1 的規範(RFC7230)](https://datatracker.ietf.org/doc/html/rfc7230#appendix-A.1.2)，似乎沒有提到 max 這個參數
+其中 timeout 前面已經講過，而 max 代表的是這個 TCP Connection 在關閉之前，可以接受多少個請求，不過在 [HTTP/1.1 的規範(RFC7230)](https://datatracker.ietf.org/doc/html/rfc7230#appendix-A.1.2)，似乎沒有提到 max 這個參數
 
 ## How to control maxRequestsPerSocket
 

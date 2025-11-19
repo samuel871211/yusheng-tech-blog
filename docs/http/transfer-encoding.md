@@ -7,7 +7,7 @@ last_update:
 
 ## Transfer-Encoding: chunked
 
-HTTP 1.1 的世界，新增了 `Transfer-Encoding: chunked` 的概念，允許 request.body 或是 response.body 分塊傳輸
+HTTP/1.1 的世界，新增了 `Transfer-Encoding: chunked` 的概念，允許 request.body 或是 response.body 分塊傳輸
 
 格式如下：
 

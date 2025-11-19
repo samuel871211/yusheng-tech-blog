@@ -449,7 +449,7 @@ clientHttp2Session.request({ ":path": "/path/to/resource" });
 Clients SHOULD NOT open more than one HTTP/2 connection to a given host and port pair
 ```
 
-如果理解 [HTTP 1.1 HOL blocking](./http-1.1-HOL-blocking.md) 的話，可能就會想問，只建議開一個連線，那還不如用 HTTP/1.1 開六條 TCP Connection，速度肯定更快！
+如果理解 [BrowserMaxTCPConnectionPerHost = 6](./browser-max-tcp-connection-6-per-host.md) 的話，可能就會想問，只建議開一個連線，那還不如用 HTTP/1.1 開六條 TCP Connection，速度肯定更快！
 
 我們實測看看，先在 Server 加上
 

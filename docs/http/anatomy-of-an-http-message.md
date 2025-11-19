@@ -7,7 +7,7 @@ last_update:
 
 ## 關於本系列
 
-這是一個 30 篇 HTTP 文章的挑戰，記錄我身為前端工程師，透過 NodeJS HTTP 模組的實際 Coding，學習 HTTP 1.1 的過程。文章內出現的程式碼，都會放在我的另一個 Repo [yusheng-tech-blog-nodejs](https://github.com/samuel871211/yusheng-tech-blog-nodejs)，歡迎大家 fork 一份自己來玩玩呦！
+這是一個 30 篇 HTTP 文章的挑戰，記錄我身為前端工程師，透過 NodeJS HTTP 模組的實際 Coding，學習 HTTP/1.1 的過程。文章內出現的程式碼，都會放在我的另一個 Repo [yusheng-tech-blog-nodejs](https://github.com/samuel871211/yusheng-tech-blog-nodejs)，歡迎大家 fork 一份自己來玩玩呦！
 
 ## raw HTTP 介紹
 
@@ -147,7 +147,7 @@ function checkInvalidHeaderChar(val) {
 }
 ```
 
-上面的 regex 其實是有定義在 HTTP 1.1 的規範，有興趣的朋友可以參考
+上面的 regex 其實是有定義在 HTTP/1.1 的規範，有興趣的朋友可以參考
 
 - https://www.rfc-editor.org/rfc/rfc7230#section-3.2.6
 

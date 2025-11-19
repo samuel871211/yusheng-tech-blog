@@ -1,11 +1,19 @@
 ---
-title: HTTP 1.1 HOL blocking
-description: HTTP 1.1 HOL blocking
+title: HTTP/1.1 為何只能 6 個連線? HTTP/2 如何突破限制?
+description: HTTP/1.1 為何只能 6 個連線? HTTP/2 如何突破限制?
+# last_update:
+#   date: "2025-03-10T08:00:00+08:00"
 last_update:
-  date: "2025-03-10T08:00:00+08:00"
+  date: "2025-11-19T08:00:00+08:00"
 ---
 
-今天要來讓大家實際體驗 HTTP 1.1 HOL (head-of-line) blocking，首先，用 NodeJS http module 建立一個簡易的 http server，為了方便觀察，我們將 server 設定成 2 秒後才會回覆
+## [更新 2025/11/19]
+
+本文原標題為「HTTP/1.1 HOL blocking」,經重新檢視後發現概念有誤。
+
+## 實測環節
+
+首先，用 NodeJS http module 建立一個簡易的 HTTP/1.1 server，為了方便觀察，我們將 server 設定成 2 秒後才會回覆
 
 ```js
 import { createServer } from "http";
@@ -72,7 +80,7 @@ This means that browsers are limited in the number of resources that they can do
 
 前面 6 個請求會建立 6 個 parallel TCP Connection
 
-第 7 個請求會先停滯（Stalled），等到前面 6 個 TCP Connection 的其中一個變成閒置（Idle），第 7 個請求才會發出去，而因為 HTTP 1.1 預設 Keep-Alive 的機制，所以第 7 個請求可以重複使用前面已經建立的 TCP Connection
+第 7 個請求會先停滯（Stalled），等到前面 6 個 TCP Connection 的其中一個變成閒置（Idle），第 7 個請求才會發出去，而因為 HTTP/1.1 預設 Keep-Alive 的機制，所以第 7 個請求可以重複使用前面已經建立的 TCP Connection
 
 那如果我們再進一步嘗試，如果一次發 12 個請求呢？
 
@@ -127,7 +135,7 @@ What are the maximum number of HTTP connections I can make with a Chrome device 
 Maximum per Host: 6 connections
 ```
 
-我們試著在 localhost:5000 的 F12 > Console，輸入以下程式碼，請求來自不同 host 的資料，這邊使用的是 httpstat.us 提供的 API，可以模擬 HTTP 1.1 的請求 delay N 毫秒，用來測試非常方便
+我們試著在 localhost:5000 的 F12 > Console，輸入以下程式碼，請求來自不同 host 的資料，這邊使用的是 httpstat.us 提供的 API，可以模擬 HTTP/1.1 的請求 delay N 毫秒，用來測試非常方便
 
 ```js
 // 各 6 個請求，總共 12 個
@@ -153,7 +161,7 @@ const responses = await Promise.all([
 
 ![browserMaxConnection6+6](../../static/img/browserMaxConnection6+6.jpg)
 
-## HTTP 2 的 multiplexing 機制，解決了 HOL blocking
+## HTTP/2 的 multiplexing: 不再受限於 6 個連線
 
 我們來看看 MDN 原文的解說
 
@@ -163,7 +171,7 @@ https://developer.mozilla.org/en-US/docs/Web/HTTP/Messages#http2_messages
 HTTP/2 allows you to use a single TCP connection for multiple requests and responses at the same time. This is done by wrapping messages into a binary frame and sending the requests and responses in a numbered stream on a connection. Data and header frames are handled separately, which allows headers to be compressed via an algorithm called HPACK. Using the same TCP connection to handle multiple requests at the same time is called multiplexing.
 ```
 
-HTTP 2 可以使用一個 TCP Connection 來同時傳輸多個請求，細節怎麼實現的，本篇暫時不討論，我們直接來嘗試 HTTP2 的威力！使用的是 postman 的 HTTP 2 測試 API，一樣可以傳入 delay N 秒，非常方便！
+HTTP/2 可以使用一個 TCP Connection 來同時傳輸多個請求，細節怎麼實現的，本篇暫時不討論，我們直接來嘗試 HTTP/2 的威力！使用的是 postman 的 HTTP/2 測試 API，一樣可以傳入 delay N 秒，非常方便！
 
 ```js
 // 總共 7 個
@@ -182,8 +190,11 @@ const responses = await Promise.all([
 
 ![HTTP2](../../static/img/HTTP2.jpg)
 
-今天我們學到了 HTTP 1.1 HOL Blocking，並且也學到了 HTTP 2 的 multiplexing 機制，希望能讓各位夥伴對 HTTP 更熟悉一點
+## 小結
+
+今天我們學到了瀏覽器 maxTCPConnectionPerHost = 6，並且也學到了 HTTP/2 的 multiplexing 機制，希望能讓各位夥伴對 HTTP 更熟悉一點
 
 ## 參考資料
 
-- https://developer.mozilla.org/en-US/docs/Glossary/Head_of_line_blocking
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Messages#http2_messages
+- https://support.google.com/chrome/a/answer/3339263?hl=en
