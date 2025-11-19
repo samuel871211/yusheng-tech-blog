@@ -31,6 +31,7 @@ description: Link
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Link
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/103
+- https://nodejs.org/api/http.html#responsewriteearlyhintshints-callback
 - https://datatracker.ietf.org/doc/html/rfc8297
 - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/preconnect
 - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/preload
