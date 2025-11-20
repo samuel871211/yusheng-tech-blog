@@ -610,7 +610,6 @@ system('ls')
     - Server-side pause-based desync
       - [Document](../port-swigger/http-request-smuggling.md#pause-based-desync-attacks)
       - [1 (EXPERT)](../port-swigger/http-request-smuggling.md#lab-server-side-pause-based-request-smuggling)
-  -
 - HTTP/2
   - [H2.CL + Web Cache Poisoning](../port-swigger/http-request-smuggling.md#lab-h2cl-request-smuggling)
   - [H2.CL + CRLF Injection](../port-swigger/http-request-smuggling.md#lab-http2-request-smuggling-via-crlf-injection)
