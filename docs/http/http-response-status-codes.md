@@ -116,6 +116,38 @@ error was encountered while trying to use an ErrorDocument to handle the request
 
 ## 501 Not Implemented
 
+根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/501) 的描述
+
+```
+501 is the appropriate response when the server does not recognize the request method and is incapable of supporting it for any resource.
+```
+
+我在一些 cloudflare 的 Server 有看過這個 Status Code
+
+Request
+
+```
+HELLO /404 HTTP/1.1
+Host: example.com
+
+
+```
+
+Response
+
+```
+HTTP/1.1 501 Not Implemented
+Date: Thu, 20 Nov 2025 11:48:17 GMT
+Content-Length: 0
+Connection: keep-alive
+CF-RAY: 9a17b7aaaed44a82-TPE
+Strict-Transport-Security: max-age=15552000; includeSubDomains
+Server: cloudflare
+alt-svc: h3=":443"; ma=86400
+
+
+```
+
 ## 502 Bad Gateway
 
 ## 503 Service Unavailable
