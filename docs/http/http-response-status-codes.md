@@ -27,6 +27,43 @@ description: HTTP response status codes
 
 ## 411 Length Required
 
+有些 Server 會希望 POST 或是 PUT Request 必須要帶上 Body，若沒帶的話，Server 就可以回傳 411 Length Required
+
+其中一個範例就是微軟生態系（HTTPAPI/2.0, IIS, ASP.NET）
+
+Request
+
+```
+POST / HTTP/1.1
+Host: example.com
+
+
+```
+
+Response
+
+```
+HTTP/1.1 411 Length Required
+Content-Type: text/html; charset=us-ascii
+Server: Microsoft-HTTPAPI/2.0
+Date: Thu, 20 Nov 2025 08:21:06 GMT
+Connection: close
+Content-Length: 344
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN""http://www.w3.org/TR/html4/strict.dtd">
+<HTML>
+    <HEAD>
+        <TITLE>Length Required</TITLE>
+        <META HTTP-EQUIV="Content-Type" Content="text/html; charset=us-ascii">
+    </HEAD>
+    <BODY>
+        <h2>Length Required</h2>
+        <hr>
+        <p>HTTP Error 411. The request must be chunked or have a content length.</p>
+    </BODY>
+</HTML>
+```
+
 ## 414 URI Too Long
 
 ## 417 Expectation Failed
