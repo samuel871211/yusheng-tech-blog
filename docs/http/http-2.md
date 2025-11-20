@@ -689,6 +689,10 @@ A request or response that includes message content can include a content-length
 
 然而有些 HTTP/2 的實作沒有遵守 RFC 的 "MUST" 規範，導致了 [H2.CL request smuggling](../port-swigger/http-request-smuggling.md#lab-h2cl-request-smuggling)
 
+## StreamID
+
+<!-- https://datatracker.ietf.org/doc/html/rfc9113#section-5.1.1 -->
+
 ## 參考資料
 
 - https://nodejs.org/api/http2.html
