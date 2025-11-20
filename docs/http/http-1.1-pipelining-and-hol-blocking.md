@@ -24,7 +24,7 @@ sequenceDiagram
   Browser ->> HTTP/1.1 Server: GET /user/me
 ```
 
-雖然有 [Keep-Alive](./keep-alive-and-connection.md) 的機制可以讓 TCP Connection 複用，但每條 TCP Connection 同時只能發送一個 HTTP Request，現代前端網站架構複雜，框架 bundle 完 => 動輒十幾個 js, css, img 要載入，從第 7 個 HTTP Request 開始就要等待，導致效能不佳
+雖然有 [Keep-Alive](./keep-alive-and-connection.md) 的機制可以讓 TCP Connection 複用，但每條 TCP Connection 同時只能發送一個 HTTP Request，現代前端網站架構複雜，框架 bundle 完，動輒十幾個 js, css, img 要載入，從第 7 個 HTTP Request 開始就要等待，導致效能不佳
 
 ## pipelining
 
@@ -35,9 +35,6 @@ A client that supports persistent connections MAY "pipeline" its requests (i.e.,
 ```
 
 簡單來說，就是在一個 TCP Connection 發送
-:::info
-去年寫的 [深入解說 HTTP message](./anatomy-of-an-http-message.md) 有提到 HTTP/1.1 的傳輸格式
-:::
 
 ```
 GET /style.css HTTP/1.1
@@ -51,6 +48,10 @@ Host: localhost
 
 
 ```
+
+:::info
+去年寫的 [深入解說 HTTP message](./anatomy-of-an-http-message.md) 有提到 HTTP/1.1 的傳輸格式
+:::
 
 HTTP/1.1 Server 就會依序回傳
 
@@ -78,13 +79,44 @@ Content-Type: image/jpg
 jpg here...
 ```
 
-看起來很美好，但是有個 [限制](https://datatracker.ietf.org/doc/html/rfc9112#section-9.3.2)
+看起來很美好，但是有一些限制
+
+### pipelining 限制 1: HTTP/1.1 HOL Blocking
+
+根據 [RFC 9112 section-9.3.2](https://datatracker.ietf.org/doc/html/rfc9112#section-9.3.2) 的描述
 
 ```
 it MUST send the corresponding responses in the same order that the requests were received.
 ```
 
-<!-- 所以如果有個資源在 Server 準備特別久 -->
+假設某個 HTTP Request 花了比較久
+
+<svg width="500" height="150" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="10" width="150" height="30" fill="#4CAF50" />
+  <text x="10" y="30">Request A: 1.5s</text>
+  
+  <rect x="0" y="50" width="480" height="30" fill="#2196F3" />
+  <text x="10" y="70">Request B: 4.8s</text>
+  
+  <rect x="0" y="90" width="220" height="30" fill="#FF9800" />
+  <text x="10" y="110">Request C: 2.2s</text>
+</svg>
+
+最終
+<span style={{"color": "#FF9800"}}>Request C</span>
+還是得等到
+<span style={{"color": "#2196F3"}}>Request B</span>
+完成，才能回傳
+
+這個現象，有個專有名詞叫做 Head-of-line blocking (HOL Blocking)，來看看 [MDN 文件](https://developer.mozilla.org/en-US/docs/Glossary/Head_of_line_blocking) 的解說:
+
+```
+Unfortunately the design of HTTP/1.1 means that responses must be returned in the same order as the requests were received, so HOL blocking can still occur if a request takes a long time to complete.
+```
+
+而 HTTP/2 解決了 HTTP/1.1 的 HOL Blocking，解法也很簡單，就是在每個 Request/Response 都加上流水號 ID，細節我會在未來的 [HTTP/2](./http-2.md) 談到
+
+### pipelining 限制 2: 只能是 Idempotent Methods
 
 ## Safe Methods
 
