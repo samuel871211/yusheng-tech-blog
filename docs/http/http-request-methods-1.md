@@ -1,8 +1,10 @@
 ---
 title: HTTP Request Methods (上篇)
 description: HTTP Request Methods (上篇)
+# last_update:
+#   date: "2025-07-01T08:00:00+08:00"
 last_update:
-  date: "2025-07-01T08:00:00+08:00"
+  date: "2025-11-21T08:00:00+08:00"
 ---
 
 ## 前言
@@ -16,6 +18,60 @@ last_update:
 - DELETE: 刪除資料
 
 但，今天我想要深入理解，平常不會去使用那些 HTTP Request Methods，一起來看看吧！
+
+## Request Method 到底要大寫還是小寫 ?
+
+在寫前端的時候，總是會看到各種大小寫混雜的寫法
+
+```ts
+fetch("https://example.com", { method: "get" });
+fetch("https://example.com", { method: "GET" });
+```
+
+我以前以為 Request Method 是 case-insensitive，直到我發現 nginx 會 reject 小寫的 Request Method
+
+```
+get / HTTP/2
+Host: example.com
+
+
+```
+
+Response
+
+```
+HTTP/2 400 Bad Request
+Date: Fri, 21 Nov 2025 01:02:23 GMT
+Content-Type: text/html
+Content-Length: 150
+
+<html>
+  <head>
+    <title>400 Bad Request</title>
+  </head>
+  <body>
+    <center>
+      <h1>400 Bad Request</h1>
+    </center>
+    <hr>
+    <center>nginx</center>
+  </body>
+</html>
+```
+
+於是回頭查看 [RFC 9110 section-9.1](https://datatracker.ietf.org/doc/html/rfc9110#section-9.1) 的描述
+
+```
+The method token is case-sensitive because it might be used as a gateway to object-based systems with case-sensitive method names. By convention, standardized methods are defined in all-uppercase US-ASCII letters.
+```
+
+但是 Header Field Names 就是 case-insensitive，所以 `content-type` 跟 `Content-Type` 是同樣的，我們來看看 [RFC 9110 section-5.1](https://datatracker.ietf.org/doc/html/rfc9110#section-5.1) 的描述
+
+```
+Field names are case-insensitive and ought to be registered within the "Hypertext Transfer Protocol (HTTP) Field Name Registry"
+```
+
+其中 [Hypertext Transfer Protocol (HTTP) Field Name Registry](https://www.iana.org/assignments/http-fields/http-fields.xhtml) 定義的是標準化的 Header Field Names，不包含 `X-Powered-By` 這種 Custom Header Field Names
 
 ## HEAD
 
