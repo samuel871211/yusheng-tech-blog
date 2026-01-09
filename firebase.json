@@ -1,0 +1,22 @@
+{
+  "hosting": {
+    "public": "build",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "https://yusheng.dev/",
+        "type": 301
+      },
+      {
+        "source": "/:path*",
+        "destination": "https://yusheng.dev/:path",
+        "type": 301
+      }
+    ]
+  }
+}

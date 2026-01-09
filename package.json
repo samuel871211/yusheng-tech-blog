@@ -1,0 +1,71 @@
+{
+  "name": "yusheng-tech-blog",
+  "version": "0.0.0",
+  "private": true,
+  "lint-staged": {
+    "*.{ts,md}": [
+      "prettier --write"
+    ]
+  },
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start -p 3002",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve -p 3002",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "typecheck": "tsc",
+    "prepare": "husky"
+  },
+  "scriptComments": {
+    "docusaurus": "See https://docusaurus.io/docs/cli",
+    "start": "Run the development server. See https://docusaurus.io/docs/installation#running-the-development-server",
+    "build": "Build the static files of your website for production. See https://docusaurus.io/docs/deployment",
+    "swizzle": "https://docusaurus.io/docs/swizzling",
+    "deploy": "Deploy your site to GitHub Pages. See https://docusaurus.io/docs/deployment#deploy",
+    "clear": "Clear a Docusaurus site's generated assets, caches and build artifacts. See https://docusaurus.io/docs/migration#run-the-clear-command",
+    "serve": "Test your build locally before deploying it for production. See https://docusaurus.io/docs/deployment#testing-build-locally",
+    "write-translations": "https://docusaurus.io/docs/cli#docusaurus-write-translations-sitedir",
+    "write-heading-ids": "https://docusaurus.io/docs/cli#docusaurus-write-heading-ids-sitedir",
+    "typecheck": "typecheck"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^3.9.2",
+    "@docusaurus/preset-classic": "^3.9.2",
+    "@docusaurus/theme-mermaid": "^3.9.2",
+    "@mdx-js/react": "^3.0.0",
+    "clsx": "^2.0.0",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.9.2",
+    "@docusaurus/tsconfig": "^3.9.2",
+    "@docusaurus/types": "^3.9.2",
+    "baseline-browser-mapping": "^2.9.11",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "~5.6.2"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0"
+  },
+  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a"
+}

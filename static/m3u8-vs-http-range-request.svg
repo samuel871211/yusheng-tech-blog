@@ -1,0 +1,118 @@
+<svg viewBox="0 0 1000 350" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font: bold 24px sans-serif; fill: #333; }
+      .subtitle { font: bold 18px sans-serif; fill: #555; }
+      .label { font: 14px sans-serif; fill: #666; }
+      .segment { stroke: #333; stroke-width: 2; }
+      .quality-480 { fill: #4CAF50; }
+      .quality-720 { fill: #2196F3; }
+      .quality-1080 { fill: #FF9800; }
+      .arrow { fill: none; stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+      .switch-label { font: 12px sans-serif; fill: #d32f2f; font-weight: bold; }
+      .legend-text { font: 13px sans-serif; fill: #333; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#d32f2f" />
+    </marker>
+  </defs>
+  
+  <!-- Legend -->
+  <rect x="700" y="15" width="30" height="20" class="quality-480" />
+  <text x="735" y="30" class="legend-text">480P</text>
+  
+  <rect x="780" y="15" width="30" height="20" class="quality-720" />
+  <text x="815" y="30" class="legend-text">720P</text>
+  
+  <rect x="860" y="15" width="30" height="20" class="quality-1080" />
+  <text x="895" y="30" class="legend-text">1080P</text>
+  
+  <!-- HLS (M3U8) Section -->
+  <text x="50" y="70" class="subtitle">HLS (M3U8) - 支援動態切換</text>
+  
+  <!-- Timeline -->
+  <line x1="150" y1="110" x2="900" y2="110" stroke="#ccc" stroke-width="1" />
+  <text x="50" y="115" class="label">時間軸</text>
+  
+  <!-- HLS Segments -->
+  <rect x="150" y="90" width="80" height="40" class="segment quality-480" rx="4" />
+  <text x="190" y="115" text-anchor="middle" class="label" fill="white">1.ts</text>
+  
+  <rect x="240" y="90" width="80" height="40" class="segment quality-480" rx="4" />
+  <text x="280" y="115" text-anchor="middle" class="label" fill="white">2.ts</text>
+  
+  <rect x="330" y="90" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="370" y="115" text-anchor="middle" class="label" fill="white">3.ts</text>
+  
+  <rect x="420" y="90" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="460" y="115" text-anchor="middle" class="label" fill="white">4.ts</text>
+  
+  <rect x="510" y="90" width="80" height="40" class="segment quality-1080" rx="4" />
+  <text x="550" y="115" text-anchor="middle" class="label" fill="white">5.ts</text>
+  
+  <rect x="600" y="90" width="80" height="40" class="segment quality-1080" rx="4" />
+  <text x="640" y="115" text-anchor="middle" class="label" fill="white">6.ts</text>
+  
+  <rect x="690" y="90" width="80" height="40" class="segment quality-480" rx="4" />
+  <text x="730" y="115" text-anchor="middle" class="label" fill="white">7.ts</text>
+  
+  <rect x="780" y="90" width="80" height="40" class="segment quality-480" rx="4" />
+  <text x="820" y="115" text-anchor="middle" class="label" fill="white">8.ts</text>
+  
+  <!-- Switch indicators for HLS -->
+  <text x="290" y="70" class="switch-label">切換到 720P</text>
+  
+  <text x="465" y="70" class="switch-label">切換到 1080P</text>
+  
+  <text x="650" y="70" class="switch-label">切換到 480P</text>
+  
+  <!-- Request info -->
+  <text x="150" y="160" class="label" fill="#666">GET /segment1_480p.ts</text>
+  <text x="330" y="160" class="label" fill="#666">GET /segment3_720p.ts</text>
+  <text x="510" y="160" class="label" fill="#666">GET /segment5_1080p.ts</text>
+  <text x="690" y="160" class="label" fill="#666">GET /segment7_480p.ts</text>
+  
+  <!-- Separator -->
+  <line x1="50" y1="200" x2="950" y2="200" stroke="#ddd" stroke-width="2" />
+  
+  <!-- HTTP Range Request Section -->
+  <text x="50" y="240" class="subtitle">HTTP Range Request (MP4)</text>
+  
+  <!-- Timeline -->
+  <line x1="150" y1="280" x2="900" y2="280" stroke="#ccc" stroke-width="1" />
+  <text x="50" y="285" class="label">時間軸</text>
+  
+  <!-- MP4 Segments (locked to one quality) -->
+  <rect x="150" y="260" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="190" y="285" text-anchor="middle" class="label" fill="white">Range 1</text>
+  
+  <rect x="240" y="260" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="280" y="285" text-anchor="middle" class="label" fill="white">Range 2</text>
+  
+  <rect x="330" y="260" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="370" y="285" text-anchor="middle" class="label" fill="white">Range 3</text>
+  
+  <rect x="420" y="260" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="460" y="285" text-anchor="middle" class="label" fill="white">Range 4</text>
+  
+  <rect x="510" y="260" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="550" y="285" text-anchor="middle" class="label" fill="white">Range 5</text>
+  
+  <rect x="600" y="260" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="640" y="285" text-anchor="middle" class="label" fill="white">Range 6</text>
+  
+  <rect x="690" y="260" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="730" y="285" text-anchor="middle" class="label" fill="white">Range 7</text>
+  
+  <rect x="780" y="260" width="80" height="40" class="segment quality-720" rx="4" />
+  <text x="820" y="285" text-anchor="middle" class="label" fill="white">Range 8</text>
+  
+  <!-- Locked indicator -->
+  <text x="400" y="240" class="switch-label" font-size="14">❌ 鎖定在 video_720p.mp4</text>
+  
+  <!-- Request info -->
+  <text x="150" y="330" class="label" fill="#666">Range: bytes=0-100</text>
+  <text x="330" y="330" class="label" fill="#666">Range: bytes=100-200</text>
+  <text x="510" y="330" class="label" fill="#666">Range: bytes=200-300</text>
+  <text x="690" y="330" class="label" fill="#666">Range: bytes=300-400</text>
+</svg>
