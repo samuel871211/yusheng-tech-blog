@@ -65,7 +65,7 @@
 
   <!-- Cyber Security (outer) -->
   <rect x="80" y="40" width="640" height="360" class="container" />
-  <text x="100" y="75" class="title">Cyber Security (資訊安全)</text>
+  <text x="100" y="75" class="title">Cyber Security (網路安全)</text>
 
   <!-- Penetration Testing (middle) -->
   <rect x="160" y="120" width="480" height="240" class="container" />
