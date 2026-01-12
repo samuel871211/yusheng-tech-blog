@@ -88,68 +88,6 @@ graph TB
 - stream 負責資料的讀寫
 - Socket 則是管理 TCP 連線的抽象層，繼承了 stream.Duplex，可讀寫資料
 
-## stream.Readable
-
-https://nodejs.org/api/stream.html#class-streamreadable
-
-### events
-
-- [readable.on('close')](https://nodejs.org/api/stream.html#event-close_1)
-- [readable.on('data')](https://nodejs.org/api/stream.html#event-data)
-- [readable.on('end')](https://nodejs.org/api/stream.html#event-end)
-- [readable.on('error')](https://nodejs.org/api/stream.html#event-error_1)
-- [readable.on('pause')](https://nodejs.org/api/stream.html#event-pause)
-- [readable.on('readable')](https://nodejs.org/api/stream.html#event-readable)
-- [readable.on('resume')](https://nodejs.org/api/stream.html#event-resume)
-
-### methods
-
-- [readable.destroy](https://nodejs.org/api/stream.html#readabledestroyerror)
-- [readable.isPaused](https://nodejs.org/api/stream.html#readableispaused)
-- [readable.pause](https://nodejs.org/api/stream.html#readablepause)
-- [readable.pipe](https://nodejs.org/api/stream.html#readablepipedestination-options)
-- [readable.unpipe](https://nodejs.org/api/stream.html#readableunpipedestination)
-- [readable.read](https://nodejs.org/api/stream.html#readablereadsize)
-- [readable.resume](https://nodejs.org/api/stream.html#readableresume)
-- [readable.setEncoding](https://nodejs.org/api/stream.html#readablesetencodingencoding)
-- [readable.unshift](https://nodejs.org/api/stream.html#readableunshiftchunk-encoding)
-- [readable.wrap](https://nodejs.org/api/stream.html#readablewrapstream)
-- [readable.compose](https://nodejs.org/api/stream.html#readablecomposestream-options)
-- [readable.iterator](https://nodejs.org/api/stream.html#readableiteratoroptions)
-
-### Experimental methods
-
-- [readable.map](https://nodejs.org/api/stream.html#readablemapfn-options)
-- [readable.filter](https://nodejs.org/api/stream.html#readablefilterfn-options)
-- [readable.forEach](https://nodejs.org/api/stream.html#readableforeachfn-options)
-- [readable.toArray](https://nodejs.org/api/stream.html#readabletoarrayoptions)
-- [readable.some](https://nodejs.org/api/stream.html#readablesomefn-options)
-- [readable.find](https://nodejs.org/api/stream.html#readablefindfn-options)
-- [readable.every](https://nodejs.org/api/stream.html#readableeveryfn-options)
-- [readable.flatMap](https://nodejs.org/api/stream.html#readableflatmapfn-options)
-- [readable.drop](https://nodejs.org/api/stream.html#readabledroplimit-options)
-- [readable.take](https://nodejs.org/api/stream.html#readabletakelimit-options)
-- [readable.reduce](https://nodejs.org/api/stream.html#readablereducefn-initial-options)
-
-### properties
-
-- [readable.closed](https://nodejs.org/api/stream.html#readableclosed)
-- [readable.destroyed](https://nodejs.org/api/stream.html#readabledestroyed)
-- [readable.readable](https://nodejs.org/api/stream.html#readablereadable)
-- [readable.readableAborted](https://nodejs.org/api/stream.html#readablereadableaborted)
-- [readable.readableDidRead](https://nodejs.org/api/stream.html#readablereadabledidread)
-- [readable.readableEncoding](https://nodejs.org/api/stream.html#readablereadableencoding)
-- [readable.readableEnded](https://nodejs.org/api/stream.html#readablereadableended)
-- [readable.errored](https://nodejs.org/api/stream.html#readableerrored)
-- [readable.readableFlowing](https://nodejs.org/api/stream.html#readablereadableflowing)
-- [readable.readableHighWaterMark](https://nodejs.org/api/stream.html#readablereadablehighwatermark)
-- [readable.readableLength](https://nodejs.org/api/stream.html#readablereadablelength)
-- [readable.readableObjectMode](https://nodejs.org/api/stream.html#readablereadableobjectmode)
-
-### internal methods
-
-- [readable.\_destroy](https://nodejs.org/api/stream.html#readable_destroyerr-callback)
-
 ## stream.Writable
 
 https://nodejs.org/api/stream.html#class-streamwritable
@@ -230,6 +168,174 @@ https://nodejs.org/api/stream.html#implementing-a-writable-stream
 - [writable.\_construct](https://nodejs.org/api/stream.html#writable_constructcallback)
 
 <!-- https://nodejs.org/api/stream.html#errors-while-writing -->
+
+## stream.Readable
+
+https://nodejs.org/api/stream.html#class-streamreadable
+
+同理 [stream.Writable](#streamwritable)，stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際讀取」的部分留給開發者實作；換句話說，若沒有實作 `_read` method 就直接呼叫 `read` 的話，會直接報錯
+
+❌錯誤作法
+
+```ts
+import { Readable } from "stream";
+
+const myStream = new Readable();
+myStream.read("123"); // Error: The _read() method is not implemented
+```
+
+✅正確做法（實作　`_read` method）
+
+```ts
+class MyReadable extends Readable {
+  _read(size: number): void {
+    this.push("123");
+    // https://nodejs.org/api/stream.html#readablepushchunk-encoding
+    // Passing chunk as null signals the end of the stream (EOF), after which no more data can be written.
+    this.push(null);
+  }
+}
+
+const myReadable = new MyReadable();
+myReadable.on("data", console.log); // <Buffer 31 32 33>
+```
+
+### 小插曲：null as EOF
+
+在 C 語言也有 "用 null 當作 EOF" 的概念，叫做 [Null-terminated byte strings](https://en.cppreference.com/w/c/string/byte.html)，用 JavaScript 當作 Code Example 的話：
+
+```ts
+const str = "hello";
+// const str = "hello\0";
+```
+
+這個概念在 exploit path traversal 的時候，可以當作一個技巧，可參考 [portSwigger - path traversal](https://portswigger.net/web-security/file-path-traversal#common-obstacles-to-exploiting-path-traversal-vulnerabilities) 的教學
+
+因為 Node.js 底層也是 C，所以我猜測 `this.push(null)` 這個設計模式也是借鑑 C
+
+### Readable 生命週期 1：誕生 - constructor 與初始化
+
+- constructor
+- \_construct
+
+### Readable 生命週期 2: 運作 - 兩種讀取模式的切換
+
+- readableFlowing = null
+- on('readable'), read, \_read, push
+- on('data')
+- pause, on('pause'), isPaused
+- resume, on('resume')
+- highWaterMark, backpressure
+
+### Readable 生命週期 3: 終結 - 結束、銷毀與錯誤處理
+
+- on('end'), readableEnded
+- autoDestroy, destroy, on('destory'), destroyed
+- on('close'), closed
+- on('error'), errored
+
+### 狀態機
+
+```mermaid
+stateDiagram-v2
+    [*] --> Paused: new Readable()
+
+    state "readableFlowing = null" as Null
+    state "readableFlowing = false" as Paused
+    state "readableFlowing = true" as Flowing
+    state "readableEnded = true" as Ended
+    state "destroyed = true" as Destroyed
+
+    Null --> Flowing: on('data')<br/>resume()<br/>pipe()
+    Null --> Paused: pause()
+
+    Flowing --> Paused: pause()
+    Paused --> Flowing: resume()
+
+    Flowing --> Ended: push(null)<br/>emit('end')
+    Paused --> Ended: 讀完資料
+
+    Ended --> Destroyed: destroy()<br/>autoDestroy
+    Flowing --> Destroyed: destroy()
+    Paused --> Destroyed: destroy()
+
+    Destroyed --> [*]
+
+    note right of Flowing
+        emit('data')
+        自動消耗 buffer
+    end note
+
+    note right of Paused
+        emit('readable')
+        需手動 read()
+    end note
+```
+
+### events
+
+- [readable.on('close')](https://nodejs.org/api/stream.html#event-close_1)
+- [readable.on('data')](https://nodejs.org/api/stream.html#event-data)
+- [readable.on('end')](https://nodejs.org/api/stream.html#event-end)
+- [readable.on('error')](https://nodejs.org/api/stream.html#event-error_1)
+- [readable.on('pause')](https://nodejs.org/api/stream.html#event-pause)
+- [readable.on('readable')](https://nodejs.org/api/stream.html#event-readable)
+- [readable.on('resume')](https://nodejs.org/api/stream.html#event-resume)
+
+### methods
+
+- [readable.destroy](https://nodejs.org/api/stream.html#readabledestroyerror)
+- [readable.isPaused](https://nodejs.org/api/stream.html#readableispaused)
+- [readable.pause](https://nodejs.org/api/stream.html#readablepause)
+- [readable.pipe](https://nodejs.org/api/stream.html#readablepipedestination-options)
+- [readable.unpipe](https://nodejs.org/api/stream.html#readableunpipedestination)
+- [readable.read](https://nodejs.org/api/stream.html#readablereadsize)
+- [readable.resume](https://nodejs.org/api/stream.html#readableresume)
+- [readable.setEncoding](https://nodejs.org/api/stream.html#readablesetencodingencoding)
+- [readable.unshift](https://nodejs.org/api/stream.html#readableunshiftchunk-encoding)
+- [readable.wrap](https://nodejs.org/api/stream.html#readablewrapstream)
+- [readable.compose](https://nodejs.org/api/stream.html#readablecomposestream-options)
+- [readable.iterator](https://nodejs.org/api/stream.html#readableiteratoroptions)
+
+### properties
+
+- [readable.closed](https://nodejs.org/api/stream.html#readableclosed)
+- [readable.destroyed](https://nodejs.org/api/stream.html#readabledestroyed)
+- [readable.readable](https://nodejs.org/api/stream.html#readablereadable)
+- [readable.readableAborted](https://nodejs.org/api/stream.html#readablereadableaborted)
+- [readable.readableDidRead](https://nodejs.org/api/stream.html#readablereadabledidread)
+- [readable.readableEncoding](https://nodejs.org/api/stream.html#readablereadableencoding)
+- [readable.readableEnded](https://nodejs.org/api/stream.html#readablereadableended)
+- [readable.errored](https://nodejs.org/api/stream.html#readableerrored)
+- [readable.readableFlowing](https://nodejs.org/api/stream.html#readablereadableflowing)
+- [readable.readableHighWaterMark](https://nodejs.org/api/stream.html#readablereadablehighwatermark)
+- [readable.readableLength](https://nodejs.org/api/stream.html#readablereadablelength)
+- [readable.readableObjectMode](https://nodejs.org/api/stream.html#readablereadableobjectmode)
+
+### internal methods
+
+- [readable.\_construct](https://nodejs.org/api/stream.html#readable_constructcallback)
+- [readable.\_destroy](https://nodejs.org/api/stream.html#readable_destroyerr-callback)
+- [readable.\_read](https://nodejs.org/api/stream.html#readable_readsize)
+- [readable.push](https://nodejs.org/api/stream.html#readablepushchunk-encoding)
+
+### Experimental methods
+
+截止 Node.js v25.2.1，目前這些 methods 都還在 [Stability: 1 - Experimental.](https://nodejs.org/api/documentation.html#stability-index)，故不會在本篇深入解說，就當作參考看看
+
+不過，這些 Array-Like methods，在 Node.js MongoDB Driver 也能看到類似的設計模式，我推測是為了提供更好的 DX 吧！
+
+- [readable.map](https://nodejs.org/api/stream.html#readablemapfn-options)
+- [readable.filter](https://nodejs.org/api/stream.html#readablefilterfn-options)
+- [readable.forEach](https://nodejs.org/api/stream.html#readableforeachfn-options)
+- [readable.toArray](https://nodejs.org/api/stream.html#readabletoarrayoptions)
+- [readable.some](https://nodejs.org/api/stream.html#readablesomefn-options)
+- [readable.find](https://nodejs.org/api/stream.html#readablefindfn-options)
+- [readable.every](https://nodejs.org/api/stream.html#readableeveryfn-options)
+- [readable.flatMap](https://nodejs.org/api/stream.html#readableflatmapfn-options)
+- [readable.drop](https://nodejs.org/api/stream.html#readabledroplimit-options)
+- [readable.take](https://nodejs.org/api/stream.html#readabletakelimit-options)
+- [readable.reduce](https://nodejs.org/api/stream.html#readablereducefn-initial-options)
 
 ## stream.Duplex
 
