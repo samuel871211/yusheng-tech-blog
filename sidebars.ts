@@ -122,7 +122,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "web-security",
+      label: "Web Security",
       items: [
         "web-security/cheat-sheet",
         "web-security/javascript-for-hackers",
@@ -143,7 +143,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "pentesterlab",
-      items: ["pentesterlab/recon"],
+      items: ["pentesterlab/CVE", "pentesterlab/recon"],
     },
     {
       type: "category",
@@ -190,7 +190,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "nodejs",
+      label: "Node.js",
       items: ["nodejs/events", "nodejs/stream", "nodejs/socket"],
     },
     {
@@ -201,7 +201,7 @@ const sidebars: SidebarsConfig = {
         "reflections/real-world-http-request-smuggling",
         "reflections/tpbet-wordpress-pdf",
       ],
-    }
+    },
   ],
 };
 

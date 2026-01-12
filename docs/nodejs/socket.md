@@ -1,6 +1,6 @@
 ---
-title: NodeJS Socket
-description: NodeJS Socket
+title: Node.js Socket
+description: Node.js Socket
 ---
 
 <!-- NodeJS HTTP 就是繼承 Socket -->

@@ -1,0 +1,102 @@
+<svg
+  width="800"
+  height="450"
+  viewBox="0 0 800 450"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-label="Cyber Security Containment Graph"
+>
+  <style>
+    .bg {
+      fill: #020617; /* 深色背景，適合部落格 */
+    }
+
+    .container {
+      fill: none;
+      stroke: #38bdf8;
+      stroke-width: 2;
+      rx: 16;
+    }
+
+    .title {
+      fill: #38bdf8;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .we-are-here {
+      
+    }
+
+    .hint {
+      fill: #fbbf24;            /* amber-400 */
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+    }
+
+    .arrow {
+      stroke: #e5e7eb;
+      stroke-width: 2;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+  </style>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="800" height="450" class="bg" />
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker
+      id="arrowhead"
+      markerWidth="10"
+      markerHeight="7"
+      refX="10"
+      refY="3.5"
+      orient="auto"
+    >
+      <polygon points="0 0, 10 3.5, 0 7" fill="#e5e7eb" />
+    </marker>
+  </defs>
+
+  <!-- Cyber Security (outer) -->
+  <rect x="80" y="40" width="640" height="360" class="container" />
+  <text x="100" y="75" class="title">Cyber Security (資訊安全)</text>
+
+  <!-- Penetration Testing (middle) -->
+  <rect x="160" y="120" width="480" height="240" class="container" />
+  <text x="180" y="155" class="title">Penetration Testing (滲透測試)</text>
+
+  <!-- Web Security (inner) -->
+  <rect x="260" y="200" width="280" height="120" class="container" />
+  <text
+    x="400"
+    y="260"
+    class="title"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >
+    Web Security
+  </text>
+
+  <!-- Arrow: we are here -->
+  <line
+    x1="400"
+    y1="320"
+    x2="400"
+    y2="420"
+    class="arrow"
+  />
+  <text
+    x="400"
+    y="440"
+    class="hint"
+    text-anchor="middle"
+  >
+    We are here
+  </text>
+</svg>
