@@ -85,7 +85,7 @@ graph TB
 
 從 HTTP 的視角來看，就會發現 Node.js 模組的底層就是 stream 跟 Socket
 
-- stream 負責資料的讀寫
+- stream 是管理資料讀寫的抽象層
 - Socket 則是管理 TCP 連線的抽象層，繼承了 stream.Duplex，可讀寫資料
 
 ## stream.Writable
@@ -94,16 +94,16 @@ https://nodejs.org/api/stream.html#class-streamwritable
 
 stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際寫入」的部分留給開發者實作；換句話說，若沒有實作 `_write` method 就直接呼叫 `write` 的話，會直接報錯
 
-❌錯誤作法
+❌ 錯誤作法（沒有實作 `_write` method 就直接呼叫 `write`）
 
 ```ts
 import { Writable } from "stream";
 
-const myStream = new Writable();
-myStream.write("123"); // Error: The _write() method is not implemented
+const myWritable = new Writable();
+myWritable.write("123"); // Error: The _write() method is not implemented
 ```
 
-✅正確做法（實作　`_write` method）
+✅ 正確做法（實作 `_write` method）
 
 ```ts
 class MyWritable extends Writable {
@@ -161,13 +161,55 @@ myWritable.write("123"); // <Buffer 31 32 33>
 
 https://nodejs.org/api/stream.html#implementing-a-writable-stream
 
+這些底線開頭的 internal methods，只有當你在實作 stream.Writable 的時候才會碰到
+
 - [writable.\_write](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback)
 - [writable.\_writev](https://nodejs.org/api/stream.html#writable_writevchunks-callback)
 - [writable.\_destroy](https://nodejs.org/api/stream.html#writable_destroyerr-callback)
 - [writable.\_final](https://nodejs.org/api/stream.html#writable_finalcallback)
 - [writable.\_construct](https://nodejs.org/api/stream.html#writable_constructcallback)
 
-<!-- https://nodejs.org/api/stream.html#errors-while-writing -->
+❌ 錯誤作法（instance 直接呼叫 internal methods）
+
+```ts
+import { Writable } from "stream";
+
+class MyWritable extends Writable {
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(chunk);
+    callback();
+  }
+}
+const myWritable = new MyWritable();
+myWritable._write("123");
+```
+
+✅ 正確做法（instance 只呼叫 public methods）
+
+```ts
+class MyWritable extends Writable {
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(chunk);
+    callback();
+  }
+}
+const myWritable = new MyWritable();
+myWritable.write("123");
+```
+
+### handle errors
+
+https://nodejs.org/api/stream.html#errors-while-writing
+
+<!-- todo-yus -->
 
 ## stream.Readable
 
@@ -175,16 +217,16 @@ https://nodejs.org/api/stream.html#class-streamreadable
 
 同理 [stream.Writable](#streamwritable)，stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際讀取」的部分留給開發者實作；換句話說，若沒有實作 `_read` method 就直接呼叫 `read` 的話，會直接報錯
 
-❌錯誤作法
+❌ 錯誤作法（沒有實作 `_read` method 就直接呼叫 `read`）
 
 ```ts
 import { Readable } from "stream";
 
-const myStream = new Readable();
-myStream.read("123"); // Error: The _read() method is not implemented
+const myReadable = new Readable();
+myReadable.read("123"); // Error: The _read() method is not implemented
 ```
 
-✅正確做法（實作　`_read` method）
+✅ 正確做法（實作　`_read` method）
 
 ```ts
 class MyReadable extends Readable {
@@ -197,19 +239,24 @@ class MyReadable extends Readable {
 }
 
 const myReadable = new MyReadable();
-myReadable.on("data", console.log); // <Buffer 31 32 33>
+myReadable.on("readable", () => {
+  const chunk = myReadable.read();
+  console.log(chunk); // <Buffer 31 32 33>
+});
 ```
 
 ### 小插曲：null as EOF
 
-在 C 語言也有 "用 null 當作 EOF" 的概念，叫做 [Null-terminated byte strings](https://en.cppreference.com/w/c/string/byte.html)，用 JavaScript 當作 Code Example 的話：
+在 C 語言也有 "用 null 當作 EOF" 的概念，叫做 [Null-terminated byte strings](https://en.cppreference.com/w/c/string/byte.html)，簡單來說就是 C 會用 null byte 來當作 string 的結尾，用 JavaScript 當作 Code Example 的話：
 
 ```ts
 const str = "hello";
 // const str = "hello\0";
 ```
 
+:::info
 這個概念在 exploit path traversal 的時候，可以當作一個技巧，可參考 [portSwigger - path traversal](https://portswigger.net/web-security/file-path-traversal#common-obstacles-to-exploiting-path-traversal-vulnerabilities) 的教學
+:::
 
 因為 Node.js 底層也是 C，所以我猜測 `this.push(null)` 這個設計模式也是借鑑 C
 
@@ -233,44 +280,6 @@ const str = "hello";
 - autoDestroy, destroy, on('destory'), destroyed
 - on('close'), closed
 - on('error'), errored
-
-### 狀態機
-
-```mermaid
-stateDiagram-v2
-    [*] --> Paused: new Readable()
-
-    state "readableFlowing = null" as Null
-    state "readableFlowing = false" as Paused
-    state "readableFlowing = true" as Flowing
-    state "readableEnded = true" as Ended
-    state "destroyed = true" as Destroyed
-
-    Null --> Flowing: on('data')<br/>resume()<br/>pipe()
-    Null --> Paused: pause()
-
-    Flowing --> Paused: pause()
-    Paused --> Flowing: resume()
-
-    Flowing --> Ended: push(null)<br/>emit('end')
-    Paused --> Ended: 讀完資料
-
-    Ended --> Destroyed: destroy()<br/>autoDestroy
-    Flowing --> Destroyed: destroy()
-    Paused --> Destroyed: destroy()
-
-    Destroyed --> [*]
-
-    note right of Flowing
-        emit('data')
-        自動消耗 buffer
-    end note
-
-    note right of Paused
-        emit('readable')
-        需手動 read()
-    end note
-```
 
 ### events
 
@@ -314,14 +323,51 @@ stateDiagram-v2
 
 ### internal methods
 
+這些底線開頭的 internal methods，只有當你在實作 stream.Readable 的時候才會碰到
+
 - [readable.\_construct](https://nodejs.org/api/stream.html#readable_constructcallback)
 - [readable.\_destroy](https://nodejs.org/api/stream.html#readable_destroyerr-callback)
 - [readable.\_read](https://nodejs.org/api/stream.html#readable_readsize)
 - [readable.push](https://nodejs.org/api/stream.html#readablepushchunk-encoding)
 
+❌ 錯誤作法（instance 直接呼叫 internal methods）
+
+```ts
+class MyReadable extends Readable {
+  _read(size: number): void {
+    this.push("123");
+    // https://nodejs.org/api/stream.html#readablepushchunk-encoding
+    // Passing chunk as null signals the end of the stream (EOF), after which no more data can be written.
+    this.push(null);
+  }
+}
+
+const myReadable = new MyReadable();
+myReadable._read();
+```
+
+✅ 正確做法（instance 只呼叫 public methods）
+
+```ts
+class MyReadable extends Readable {
+  _read(size: number): void {
+    this.push("123");
+    // https://nodejs.org/api/stream.html#readablepushchunk-encoding
+    // Passing chunk as null signals the end of the stream (EOF), after which no more data can be written.
+    this.push(null);
+  }
+}
+
+const myReadable = new MyReadable();
+myReadable.on("readable", () => {
+  const chunk = myReadable.read();
+  console.log(chunk); // <Buffer 31 32 33>
+});
+```
+
 ### Experimental methods
 
-截止 Node.js v25.2.1，目前這些 methods 都還在 [Stability: 1 - Experimental.](https://nodejs.org/api/documentation.html#stability-index)，故不會在本篇深入解說，就當作參考看看
+截止 Node.js v25.2.1，目前這些 methods 都還在 [Stability: 1 - Experimental](https://nodejs.org/api/documentation.html#stability-index)，故不會在本篇深入解說，就當作參考看看
 
 不過，這些 Array-Like methods，在 Node.js MongoDB Driver 也能看到類似的設計模式，我推測是為了提供更好的 DX 吧！
 
@@ -339,25 +385,26 @@ stateDiagram-v2
 
 ## stream.Duplex
 
-實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 "如果 readable end，那 writable 是否要繼續開著"。聽起來很繞口，我實際舉兩個例子，讓各位了解：
+實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 "如果 Readable.end，那 writable 是否要繼續開著"。聽起來很繞口，我實際舉兩個例子，讓各位了解：
 
-1. http Server 的 Socket 就是 allowHalfOpen = true，因為通常 Server 收到完整的 HTTP Request (Readable.end) 之後，才
-   能決定 HTTP Response 是什麼，並且回傳給 Client，此時 Writable Side 就必須保持開啟。我們可以寫一個 PoC 來驗證
+1. http Server 的 Socket 就是 allowHalfOpen = true，因為通常 Server 收到完整的 HTTP Request (Readable.end) 之後，才能決定 HTTP Response 是什麼，並且回傳給 Client，此時 Writable Side 就必須保持開啟。我們可以寫一個 PoC 來驗證
 
 ```ts
-import httpServer from "../httpServer";
+import { createServer } from "http";
 
 createServer()
   .listen(5000)
   .on("request", function httpRequestListener(req, res) {
     console.log(req.socket === res.socket); // true
     console.log(req.socket.allowHalfOpen); // true
-    console.log(res.socket.allowHalfOpen); // true
+    console.log(res.socket?.allowHalfOpen); // true
     res.end();
   });
 ```
 
-2.
+<!-- todo-yus -->
+
+2. 假設你想要把 10 GB 的 mp4 影片從 Server 下載到本機
 
 ### duplex.allowHalfOpen
 
