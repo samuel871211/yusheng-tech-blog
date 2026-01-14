@@ -1,8 +1,8 @@
 ---
-title: Node.js events module
-description: Node.js events module
+title: Node.js EventEmitter
+description: "帶你了解 Node.js Event-driven architecture 的核心: EventEmitter"
 last_update:
-  date: "2026-01-08T08:00:00+08:00"
+  date: "2026-01-14T08:00:00+08:00"
 ---
 
 ## 前言
@@ -156,6 +156,8 @@ myEmitter.emit("customEvent");
 
 ### Handling events only once
 
+https://nodejs.org/api/events.html#handling-events-only-once
+
 ```ts
 import { EventEmitter } from "events";
 
@@ -198,14 +200,13 @@ myEmitter.on("error", (err) => console.log(err));
 myEmitter.emit("error", new Error("oops..."));
 ```
 
-<!-- todo-yus 校稿到這裡 -->
-
 ### 小插曲: errorMonitor
 
 https://nodejs.org/api/events.html#error-events
 
 - 會先觸發 `on(errorMonitor)`，再觸發 `on('error')`
 - 好處：將 "監控" 跟 "錯誤處理" 分開，單一職責
+- 注意：還是需要監聽 `on('error')`，才不會讓 Node.js process exit
 
 ```ts
 import EventEmitter, { errorMonitor } from "events";
@@ -216,7 +217,7 @@ const myEmitter = new MyEmitter();
 myEmitter.on(errorMonitor, (err) => {
   console.error("implement your custom error logger logic");
 });
-myEmitter.on("error", (err) => console.log(err)); // 還是需要監聽 on('error')
+myEmitter.on("error", (err) => console.log(err));
 myEmitter.emit("error", new Error("oops..."));
 ```
 
@@ -226,7 +227,7 @@ https://nodejs.org/api/events.html#capture-rejections-of-promises
 
 在 `on('event')` 使用 async function as listener 的話，需要特別注意 unhandled promise rejection
 
-❌錯誤作法
+❌ 錯誤作法
 
 ```ts
 import { EventEmitter } from "events";
@@ -241,7 +242,7 @@ myEmitter.on("error", (err) => console.log("error occured"));
 myEmitter.emit("hello");
 ```
 
-✅正確做法（加上 `captureRejections`）
+✅ 正確做法（加上 `captureRejections`）
 
 ```ts
 import { EventEmitter } from "events";
@@ -305,10 +306,10 @@ myDailyEventsEmitter.prependListener("morning", function foldTheBlanket() {});
 
 ```ts
 myDailyEventsEmitter.on("morning", function goToWork() {});
-// 等同於 myDailyEvents.morning.push(function goToWork () {})
+// 插尾，等同於 myDailyEvents.morning.push(function goToWork () {})
 
-myDailyEventsEmitter.on("morning", function foldTheBlanket() {});
-// 等同於 myDailyEvents.morning.unshift(function foldTheBlanket () {})
+myDailyEventsEmitter.prependListener("morning", function foldTheBlanket() {});
+// 插頭，等同於 myDailyEvents.morning.unshift(function foldTheBlanket () {})
 ```
 
 如果希望摺棉被只要摺一次呢？只要用 `prependOnceListener` 這個方法就好
@@ -320,7 +321,7 @@ myDailyEventsEmitter.prependOnceListener(
 );
 ```
 
-有了這個概念，再來看 EventEmitter 的 Methods，就會發現其實就是圍繞 event 跟 listener 的 CRUD
+有了這個概念，再來看 EventEmitter 的 methods，就會發現其實就是圍繞 event 跟 listener 的 CRUD
 
 ### EventEmitter prebuild events
 
