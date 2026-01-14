@@ -385,9 +385,9 @@ myReadable.on("readable", () => {
 
 ## stream.Duplex
 
-實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 "如果 Readable.end，那 writable 是否要繼續開著"。聽起來很繞口，我實際舉兩個例子，讓各位了解：
+實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 "如果 Readable.end，那 writable 是否要繼續開著"。聽起來很繞口，我實際舉個 http 的例子，讓各位了解：
 
-1. http Server 的 Socket 就是 allowHalfOpen = true，因為通常 Server 收到完整的 HTTP Request (Readable.end) 之後，才能決定 HTTP Response 是什麼，並且回傳給 Client，此時 Writable Side 就必須保持開啟。我們可以寫一個 PoC 來驗證
+http Server 的 Socket 就是 allowHalfOpen = true，因為通常 Server 收到完整的 HTTP Request (Readable.end) 之後，才能決定 HTTP Response 是什麼，並且回傳給 Client，此時 Writable Side 就必須保持開啟。我們可以寫一個 PoC 來驗證
 
 ```ts
 import { createServer } from "http";
@@ -402,13 +402,16 @@ createServer()
   });
 ```
 
-<!-- todo-yus -->
+## Web API 竟然也有 Stream ?!
 
-2. 假設你想要把 10 GB 的 mp4 影片從 Server 下載到本機
+在校稿的時候，我發現
 
-### duplex.allowHalfOpen
+- ReadableStream, WritableStream 是 Web API
+- stream.Readable, stream.Writable 是 Node.js 原生的
 
-這是 stream.Duplex
+不過 Node.js 在 v16.5.0 也加入了 ReadableStream, WritableStream，對 JavaScript 開發者來說是一大福音，減少學習成本
+
+我在 [Transfer-Encoding 這篇文章](../http/transfer-encoding.md#readablestream讓你分塊讀取-response-body) 也有提到 ReadableStream 的簡易概念，有興趣的夥伴可以參考
 
 ## 參考資料
 

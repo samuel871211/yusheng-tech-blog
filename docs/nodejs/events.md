@@ -33,9 +33,9 @@ httpServer.on("request", (req, res) => {
 尤其是 "有用過 Node.js 原生 http 模組寫 client/server" 的人類們，應該都看過
 
 - `EventEmitter`
-- `ReadableStream`
-- `WritableStream`
-- `Socket`
+- `stream.Readable`
+- `stream.Writable`
+- `net.Socket`
 
 等等名詞，還有一堆很抽象的方法
 
@@ -79,7 +79,7 @@ fetch("https://your-api-server.com", {
 
 ```mermaid
 flowchart TD
-    A[EventEmitter] --> B[Stream]
+    A[EventEmitter] --> B[stream]
     B --> C[net.Socket]
     C --> D[http]
 
@@ -89,7 +89,7 @@ flowchart TD
     style D fill:#ffb,stroke:#333
 ```
 
-所以，接下來我會規劃四篇文章，一路從 `EventEmitter` 講回 `http`
+所以，接下來我會規劃四篇文章，一路從 `EventEmitter` 講到 `http`
 
 <!-- smtp-server 就是繼承 Event.Emitter -->
 
@@ -108,10 +108,10 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
-myEmitter.on("event", () => {
-  console.log("an event occurred!");
+myEmitter.on("customEvent", () => {
+  console.log("customEvent occurred!");
 });
-myEmitter.emit("event");
+myEmitter.emit("customEvent");
 ```
 
 ### 傳參數 & 綁定 this
@@ -126,10 +126,13 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
-myEmitter.on("event", function (this: EventEmitter, a: string, b: string) {
-  console.log(a, b, this === myEmitter); // a b true
-});
-myEmitter.emit("event", "a", "b");
+myEmitter.on(
+  "customEvent",
+  function (this: EventEmitter, a: string, b: string) {
+    console.log(a, b, this === myEmitter); // a b true
+  },
+);
+myEmitter.emit("customEvent", "a", "b");
 ```
 
 ### emit 會按照事件監聽的順序，同步執行
@@ -142,13 +145,13 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
-myEmitter.on("event", function () {
-  console.log("first event");
+myEmitter.on("customEvent", function () {
+  console.log("first customEvent listener");
 });
-myEmitter.on("event", function () {
-  console.log("second event");
+myEmitter.on("customEvent", function () {
+  console.log("second customEvent listener");
 });
-myEmitter.emit("event");
+myEmitter.emit("customEvent");
 ```
 
 ### Handling events only once
@@ -159,20 +162,20 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
-myEmitter.once("event", function () {
-  console.log("event triggered");
+myEmitter.once("customEvent", function () {
+  console.log("customEvent triggered");
 });
-myEmitter.emit("event"); // event triggered
-myEmitter.emit("event"); // 忽略
+myEmitter.emit("customEvent"); // customEvent triggered
+myEmitter.emit("customEvent"); // 忽略
 ```
 
 ### 大魔王 1: 捕捉 error
 
 https://nodejs.org/api/events.html#error-events
 
-這是新手入坑最常踩到的坑，若沒有註冊 `on('error')`，則 `emit('error')` 就會讓 Node.js process exit（常見的 Node.js DoS 原因）
+這是新手最常踩到的坑，若沒有註冊 `on('error')`，則 `emit('error')` 就會讓 Node.js process exit（常見的 Node.js DoS 原因）
 
-❌錯誤作法
+❌ 錯誤作法
 
 ```ts
 import { EventEmitter } from "events";
@@ -183,7 +186,7 @@ const myEmitter = new MyEmitter();
 myEmitter.emit("error", new Error("oops..."));
 ```
 
-✅正確做法
+✅ 正確做法
 
 ```ts
 import { EventEmitter } from "events";
@@ -194,6 +197,8 @@ const myEmitter = new MyEmitter();
 myEmitter.on("error", (err) => console.log(err));
 myEmitter.emit("error", new Error("oops..."));
 ```
+
+<!-- todo-yus 校稿到這裡 -->
 
 ### 小插曲: errorMonitor
 
@@ -382,11 +387,11 @@ req.on("end", () => {}); // ❓ end 事件什麼時候觸發？
 req.pipe(res); // ❓ pipe 是什麼？
 ```
 
-這些問題的答案都在 **Stream** 裡
+這些問題的答案都在 **stream** 裡
 
-EventEmitter 只是提供了「事件機制」，而 Stream 才定義了「什麼時候該觸發這些事件」
+EventEmitter 只是提供了「事件機制」，而 stream 才定義了「什麼時候該觸發這些事件」
 
-下一篇我們來看 Stream 如何基於 EventEmitter 建立「資料流」的概念
+下一篇我們來看 stream 如何基於 EventEmitter 建立「資料流」的概念
 
 ## 參考資料
 
