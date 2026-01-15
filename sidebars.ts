@@ -191,7 +191,12 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Node.js",
-      items: ["nodejs/events", "nodejs/stream", "nodejs/socket"],
+      items: [
+        "nodejs/events",
+        "nodejs/stream-1",
+        "nodejs/stream-2",
+        "nodejs/socket",
+      ],
     },
     {
       type: "category",

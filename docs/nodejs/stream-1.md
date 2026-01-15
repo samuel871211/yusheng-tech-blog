@@ -1,11 +1,9 @@
 ---
-title: Node.js stream module
-description: Node.js stream module
+title: Node.js stream (1)
+description: Readable, Writable, Duplex 是什麼？一篇帶你搞懂
+last_update:
+  date: "2026-01-15T08:00:00+08:00"
 ---
-
-## 前言
-
-承接 [Node.js events module](./events.md)，接著來看看 stream
 
 ## Types of streams
 
@@ -120,11 +118,9 @@ const myWritable = new MyWritable();
 myWritable.write("123"); // <Buffer 31 32 33>
 ```
 
-### backpressure
-
-### highWaterMark
-
 ### events
+
+從這邊就可以看到 `stream.Writable` 繼承 [EventEmitter](./events.md) 的影子
 
 - [writable.on('close')](https://nodejs.org/api/stream.html#event-close)
 - [writable.on('drain')](https://nodejs.org/api/stream.html#event-drain)
@@ -142,7 +138,64 @@ myWritable.write("123"); // <Buffer 31 32 33>
 - [writable.end](https://nodejs.org/api/stream.html#writableendchunk-encoding-callback)
 - [writable.setDefaultEncoding](https://nodejs.org/api/stream.html#writablesetdefaultencodingencoding)
 
+這些方法可以在 Node.js 的 [http.ClientRequest](https://nodejs.org/api/http.html#class-httpclientrequest) 或是 [http.ServerResponse](https://nodejs.org/api/http.html#class-httpserverresponse) 看到，因為其繼承鏈為
+
+```mermaid
+flowchart TD
+    A[http.ClientRequest] --> C[http.OutgoingMessage]
+    B[http.ServerResponse] --> C[http.OutgoingMessage]
+    C --> D[Stream]
+
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+    style C fill:#bfb,stroke:#333
+    style D fill:#ffb,stroke:#333
+```
+
+:::info
+為何 http.OutgoingMessage 不是繼承 stream.Writable ? 因為當時 stream.Writable 根本還沒出生
+
+http.OutgoingMessage 是在 v0.1.17 加入的
+
+stream.Writable 是在 v0.9.4 加入的
+
+但 http.OutgoingMessage 也是實作了 stream.Writable 該有的 methods
+:::
+
+http.ClientRequest
+
+```ts
+import { request } from "http";
+const clientRequest = request("http://localhost:5000/");
+// These are all valid methods from stream.Writable
+clientRequest.cork();
+clientRequest.uncork();
+clientRequest.destroy();
+clientRequest.write();
+clientRequest.end();
+clientRequest.setDefaultEncoding();
+```
+
+http.ServerResponse
+
+```ts
+import { createServer } from "http";
+const httpServer = createServer().listen(5000);
+httpServer.on("request", function requestListener(req, res) {
+  // res: http.ServerResponse
+  // These are all valid methods from stream.Writable
+  res.cork();
+  res.uncork();
+  res.destroy();
+  res.write();
+  res.end();
+  res.setDefaultEncoding();
+});
+```
+
 ### properties
+
+先參考即可～下一篇文章會帶到
 
 - [writable.closed](https://nodejs.org/api/stream.html#writableclosed)
 - [writable.destroyed](https://nodejs.org/api/stream.html#writabledestroyed)
@@ -169,7 +222,7 @@ https://nodejs.org/api/stream.html#implementing-a-writable-stream
 - [writable.\_final](https://nodejs.org/api/stream.html#writable_finalcallback)
 - [writable.\_construct](https://nodejs.org/api/stream.html#writable_constructcallback)
 
-❌ 錯誤作法（instance 直接呼叫 internal methods）
+❌ 錯誤作法
 
 ```ts
 import { Writable } from "stream";
@@ -185,10 +238,10 @@ class MyWritable extends Writable {
   }
 }
 const myWritable = new MyWritable();
-myWritable._write("123");
+myWritable._write("123"); // ❌ instance 直接呼叫 internal methods
 ```
 
-✅ 正確做法（instance 只呼叫 public methods）
+✅ 正確做法
 
 ```ts
 class MyWritable extends Writable {
@@ -202,14 +255,8 @@ class MyWritable extends Writable {
   }
 }
 const myWritable = new MyWritable();
-myWritable.write("123");
+myWritable.write("123"); // ✅ instance 只呼叫 public methods
 ```
-
-### handle errors
-
-https://nodejs.org/api/stream.html#errors-while-writing
-
-<!-- todo-yus -->
 
 ## stream.Readable
 
@@ -260,28 +307,9 @@ const str = "hello";
 
 因為 Node.js 底層也是 C，所以我猜測 `this.push(null)` 這個設計模式也是借鑑 C
 
-### Readable 生命週期 1：誕生 - constructor 與初始化
-
-- constructor
-- \_construct
-
-### Readable 生命週期 2: 運作 - 兩種讀取模式的切換
-
-- readableFlowing = null
-- on('readable'), read, \_read, push
-- on('data')
-- pause, on('pause'), isPaused
-- resume, on('resume')
-- highWaterMark, backpressure
-
-### Readable 生命週期 3: 終結 - 結束、銷毀與錯誤處理
-
-- on('end'), readableEnded
-- autoDestroy, destroy, on('destory'), destroyed
-- on('close'), closed
-- on('error'), errored
-
 ### events
+
+從這邊就可以看到 `stream.Readable` 繼承 [EventEmitter](./events.md) 的影子
 
 - [readable.on('close')](https://nodejs.org/api/stream.html#event-close_1)
 - [readable.on('data')](https://nodejs.org/api/stream.html#event-data)
@@ -306,7 +334,46 @@ const str = "hello";
 - [readable.compose](https://nodejs.org/api/stream.html#readablecomposestream-options)
 - [readable.iterator](https://nodejs.org/api/stream.html#readableiteratoroptions)
 
+這些方法都可以在 Node.js 的 [http.IncomingMessage](https://nodejs.org/api/http.html#class-httpincomingmessage) 看到，因為其繼承鏈為
+
+```mermaid
+flowchart TD
+    A[http.IncomingMessage] --> B[stream.Readable]
+
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+```
+
+As a HTTP client (receive response)
+
+```ts
+import { request } from "http";
+const clientRequest = request("http://localhost:5000/");
+clientRequest.on("response", (response) => {
+  // response: http.IncomingMessage
+  response.destroy();
+  response.isPaused();
+  // ......
+});
+```
+
+As a HTTP server (receive request)
+
+```ts
+import { createServer } from "http";
+const httpServer = createServer().listen(5000);
+httpServer.on("request", function requestListener(req, res) {
+  // req: http.IncomingMessage
+  // These are all valid methods from stream.Writable
+  req.destroy();
+  req.isPaused();
+  // ......
+});
+```
+
 ### properties
+
+先參考即可～下一篇文章會帶到
 
 - [readable.closed](https://nodejs.org/api/stream.html#readableclosed)
 - [readable.destroyed](https://nodejs.org/api/stream.html#readabledestroyed)
@@ -330,7 +397,7 @@ const str = "hello";
 - [readable.\_read](https://nodejs.org/api/stream.html#readable_readsize)
 - [readable.push](https://nodejs.org/api/stream.html#readablepushchunk-encoding)
 
-❌ 錯誤作法（instance 直接呼叫 internal methods）
+❌ 錯誤作法
 
 ```ts
 class MyReadable extends Readable {
@@ -343,10 +410,10 @@ class MyReadable extends Readable {
 }
 
 const myReadable = new MyReadable();
-myReadable._read();
+myReadable._read(); // ❌ instance 直接呼叫 internal methods
 ```
 
-✅ 正確做法（instance 只呼叫 public methods）
+✅ 正確做法
 
 ```ts
 class MyReadable extends Readable {
@@ -360,7 +427,7 @@ class MyReadable extends Readable {
 
 const myReadable = new MyReadable();
 myReadable.on("readable", () => {
-  const chunk = myReadable.read();
+  const chunk = myReadable.read(); // ✅ instance 只呼叫 public methods
   console.log(chunk); // <Buffer 31 32 33>
 });
 ```
@@ -385,9 +452,11 @@ myReadable.on("readable", () => {
 
 ## stream.Duplex
 
-實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 "如果 Readable.end，那 writable 是否要繼續開著"。聽起來很繞口，我實際舉個 http 的例子，讓各位了解：
+實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 **"如果 Readable.end，那 writable 是否要繼續開著"**。聽起來很繞口，我實際舉個 http 的例子，讓各位了解：
 
-http Server 的 Socket 就是 allowHalfOpen = true，因為通常 Server 收到完整的 HTTP Request (Readable.end) 之後，才能決定 HTTP Response 是什麼，並且回傳給 Client，此時 Writable Side 就必須保持開啟。我們可以寫一個 PoC 來驗證
+Node.js http server 的 Socket 就是 `allowHalfOpen = true`，因為通常 Server 收到完整的 HTTP Request (Readable.end) 之後，才能決定 HTTP Response 是什麼，並且回傳給 Client，此時 Writable Side 就必須保持開啟。
+
+我們可以寫一個 PoC 來驗證
 
 ```ts
 import { createServer } from "http";
@@ -404,14 +473,22 @@ createServer()
 
 ## Web API 竟然也有 Stream ?!
 
-在校稿的時候，我發現
+在校稿的時候，我發現瀏覽器跟 Node.js 都有實作一套 Readable, Writable，名稱分別為
 
-- ReadableStream, WritableStream 是 Web API
-- stream.Readable, stream.Writable 是 Node.js 原生的
+| Web API        | Node.js stream  |
+| -------------- | --------------- |
+| ReadableStream | stream.Readable |
+| WritableStream | stream.Writable |
 
-不過 Node.js 在 v16.5.0 也加入了 ReadableStream, WritableStream，對 JavaScript 開發者來說是一大福音，減少學習成本
+不過 Node.js 在 v16.5.0 也加入了 `ReadableStream`, `WritableStream`，對 JavaScript 開發者來說是一大福音，減少學習成本
 
 我在 [Transfer-Encoding 這篇文章](../http/transfer-encoding.md#readablestream讓你分塊讀取-response-body) 也有提到 ReadableStream 的簡易概念，有興趣的夥伴可以參考
+
+## 小結
+
+這篇文章帶大家入門 [stream.Readable](#streamreadable), [stream.Writable](#streamwritable) 以及 [stream.Duplex](#streamduplex)，並且也帶入 Node.js http 的概念，讓大家從 HTTP 的觀點來理解這些抽象層
+
+下一篇文章，會帶大家深入 stream 的生命週期，以及主要 methods 跟 properties 的使用方法
 
 ## 參考資料
 
