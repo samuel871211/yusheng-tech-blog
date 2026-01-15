@@ -2,7 +2,7 @@
 title: Node.js EventEmitter
 description: "帶你了解 Node.js Event-driven architecture 的核心: EventEmitter"
 last_update:
-  date: "2026-01-14T08:00:00+08:00"
+  date: "2026-01-15T08:00:00+08:00"
 ---
 
 ## 前言
@@ -185,7 +185,7 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
-myEmitter.emit("error", new Error("oops..."));
+myEmitter.emit("error", new Error("oops...")); // ❌ 沒有註冊 on('error')
 ```
 
 ✅ 正確做法
@@ -196,7 +196,7 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
-myEmitter.on("error", (err) => console.log(err));
+myEmitter.on("error", (err) => console.log(err)); // ✅ 正確註冊 on('error')
 myEmitter.emit("error", new Error("oops..."));
 ```
 
@@ -238,18 +238,18 @@ const myEmitter = new MyEmitter();
 myEmitter.on("hello", async () => {
   throw new Error("promise reject");
 });
-myEmitter.on("error", (err) => console.log("error occured"));
+myEmitter.on("error", (err) => console.log("error occured")); // ❌ 無法捕捉 promise rejection
 myEmitter.emit("hello");
 ```
 
-✅ 正確做法（加上 `captureRejections`）
+✅ 正確做法
 
 ```ts
 import { EventEmitter } from "events";
 
 class MyEmitter extends EventEmitter {}
 
-const myEmitter = new MyEmitter({ captureRejections: true });
+const myEmitter = new MyEmitter({ captureRejections: true }); // ✅ 加上 captureRejections
 myEmitter.on("hello", async () => {
   throw new Error("promise reject");
 });
