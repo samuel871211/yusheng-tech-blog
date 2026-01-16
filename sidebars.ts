@@ -193,8 +193,9 @@ const sidebars: SidebarsConfig = {
       label: "Node.js",
       items: [
         "nodejs/events",
-        "nodejs/stream-1",
-        "nodejs/stream-2",
+        "nodejs/stream-overview",
+        "nodejs/stream-writable",
+        "nodejs/stream-readable",
         "nodejs/socket",
       ],
     },

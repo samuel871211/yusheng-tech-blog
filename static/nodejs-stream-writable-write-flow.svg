@@ -1,0 +1,35 @@
+<svg width="500" height="300" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grid)" />
+
+  <rect x="150" y="50" width="120" height="200" rx="4" fill="none" stroke="#333" stroke-width="2" />
+  <text x="150" y="40" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Internal Buffer</text>
+
+  <line x1="140" x2="280" y1="100" y2="100" stroke="#e74c3c" stroke-width="2" stroke-dasharray="5,5" />
+  <text x="285" y="105" font-family="monospace" font-size="14" fill="#e74c3c">highWaterMark</text>
+
+  <rect x="160" y="210" width="100" height="30" rx="2" fill="#3498db" opacity="0.8" stroke="#2980b9" />
+  <text x="190" y="230" font-family="Arial" font-size="12" fill="white">chunk</text>
+  
+  <rect x="160" y="175" width="100" height="30" rx="2" fill="#3498db" opacity="0.8" stroke="#2980b9" />
+  <text x="190" y="195" font-family="Arial" font-size="12" fill="white">chunk</text>
+  
+  <rect x="160" y="140" width="100" height="30" rx="2" fill="#3498db" opacity="0.4" stroke="#2980b9" />
+  <text x="190" y="160" font-family="Arial" font-size="12" fill="#2980b9">chunk</text>
+
+  <path d="M 50 180 L 130 180" fill="none" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)" />
+  <text x="60" y="170" font-family="Arial" font-size="14" fill="#2c3e50" font-style="italic">.write(chunk)</text>
+
+  <path d="M 280 180 L 360 180" fill="none" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)" />
+  <text x="300" y="170" font-family="Arial" font-size="14" fill="#2c3e50" font-style="italic">._write()</text>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50" />
+    </marker>
+  </defs>
+</svg>

@@ -1,6 +1,6 @@
 ---
-title: Node.js stream (1)
-description: Readable, Writable, Duplex 是什麼？一篇帶你搞懂
+title: Node.js stream 入門：Readable、Writable、Duplex（附 HTTP 實例）
+description: 從 HTTP 視角探索 Node.js stream，了解 Readable、Writable、Duplex 的實作與應用，包含範例
 last_update:
   date: "2026-01-15T08:00:00+08:00"
 ---
