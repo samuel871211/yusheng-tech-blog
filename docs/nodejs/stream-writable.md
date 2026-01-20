@@ -5,9 +5,7 @@ last_update:
   date: "2026-01-16T08:00:00+08:00"
 ---
 
-## Writable
-
-### 生命週期 1：constructor 與初始化
+## 生命週期 1：constructor 與初始化
 
 先來個範例，包含 `constructor`, `_construct` 跟 `_write`，各位覺得執行順序是什麼呢？
 
@@ -64,7 +62,7 @@ flowchart TD
     style D fill:#fff5ad,stroke:#aaaa33
 ```
 
-### 生命週期 2：寫入資料
+## 生命週期 2：寫入資料
 
 我曾經以為寫入資料就是一直 `write` 下去就好
 
@@ -74,9 +72,9 @@ myWritable.write("123");
 myWritable.write("456");
 ```
 
-但如果仔細查看 [writable.write](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [writable.\_write](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 highWaterMark 這兩個名詞一直被提到
+但如果仔細查看 [`writable.write`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [`writable._write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 highWaterMark 這兩個名詞一直被提到
 
-我們先來看看 write 的 callback 何時會被觸發
+我們先來看看 `write` 的 `callback` 何時會被觸發
 
 ```ts
 // class MyWritable 實作不變...
@@ -109,11 +107,11 @@ flowchart TD
 Node.js 的 Event-driven architecture 設計真的很精妙，大量的利用 `callback` 把各種 async 事件串連起來
 
 - `_construct` 完成後，執行 `callback`，代表可以開始 `_write`
-- `_write` 完成後，執行 `callback`，代表可以開始 write 的 callback
+- `_write` 完成後，執行 `callback`，代表可以開始 `write` 的 `callback`
 
-但 Node.js 是怎麼判斷 isSafeToWriteMore 呢？這邊就會帶到 backpressure 跟 highWaterMark 這兩個名詞了
+但 Node.js 是怎麼判斷 `isSafeToWriteMore` 呢？這邊就會帶到 backpressure 跟 highWaterMark 這兩個名詞了
 
-### 記憶體管理：backpressure 與 highWaterMark
+## 記憶體管理：backpressure 與 highWaterMark
 
 在 create instance 的階段可以指定 `highWaterMark`，單位是 bytes
 
@@ -200,7 +198,7 @@ myWritable.on("drain", () => {
 2. 回傳 `{ isSafeToWriteMore: false }`，提醒使用者 "請暫停 `write`"
 3. 使用者需手動監聽 `on("drain")`，等到 `_write` 消化完再繼續 `write`
 
-### 效能優化：cork, uncork 與 \_writev
+## 效能優化：`cork`, `uncork` 與 `_writev`
 
 cork 的中文是軟木塞，它"塞住"了 `_write` 的執行，目的是為了優化多個 `write` 在短時間寫入造成的 [head-of-line blocking](../http/http-1.1-pipelining-and-hol-blocking.md#pipelining-限制-1-http11-hol-blocking)
 
@@ -235,7 +233,7 @@ process.nextTick(() => httpRequestWritable.uncork()); // ✅ 寫入完成後，�
 // ❗ p.s. 這邊先不探討 TCP packet size，假設這些資料都會在同一個 packet 送出
 ```
 
-而為了優化 Array of chunks 的寫入，Node.js 提供了 [writable.\_writev](https://nodejs.org/api/stream.html#writable_writevchunks-callback)，我們直接實作一個 PoC
+而為了優化 Array of chunks 的寫入，Node.js 提供了 [`writable.writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback)，我們直接實作一個 PoC
 
 ```ts
 import { Writable, WritableOptions } from "stream";
@@ -304,7 +302,7 @@ const httpRequestWritable = getWritableSomehow();
 process.nextTick(() => httpRequestWritable.uncork());
 ```
 
-### 生命週期 3：結束、關閉
+## 生命週期 3：結束、關閉
 
 當使用者確定不會再寫入後，就可以使用 [writable.end](https://nodejs.org/api/stream.html#writableendchunk-encoding-callback)
 
@@ -382,8 +380,68 @@ flowchart LR
 
 這個現象蠻有趣的，Node.js 會先盡快送出第一個 chunk，後續的 Array of chunks 則用 `_writev` 一次處理
 
-### handle errors
+## handle error
 
-https://nodejs.org/api/stream.html#errors-while-writing
+若仔細觀察每個 internal method 的參數，會發現 callback function 都有一個 optional error 參數
+
+```ts
+_construct(callback: (error?: Error | null) => void): void {
+
+}
+```
+
+而 `_destroy` method 比較特殊，參數還有一個 error
+
+```ts
+_destroy(
+  error: Error | null,
+  callback: (error?: Error | null) => void,
+): void {
+
+}
+```
+
+在 `_construct`, `_write`, `_writev` 或 `_final` 任一階段拋錯，都會接著觸發 `_destroy`
+
+故 `_destroy` 也需要正確拋錯，才可以被 `on('error')` 捕捉
+
+```ts
+class MyWritable extends Writable {
+  _construct(callback: (error?: Error | null) => void): void {
+    console.log(performance.now(), "_construct");
+    callback(new Error("_construct error"));
+  }
+  _destroy(
+    error: Error | null,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_destroy");
+    if (error) return callback(error);
+  }
+}
+
+const myWritable = new MyWritable();
+myWritable.on("error", (error) => {
+  console.error(performance.now(), "error", error.message);
+});
+
+// Prints
+// 600.948167 _construct
+// 603.178708 _destroy
+// 603.284458 error _construct error
+```
+
+時序圖如下
+
+```mermaid
+flowchart LR
+    A[_construct] --> E["callback(new Error())"]
+    B[_write] --> E["callback(new Error())"]
+    C[_writev] --> E["callback(new Error())"]
+    D[_final] --> E["callback(new Error())"]
+    E["callback(new Error())"] --> F[_destroy]
+```
+
+## 小結
 
 <!-- todo-yus -->
