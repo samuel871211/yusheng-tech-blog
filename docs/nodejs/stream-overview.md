@@ -2,7 +2,7 @@
 title: Node.js stream 入門：Readable、Writable、Duplex（附 HTTP 實例）
 description: 從 HTTP 視角探索 Node.js stream，了解 Readable、Writable、Duplex 的實作與應用，包含範例
 last_update:
-  date: "2026-01-15T08:00:00+08:00"
+  date: "2026-01-20T08:00:00+08:00"
 ---
 
 ## Types of streams
@@ -273,7 +273,7 @@ const myReadable = new Readable();
 myReadable.read("123"); // Error: The _read() method is not implemented
 ```
 
-✅ 正確做法（實作　`_read` method）
+✅ 正確做法（實作 `_read` method）
 
 ```ts
 class MyReadable extends Readable {
@@ -292,13 +292,13 @@ myReadable.on("readable", () => {
 });
 ```
 
-### 小插曲：null as EOF
+### 小插曲：Null-terminated byte strings
 
-在 C 語言也有 "用 null 當作 EOF" 的概念，叫做 [Null-terminated byte strings](https://en.cppreference.com/w/c/string/byte.html)，簡單來說就是 C 會用 null byte 來當作 string 的結尾，用 JavaScript 當作 Code Example 的話：
+在 C 語言的 string 也有 "用 null 當作結尾" 的概念，叫做 [Null-terminated byte strings](https://en.cppreference.com/w/c/string/byte.html)，簡單來說就是 C 會用 null byte 來當作 string 的結尾
 
-```ts
-const str = "hello";
-// const str = "hello\0";
+```c
+char greeting[] = "Hello"; // Compiler automatically adds '\0'
+// In memory: {'H', 'e', 'l', 'l', 'o', '\0'};
 ```
 
 :::info

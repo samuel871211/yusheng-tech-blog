@@ -1,8 +1,8 @@
 ---
 title: Node.js stream.Writable 生命週期
-# description: Node.js stream.Writable 生命週期
+description: Node.js stream.Writable 生命週期
 last_update:
-  date: "2026-01-16T08:00:00+08:00"
+  date: "2026-01-20T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -104,10 +104,11 @@ flowchart TD
     E --> F[write callback]
 ```
 
-Node.js 的 Event-driven architecture 設計真的很精妙，大量的利用 `callback` 把各種 async 事件串連起來
+1. 根據 [readable.\_construct](https://nodejs.org/api/stream.html#readable_constructcallback) 的描述，`constructor` 執行完後，`process.nextTick` 才會執行 `_construct`，所以 `write` 的回傳值 `isSafeToWriteMore` 會先印出來。雖然 `writable._construct` 的官方文件沒有描述到這個行為，但基本上兩者的概念是相通的
+2. `_construct` 完成後，執行 `callback`，代表可以開始 `_write`
+3. `_write` 完成後，執行 `callback`，代表可以開始 `write` 的 `callback`
 
-- `_construct` 完成後，執行 `callback`，代表可以開始 `_write`
-- `_write` 完成後，執行 `callback`，代表可以開始 `write` 的 `callback`
+只能讚嘆 Node.js 的 Event-driven architecture 設計真的很精妙，大量的利用 `callback` 把各種 async 事件串連起來
 
 但 Node.js 是怎麼判斷 `isSafeToWriteMore` 呢？這邊就會帶到 backpressure 跟 highWaterMark 這兩個名詞了
 
@@ -127,7 +128,7 @@ const myWritable = new MyWritable({ highWaterMark: 1024 });
 
 ![nodejs-stream-writable-write-flow](../../static/nodejs-stream-writable-write-flow.svg)
 
-回到 isSafeToWriteMore，Node.js 在 `write` 的當下，就可以判斷接下來要寫入的 chunk 是否會頂到 highWaterMark
+回到 `isSafeToWriteMore`，Node.js 在 `write` 的當下，就可以判斷接下來要寫入的 chunk 是否會頂到 highWaterMark
 
 - 若頂到 highWaterMark，回傳 false
 - 反之，則回傳 true
@@ -166,15 +167,15 @@ console.log(performance.now(), "abcde", { isSafeToWriteMore });
 // 1959.665167 abcde is flushed
 ```
 
-- ✅ 第二次 `write("67890")` 剛好頂到 10 bytes 的水位，所以回傳 `{ isSafeToWriteMore: false }` 符合預期
-- ✅ 從 1754 > 1856 > 1959 幾乎都是 100ms 的間隔，得知 `_write` 是依序處理，確保 `write` 跟 `_write` 的寫入順序一致
-- ❗ 第三次 `write("abcde")` 雖然頂到水位，但還是有被處理，這點是符合預期的，參考 [writable.write](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 的描述
+- 第二次 `write("67890")` 剛好頂到 10 bytes 的水位，所以回傳 `{ isSafeToWriteMore: false }` 符合預期
+- 從 1754 > 1856 > 1959 幾乎都是 100ms 的間隔，得知 `_write` 是依序處理，確保 `write` 跟 `_write` 的寫入順序一致
+- 第三次 `write("abcde")` 雖然頂到水位，但還是有被處理，這點是符合預期的，參考 [writable.write](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 的描述
 
 ```
 While calling write() on a stream that is not draining is allowed, Node.js will buffer all written chunks until maximum memory usage occurs, at which point it will abort unconditionally.
 ```
 
-isSafeToWriteMore 並不是強制性的，為了避免記憶體耗盡，可使用 `on("drain")` 來監聽
+`isSafeToWriteMore` 並不是強制性的，為了避免記憶體耗盡，可使用 `on("drain")` 來監聽
 :::info
 drain 的中文是排水、排洩，在這邊代表 "Internal Buffer 被清空，可以繼續 write"
 :::
@@ -233,7 +234,7 @@ process.nextTick(() => httpRequestWritable.uncork()); // ✅ 寫入完成後，�
 // ❗ p.s. 這邊先不探討 TCP packet size，假設這些資料都會在同一個 packet 送出
 ```
 
-而為了優化 Array of chunks 的寫入，Node.js 提供了 [`writable.writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback)，我們直接實作一個 PoC
+而為了優化 Array of chunks 的寫入，Node.js 提供了 [`writable._writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback)，我們直接實作一個 PoC
 
 ```ts
 import { Writable, WritableOptions } from "stream";
@@ -278,7 +279,7 @@ process.nextTick(() => myWritable.uncork());
 However, use of writable.cork() without implementing writable._writev() may have an adverse effect on throughput.
 ```
 
-另外，cork 跟 uncork 並不是一個 boolean 狀態，而是 counter 計數器的概念
+另外，`cork` 跟 `uncork` 並不是一個 boolean 狀態，而是 counter 計數器的概念
 
 ```ts
 const httpRequestWritable = getWritableSomehow();
@@ -311,7 +312,16 @@ const httpRequestWritable = getWritableSomehow();
 httpRequestWritable.end("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
 ```
 
-寫個 PoC 來觀察生命週期
+也因此 `end` 之後不能再 `write`，否則就會報錯
+
+```ts
+// class MyWritable 實作不變...
+const myWritable = new MyWritable();
+myWritable.end();
+myWritable.write("123"); // Error: write after end
+```
+
+寫個 PoC 來觀察 `end`, `_final` 跟 `_destroy` 的觸發順序
 
 ```ts
 import { Writable, WritableOptions } from "stream";
@@ -378,11 +388,11 @@ flowchart LR
 // 798.611792 _writev <Buffer 36 37 38 39 30> <Buffer 61 62 63 64 65>
 ```
 
-這個現象蠻有趣的，Node.js 會先盡快送出第一個 chunk，後續的 Array of chunks 則用 `_writev` 一次處理
+這個現象蠻有趣的，Node.js 會先用 `write` 盡快地送出第一個 chunk，後續的 Array of chunks 則用 `_writev` 一次處理
 
 ## handle error
 
-若仔細觀察每個 internal method 的參數，會發現 callback function 都有一個 optional error 參數
+若仔細觀察每個 internal method 的參數，會發現 callback function 都有一個 optional error 參數，以 `_construct` 為例：
 
 ```ts
 _construct(callback: (error?: Error | null) => void): void {
@@ -390,7 +400,7 @@ _construct(callback: (error?: Error | null) => void): void {
 }
 ```
 
-而 `_destroy` method 比較特殊，參數還有一個 error
+而 `_destroy` 比較特殊，參數還有一個 error
 
 ```ts
 _destroy(
@@ -401,9 +411,9 @@ _destroy(
 }
 ```
 
-在 `_construct`, `_write`, `_writev` 或 `_final` 任一階段拋錯，都會接著觸發 `_destroy`
+因為 `_destroy` 是最後一個階段，在 `_construct`, `_write`, `_writev` 或 `_final` 任一階段拋錯，都會接著觸發 `_destroy`
 
-故 `_destroy` 也需要正確拋錯，才可以被 `on('error')` 捕捉
+所以 `_destroy` 也需要正確拋錯，才可以被 `on('error')` 捕捉
 
 ```ts
 class MyWritable extends Writable {
@@ -444,4 +454,4 @@ flowchart LR
 
 ## 小結
 
-<!-- todo-yus -->
+我們在這篇文章學到了 stream.Writable 的生命週期 & 基本操作方法，希望對大家有幫助～
