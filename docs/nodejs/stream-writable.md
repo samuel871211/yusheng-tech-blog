@@ -177,7 +177,7 @@ While calling write() on a stream that is not draining is allowed, Node.js will 
 
 `isSafeToWriteMore` 並不是強制性的，為了避免記憶體耗盡，可使用 `on("drain")` 來監聽
 :::info
-drain 的中文是排水、排洩，在這邊代表 "Internal Buffer 被清空，可以繼續 write"
+drain 的中文是排水、排洩，在這邊代表 "internal buffer 被清空，可以繼續 write"
 :::
 
 ```ts
@@ -378,7 +378,7 @@ flowchart LR
 
 - 由於我們的 `_construct` 延遲了 `_write`
 - 加上我們有實作 `_writev`
-- 所以 Node.js 會幫我們把 Internal Buffer 用 `_writev` 一次處理
+- 所以 Node.js 會幫我們把 internal buffer 用 `_writev` 一次處理
 
 若把 `_construct` 的實作註解，則會變成
 

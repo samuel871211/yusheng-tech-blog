@@ -51,7 +51,7 @@ flowchart TD
     style D fill:#fff5ad,stroke:#aaaa33
 ```
 
-## Readable 生命週期 2: 運作 - 兩種讀取模式的切換
+## 生命週期 2: 運作 - 兩種讀取模式的切換
 
 ### 自動讀取: `on('data')`
 
@@ -210,7 +210,7 @@ this.push(this.curCount.toString().repeat(size)); // 16384 bytes
 myReadable.read(); // 16384 bytes
 ```
 
-所以每次都是用 `push` 把 Internal Buffer 填滿，之後再用 `read` 一次把 Internal Buffer 清空
+所以每次都是用 `push` 把 internal buffer 填滿，之後再用 `read` 一次把 internal buffer 清空
 
 但實務上讀取 (`read`) 跟寫入 (`push`) 的速度會不一樣，此時就需要記憶體管理機制，避免 OOM
 
@@ -278,18 +278,96 @@ myReadable.on("readable", () => {
 
 - 第一次 `push` 6 bytes，Internal Buffer 總共 6 bytes，沒有頂到 `highWaterMark`，印出 `{ isSafeToPushMore: true }`
 - 第二次 `push` 6 bytes，Internal Buffer 總共 12 bytes，頂到 `highWaterMark`，印出 `{ isSafeToPushMore: false }`
-- 我們遵循 backpressure，當 `{ isSafeToPushMore: false }` 就不繼續寫入 Internal Buffer
-- [readable.read()](https://nodejs.org/api/stream.html#readablereadsize) 不指定 size 的情況，會一次把 Internal Buffer 的資料讀出來
+- 我們遵循 backpressure，當 `{ isSafeToPushMore: false }` 就不繼續寫入 internal buffer
+- [readable.read()](https://nodejs.org/api/stream.html#readablereadsize) 不指定 size 的情況，會一次把 internal buffer 的資料讀出來
 
 ```
 If the size argument is not specified, all of the data contained in the internal buffer will be returned.
 ```
 
+## 生命週期 3: 結束、關閉
+
+寫個 PoC 來觀察 `on("end")`, `_destroy` 跟 `on("close")` 的觸發順序
+
+```ts
+class MyReadable extends Readable {
+  _read(size: number): void {
+    console.log(performance.now(), "_read");
+    this.push("1".repeat(size));
+    this.push(null);
+  }
+  _destroy(
+    error: Error | null,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_destroy");
+    setTimeout(callback, 100);
+  }
+}
+
+const myReadable = new MyReadable({ highWaterMark: 10 });
+myReadable.on("readable", () => {
+  const data = myReadable.read();
+  console.log(performance.now(), data?.byteLength, "bytes");
+});
+myReadable.on("end", () => {
+  console.log(performance.now(), "end", {
+    readableEnded: myReadable.readableEnded,
+  });
+});
+myReadable.on("close", () => {
+  console.log(performance.now(), "close", { readableEnded: myReadable.closed });
+});
+
+// Prints
+// 917.4708 _read
+// 918.5436 10 bytes
+// 918.7669 end { readableEnded: true }
+// 919.0596 _destroy
+// 1021.6917 close { closed: true }
+```
+
+執行順序如下：
+
+```mermaid
+flowchart TD
+    A[_read] --> B["push(null)"]
+    B --> C[emit end]
+    C --> D["on('end')<br/>readableEnded = true"]
+    D --> E[destroy<br/>autoDestroy = true]
+    E --> F[_destroy]
+    F --> G[emit close]
+    G --> H["on('close')<br/>closed = true<br/>destoryed = true"]
+```
+
+## `writable._final` vs `readable.push`
+
+在 stream.Readable，結束的訊號 (`readable.push`) 是由實作者在 `_read` 的實作內主動呼叫的
+
+```ts
+_read(size: number): void {
+  // 實作者可以在這邊處理 async 操作
+  this.push(null);
+}
+```
+
+在 stream.Writable，結束的訊號 (`writable.end`) 是由使用者主動呼叫的
+
+```ts
+class MyWritable extends Writable {
+  _final(callback: (error?: Error | null) => void): void {
+    // 實作者可以在這邊處理 async 操作
+  }
+}
+const myWritable = new MyWritable();
+myWritable.write("some data");
+myWritable.end();
+```
+
+也因此，stream.Readable 沒有 `_final` 這個 internal method
+
+## handle error
+
 <!-- todo-yus -->
 
-## Readable 生命週期 3: 終結 - 結束、銷毀與錯誤處理
-
-- on('end'), readableEnded
-- autoDestroy, destroy, on('destory'), destroyed
-- on('close'), closed
 - on('error'), errored
