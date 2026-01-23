@@ -2,7 +2,7 @@
 title: Node.js stream.Readable 生命週期
 description: Node.js stream.Readable 生命週期
 last_update:
-  date: "2026-01-16T08:00:00+08:00"
+  date: "2026-01-23T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -368,6 +368,176 @@ myWritable.end();
 
 ## handle error
 
-<!-- todo-yus -->
+Readable 只有三個 internal method 要實作
 
-- on('error'), errored
+```ts
+class MyReadable extends Readable {
+  _read(size: number): void {}
+  _construct(callback: (error?: Error | null) => void): void {}
+  _destroy(
+    error: Error | null,
+    callback: (error?: Error | null) => void,
+  ): void {}
+}
+```
+
+### `_construct` 階段正確拋出錯誤
+
+```ts
+class MyReadable extends Readable {
+  _construct(callback: (error?: Error | null) => void): void {
+    // 模擬非同步操作拋出錯誤
+    setTimeout(() => callback(new Error("_construct failed")), 1000);
+  }
+  _destroy(
+    error: Error | null,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_destroy");
+    // ✅ _construct 拋出的錯誤會傳入 _destroy，請記得傳遞到 callback
+    if (error) return callback(error);
+    callback();
+  }
+}
+
+const myReadable = new MyReadable();
+// ✅ 使用者請記得用 on('error') 捕捉錯誤
+myReadable.on("error", (err) => {
+  console.log("on('error')");
+  console.log(myReadable.destroyed); // true
+  console.log(err === myReadable.errored); // true
+  console.log(err);
+});
+
+// Prints
+// 1747.335125 _destroy
+// on('error')
+// true
+// true
+// Error: _construct failed
+```
+
+執行順序如下：
+
+```mermaid
+flowchart LR
+    A[_construct] --> B["callback(err)"]
+    B --> C[destroy + _destroy]
+    C --> D[emit error]
+    D --> E["on('error')<br/>errored = err<br/>destoryed = true"]
+```
+
+### `_read` 階段正確呼叫 `destroy`
+
+```ts
+class MyReadable extends Readable {
+  _read(size: number): void {
+    // 模擬非同步操作拋出錯誤
+    setTimeout(() => this.destroy(new Error("_read failed")), 1000);
+  }
+  _destroy(
+    error: Error | null,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_destroy");
+    // ✅ destroy 背後會呼叫 _destroy，請記得把 error 傳遞到 callback
+    if (error) return callback(error);
+    callback();
+  }
+}
+
+const myReadable = new MyReadable();
+// ✅ 使用者請記得用 on('error') 捕捉錯誤
+myReadable.on("error", (err) => {
+  console.log("on('error')");
+  console.log(myReadable.destroyed); // true
+  console.log(err === myReadable.errored); // true
+  console.log(err);
+});
+
+// Prints
+// 1658.621167 _destroy
+// on('error')
+// true
+// true
+// Error: _read failed
+```
+
+執行順序如下：
+
+```mermaid
+flowchart LR
+    A[_read] --> B[destroy + _destroy]
+    B --> C[emit error]
+    C --> D["on('error')<br/>errored = err<br/>destoryed = true"]
+```
+
+## `writable._write` vs `readable._read` 錯誤處理
+
+先來看看 `write` 跟 `_write` 的介面
+
+```ts
+write(chunk: any, encoding: BufferEncoding, callback?: (error: Error | null | undefined) => void): boolean;
+_write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
+```
+
+寫個 PoC 來釐清兩者的執行順序
+
+```ts
+class MyWritable extends Writable {
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_write");
+    callback(new Error(`_write ${chunk}`));
+  }
+}
+
+const myWritable = new MyWritable();
+myWritable.write("123", (err) => {
+  console.log("write callback");
+  console.log(err);
+});
+
+// Prints
+// _write
+// write callback
+// Error: _write 123
+```
+
+執行順序如下：
+
+```mermaid
+flowchart LR
+    A[使用者呼叫 write] --> B[底層呼叫 _write]
+    B --> C["實作者調用 _write<br/>的 callback(err)"]
+    C --> D["底層呼叫使用者傳入的<br/>write callback<br/>並且傳入 err 當作參數"]
+```
+
+而 `readable._read` 則需要使用 `readable.destroy` 來處理錯誤
+
+再來看看 `read`, `_read` 跟 `push` 的介面
+
+```ts
+read(size?: number): any;
+_read(size: number): void
+push(chunk: any, encoding?: BufferEncoding): boolean
+```
+
+## Readable vs Writable
+
+若從介面設計的對等性來看
+
+|                                               | Readable                                           | Writable                                              |
+| --------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------- |
+| 誰負責把資料寫入 internal buffer<br/>(生產者) | `push(chunk)` (實作者)                             | `write(chunk)` (使用者)                               |
+| 誰負責消化 internal buffer<br/>(消費者)       | `read(size)` (使用者)                              | `_write(chunk)` (實作者)                              |
+| 啟動訊號                                      | `_read(size)` (Node.js 觸發)                       | `write(chunk)` (使用者)                               |
+| 對應關係                                      | 1 : N <br/>1 次 `_read(size)` : N 次 `push(chunk)` | 1 : 1 <br/>1 次 `write(chunk)` : 1 次 `_write(chunk)` |
+| backpressure 訊號                             | `push(chunk)` 的回傳值 (給實作者看)                | `_write(chunk)` 的回傳值 (給使用者看)                 |
+| 錯誤處理                                      | `_read` 內部實作呼叫 `destroy`                     | `_write` 內部實作呼叫 `callback(err)`<br/>            |
+| 錯誤歸屬                                      | Transaction-based<br/>關聯到特定的 `write(chunk)`  | Source-based<br/>關聯到整個資料源                     |
+
+<!-- todo-yus -->
