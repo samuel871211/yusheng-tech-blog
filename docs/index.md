@@ -5,18 +5,18 @@ hide_table_of_contents: true
 pagination_next: null
 description: HTTP, Web Security, Node.js, PortSwigger Labs, Layer 7 Protocols
 last_update:
-  date: "2026-01-12T08:00:00+08:00"
+  date: "2026-01-24T08:00:00+08:00"
 ---
 
-# 昱昇の技術部落格 - 專注於 Web Security 與 HTTP 協議研究
+# 昱昇の技術部落格 - 專注於 Web Security 與 HTTP 研究
 
 ![index](../static/index.svg)
 
 ### 目前研究方向
 
 - HTTP 協議行為與相關 library 實作（以 JavaScript, Node.js 生態系為主）
-- Node.js 如何將 HTTP 協議進行多層抽象（EventEmitter, stream, Socket...）
-- Web Security 攻擊面：從協議層行為到實際 exploitation
+- Node.js 如何將 HTTP 進行多層抽象（EventEmitter, stream, Socket...）
+- Web Security 攻擊面：從 HTTP 行為到實際 exploitation
 
 <!-- - 開始日期：2025/03/09
 - 開始目標：最初是想參加 2025 iThome 鐵人賽，寫 30 篇關於 HTTP 的文章，後來變成一個全能型的技術部落格
