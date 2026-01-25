@@ -2,7 +2,7 @@
 title: Node.js EventEmitter
 description: "帶你了解 Node.js Event-driven architecture 的核心: EventEmitter"
 last_update:
-  date: "2026-01-15T08:00:00+08:00"
+  date: "2026-01-25T08:00:00+08:00"
 ---
 
 ## 前言
@@ -23,8 +23,8 @@ import { createServer } from "http";
 const httpServer = createServer().listen(5000);
 
 httpServer.on("request", (req, res) => {
-  res.on("data", (chunk) => {});
-  res.on("end", () => {});
+  req.on("data", (chunk) => {});
+  req.on("end", () => {});
 });
 ```
 
@@ -89,7 +89,7 @@ flowchart TD
     style D fill:#ffb,stroke:#333
 ```
 
-所以，接下來我會規劃四篇文章，一路從 `EventEmitter` 講到 `http`
+所以，接下來我會規劃數篇文章，一路從 `EventEmitter` 講到 `http`
 
 <!-- smtp-server 就是繼承 Event.Emitter -->
 
@@ -206,7 +206,7 @@ https://nodejs.org/api/events.html#error-events
 
 - 會先觸發 `on(errorMonitor)`，再觸發 `on('error')`
 - 好處：將 "監控" 跟 "錯誤處理" 分開，單一職責
-- 注意：還是需要監聽 `on('error')`，才不會讓 Node.js process exit
+- ⚠️注意，還是需要監聽 `on('error')`，才不會讓 Node.js process exit
 
 ```ts
 import EventEmitter, { errorMonitor } from "events";
