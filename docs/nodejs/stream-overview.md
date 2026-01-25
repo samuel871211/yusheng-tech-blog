@@ -2,7 +2,7 @@
 title: Node.js stream 入門：Readable、Writable、Duplex（附 HTTP 實例）
 description: 從 HTTP 視角探索 Node.js stream，了解 Readable、Writable、Duplex 的實作與應用，包含範例
 last_update:
-  date: "2026-01-20T08:00:00+08:00"
+  date: "2026-01-25T08:00:00+08:00"
 ---
 
 ## Types of streams
@@ -90,21 +90,23 @@ graph TB
 
 https://nodejs.org/api/stream.html#class-streamwritable
 
-stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際寫入」的部分留給開發者實作；換句話說，若沒有實作 `_write` method 就直接呼叫 `write` 的話，會直接報錯
+stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際寫入」的部分留給開發者實作。而這個「實際寫入」的部分，就是 `_write` internal method
 
-❌ 錯誤作法（沒有實作 `_write` method 就直接呼叫 `write`）
+❌ 錯誤作法
 
 ```ts
 import { Writable } from "stream";
 
 const myWritable = new Writable();
+// ❌ 沒有實作 `_write` method 就直接呼叫 `write`
 myWritable.write("123"); // Error: The _write() method is not implemented
 ```
 
-✅ 正確做法（實作 `_write` method）
+✅ 正確做法
 
 ```ts
 class MyWritable extends Writable {
+  // ✅ 實作 `_write` method
   _write(
     chunk: any,
     encoding: BufferEncoding,
@@ -216,11 +218,11 @@ https://nodejs.org/api/stream.html#implementing-a-writable-stream
 
 這些底線開頭的 internal methods，只有當你在實作 stream.Writable 的時候才會碰到
 
-- [writable.\_write](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback)
-- [writable.\_writev](https://nodejs.org/api/stream.html#writable_writevchunks-callback)
-- [writable.\_destroy](https://nodejs.org/api/stream.html#writable_destroyerr-callback)
-- [writable.\_final](https://nodejs.org/api/stream.html#writable_finalcallback)
-- [writable.\_construct](https://nodejs.org/api/stream.html#writable_constructcallback)
+- [`writable._write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback)
+- [`writable._writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback)
+- [`writable._destroy`](https://nodejs.org/api/stream.html#writable_destroyerr-callback)
+- [`writable._final`](https://nodejs.org/api/stream.html#writable_finalcallback)
+- [`writable._construct`](https://nodejs.org/api/stream.html#writable_constructcallback)
 
 ❌ 錯誤作法
 
@@ -262,21 +264,23 @@ myWritable.write("123"); // ✅ instance 只呼叫 public methods
 
 https://nodejs.org/api/stream.html#class-streamreadable
 
-同理 [stream.Writable](#streamwritable)，stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際讀取」的部分留給開發者實作；換句話說，若沒有實作 `_read` method 就直接呼叫 `read` 的話，會直接報錯
+同理 [stream.Writable](#streamwritable)，stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際讀取」的部分留給開發者實作。而這個「實際讀取」的部分，就是 `_read` internal method
 
-❌ 錯誤作法（沒有實作 `_read` method 就直接呼叫 `read`）
+❌ 錯誤作法
 
 ```ts
 import { Readable } from "stream";
 
 const myReadable = new Readable();
+// ❌ 沒有實作 `_read` method 就直接呼叫 `read`
 myReadable.read("123"); // Error: The _read() method is not implemented
 ```
 
-✅ 正確做法（實作 `_read` method）
+✅ 正確做法
 
 ```ts
 class MyReadable extends Readable {
+  // ✅ 實作 `_read` method
   _read(size: number): void {
     this.push("123");
     // https://nodejs.org/api/stream.html#readablepushchunk-encoding
@@ -294,7 +298,7 @@ myReadable.on("readable", () => {
 
 ### 小插曲：Null-terminated byte strings
 
-在 C 語言的 string 也有 "用 null 當作結尾" 的概念，叫做 [Null-terminated byte strings](https://en.cppreference.com/w/c/string/byte.html)，簡單來說就是 C 會用 null byte 來當作 string 的結尾
+在 C 語言的 string 也有 "用 null 當作結尾" 的概念，叫做 [Null-terminated byte strings](https://en.cppreference.com/w/c/string/byte.html)
 
 ```c
 char greeting[] = "Hello"; // Compiler automatically adds '\0'
@@ -344,7 +348,7 @@ flowchart TD
     style B fill:#bbf,stroke:#333
 ```
 
-As a HTTP client (receive response)
+As a HTTP client (Receive HTTP Response)
 
 ```ts
 import { request } from "http";
@@ -357,14 +361,13 @@ clientRequest.on("response", (response) => {
 });
 ```
 
-As a HTTP server (receive request)
+As a HTTP server (Receive HTTP Request)
 
 ```ts
 import { createServer } from "http";
 const httpServer = createServer().listen(5000);
 httpServer.on("request", function requestListener(req, res) {
   // req: http.IncomingMessage
-  // These are all valid methods from stream.Writable
   req.destroy();
   req.isPaused();
   // ......
@@ -392,10 +395,11 @@ httpServer.on("request", function requestListener(req, res) {
 
 這些底線開頭的 internal methods，只有當你在實作 stream.Readable 的時候才會碰到
 
-- [readable.\_construct](https://nodejs.org/api/stream.html#readable_constructcallback)
-- [readable.\_destroy](https://nodejs.org/api/stream.html#readable_destroyerr-callback)
-- [readable.\_read](https://nodejs.org/api/stream.html#readable_readsize)
-- [readable.push](https://nodejs.org/api/stream.html#readablepushchunk-encoding)
+- [`readable._construct`](https://nodejs.org/api/stream.html#readable_constructcallback)
+- [`readable._destroy`](https://nodejs.org/api/stream.html#readable_destroyerr-callback)
+- [`readable._read`](https://nodejs.org/api/stream.html#readable_readsize)
+
+而 [readable.push](https://nodejs.org/api/stream.html#readablepushchunk-encoding) 比較特別，雖然是 public method，但通常也是實作者在 `_read` 裡面會呼叫的 method
 
 ❌ 錯誤作法
 
@@ -452,7 +456,7 @@ myReadable.on("readable", () => {
 
 ## stream.Duplex
 
-實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 **"如果 Readable.end，那 writable 是否要繼續開著"**。聽起來很繞口，我實際舉個 http 的例子，讓各位了解：
+實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 **"如果 Readable.end，那 Writable 是否要繼續開著"**。聽起來很繞口，我實際舉個 http 的例子，讓各位了解：
 
 Node.js http server 的 Socket 就是 `allowHalfOpen = true`，因為通常 Server 收到完整的 HTTP Request (Readable.end) 之後，才能決定 HTTP Response 是什麼，並且回傳給 Client，此時 Writable Side 就必須保持開啟。
 
