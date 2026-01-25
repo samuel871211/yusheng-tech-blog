@@ -939,7 +939,7 @@ Cookie: session=1sRfKPxBJzGkrHxXNeO6RtU4Jl656T1f
 
 ## Cache key injection
 
-假設 cache server 用 \_\_ 來分割 cache component
+假設 cache server 用 `__` 來分割 cache component
 
 Attack Request
 

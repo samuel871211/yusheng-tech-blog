@@ -863,13 +863,13 @@ class DefaultMap {
 }
 ```
 
-查看 [\_\_sleep](https://www.php.net/manual/en/language.oop5.magic.php) 的解釋
+查看 [`__sleep`](https://www.php.net/manual/en/language.oop5.magic.php) 的解釋
 
 ```
 serialize() checks if the class has a function with the magic name __sleep(). If so, that function is executed prior to any serialization. It can clean up the object and is supposed to return an array with the names of all variables of that object that should be serialized. If the method doesn't return anything then null is serialized and E_NOTICE is issued.
 ```
 
-查看 [\_\_get](https://www.php.net/manual/en/language.oop5.overloading.php#object.get) 的解釋
+查看 [`__get`](https://www.php.net/manual/en/language.oop5.overloading.php#object.get) 的解釋
 
 ```
 __get() is utilized for reading data from inaccessible (protected or private) or non-existing properties.
