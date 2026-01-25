@@ -2,7 +2,7 @@
 title: Node.js stream.Readable 生命週期
 description: Node.js stream.Readable 生命週期
 last_update:
-  date: "2026-01-23T08:00:00+08:00"
+  date: "2026-01-25T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -76,13 +76,11 @@ class MyReadable extends Readable {
 }
 
 const myReadable = new MyReadable();
-console.log(myReadable.readableFlowing); // null
+myReadable.readableFlowing; // null
 myReadable.on("data", (chunk) => console.log((chunk as Buffer).byteLength));
-console.log(myReadable.readableFlowing); // true
+myReadable.readableFlowing; // true
 
 // Prints
-// null
-// true
 // 790.7202 _read
 // 16384
 // 891.7516 _read
@@ -98,12 +96,14 @@ console.log(myReadable.readableFlowing); // true
 
 - [readableFlowing](https://nodejs.org/api/stream.html#readablereadableflowing) 有 `null`, `true`, `false` 三種狀態，初始值是 `null`
 - 當 `on('data')` 開始監聽後，`readableFlowing` 會轉成 `true`
-- 因為是 "有多少讀多少"，所以 Node.js 會直接讀 `highWaterMark`，根據 Node.js 原始碼，Windows 11 的預設值 16KiB 符合預期
-
+- 自動讀取的設計哲學是 "有多少讀多少"，所以 Node.js 會直接在底層呼叫 `_read(highWaterMark)`
+- 承上，根據 [Node.js 原始碼](https://github.com/nodejs/node/blob/main/lib/internal/streams/state.js)，Windows 11 的預設 `highWaterMark` 16KiB 符合預期
 <!-- prettier-ignore -->
+
 ```js
 // TODO (fix): For some reason Windows CI fails with bigger hwm.
-let defaultHighWaterMarkBytes = process.platform === "win32" ? 16 * 1024 : 64 * 1024;
+let defaultHighWaterMarkBytes =
+  process.platform === "win32" ? 16 * 1024 : 64 * 1024;
 ```
 
 ### 自動讀取: 用 `pause` 跟 `resume` 來控制讀取速率
@@ -114,40 +114,23 @@ class MyReadable extends Readable {
   // 其餘實作不變...
 }
 
-// 統一使用 16KiB，避免跨作業系統的預設值不一樣
-const myReadable = new MyReadable({ highWaterMark: 16384 });
+const myReadable = new MyReadable();
 myReadable.on("data", (chunk) => {
-  console.log(performance.now(), "readableFlowing", myReadable.readableFlowing); // true;
-  console.log(performance.now(), (chunk as Buffer).byteLength);
+  myReadable.readableFlowing; // true;
   if (myReadable.shouldPause) {
     myReadable.shouldPause = false;
     myReadable.pause();
-    console.log(
-      performance.now(),
-      "isPaused",
-      myReadable.isPaused(),
-      "readableFlowing",
-      myReadable.readableFlowing,
-    ); // true false
+    myReadable.isPaused(); // true
+    myReadable.readableFlowing; // false
     setTimeout(() => myReadable.resume(), 1000);
   }
 });
 myReadable.on("resume", () => {
-  console.log(performance.now(), "resume", myReadable.readableFlowing); // true
+  myReadable.readableFlowing; // true
 });
 myReadable.on("pause", () => {
-  console.log(performance.now(), "pause", myReadable.readableFlowing); // false
+  myReadable.readableFlowing; // false
 });
-
-// Prints
-// 657.141584 _read
-// 657.489625 resume true
-// 758.942125 readableFlowing true
-// 759.124209 16384
-// 759.353459 pause false
-// 759.412167 isPaused true readableFlowing false
-// 759.662209 _read
-// 1761.100334 resume true
 ```
 
 執行順序如下：
@@ -155,18 +138,18 @@ myReadable.on("pause", () => {
 ```mermaid
 flowchart TD
     A["on('data')"] --> B[_read]
-    B --> C["emit resume<br/>(readableFlowing = true)"]
+    B --> C["on('resume')<br/>(readableFlowing = true)"]
     C --> D["pause()"]
-    D --> E["emit pause<br/>(readableFlowing = false)"]
+    D --> E["on('pause')<br/>(readableFlowing = false)"]
     E --> F["resume()"]
-    F --> G["emit resume<br/>(readableFlowing = true)"]
+    F --> G["on('resume')<br/>(readableFlowing = true)"]
 ```
 
 ### 手動讀取: `on('readable')` 搭配 `read`
 
 ```ts
 class MyReadable extends Readable {
-  private maxCount = 1;
+  private maxCount = 2;
   // 其餘實作不變...
 }
 
@@ -177,33 +160,39 @@ myReadable.readableDidRead; // false
 myReadable.on("readable", () => {
   console.log(performance.now(), "readable");
   const data = myReadable.read();
-  console.log(performance.now(), data);
+  console.log(performance.now(), data?.byteLength);
   myReadable.readableFlowing; // false
   myReadable.readableDidRead; // true
 });
 
 // Prints
-// 655.375667 _read
-// 756.2565 readable
-// 756.425042 _read
-// 756.675792 <Buffer 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 ... 16334 more bytes>
-// 858.348583 readable
-// 858.854583 null
+// 772.669 _read
+// 880.1044 readable
+// 880.4422 _read
+// 880.761 16384
+// 983.6141 readable
+// 984.0102 _read
+// 984.2194 16384
+// 1089.2055 readable
+// 1089.7458 undefined
 ```
 
-執行順序如下：
+- `_read` 的調用是由 Node.js 控制的
+- `read` 若無指定 `size` 參數，則預設會把 internal buffer 的資料讀完
 
-```mermaid
-flowchart TD
-    A["on('readable')"] --> B[_read]
-    B --> C[emit readable]
-    C --> D[read]
-    D --> B
+```
+If the size argument is not specified, all of the data contained in the internal buffer will be returned.
+```
+
+- 最後一次的 `readable` 觸發，讀到的資料是 `null`，故 `data?.byteLength` 等於 `undefined`
+
+```
+If the end of the stream has been reached, calling stream.read() will return null and trigger the 'end' event.
 ```
 
 ### 記憶體管理：backpressure 與 highWaterMark
 
-上面的程式碼範例，讀取 (`read`) 跟寫入 (`push`) 的速度都是一致的
+上面的程式碼範例，讀取 `read` 跟寫入 `push` 的速度都是一致的
 
 ```ts
 this.push(this.curCount.toString().repeat(size)); // 16384 bytes
@@ -212,7 +201,7 @@ myReadable.read(); // 16384 bytes
 
 所以每次都是用 `push` 把 internal buffer 填滿，之後再用 `read` 一次把 internal buffer 清空
 
-但實務上讀取 (`read`) 跟寫入 (`push`) 的速度會不一樣，此時就需要記憶體管理機制，避免 OOM
+但實務上讀取 `read` 跟寫入 `push` 的速度會不一樣，此時就需要記憶體管理機制，避免 OOM
 
 ![nodejs-stream-readable-read-flow](../../static/nodejs-stream-readable-read-flow.svg)
 
@@ -226,14 +215,16 @@ class MyReadable extends Readable {
   private maxCount = 5;
   private curCount = 0;
   _read(size: number): void {
-    console.log(performance.now(), "_read");
     // 模擬讀取資料的延遲
     setTimeout(() => {
       if (this.curCount < this.maxCount) {
         let isSafeToPushMore = true;
         while (isSafeToPushMore) {
           isSafeToPushMore = this.push(this.curCount.toString().repeat(6));
-          console.log({ isSafeToPushMore });
+          console.log({
+            readableLength: this.readableLength,
+            isSafeToPushMore,
+          });
         }
         this.curCount++;
         return;
@@ -246,44 +237,30 @@ class MyReadable extends Readable {
 }
 
 const myReadable = new MyReadable({ highWaterMark: 10 });
-myReadable.on("readable", () => {
-  const data = myReadable.read();
-  console.log(data?.byteLength);
-});
+myReadable.on("readable", myReadable.read);
 
 // Prints
-// 657.866417 _read
-// { isSafeToPushMore: true }
-// { isSafeToPushMore: false }
-// 758.513833 _read
-// 12
-// { isSafeToPushMore: true }
-// { isSafeToPushMore: false }
-// 860.697375 _read
-// 12
-// { isSafeToPushMore: true }
-// { isSafeToPushMore: false }
-// 963.028875 _read
-// 12
-// { isSafeToPushMore: true }
-// { isSafeToPushMore: false }
-// 1065.249542 _read
-// 12
-// { isSafeToPushMore: true }
-// { isSafeToPushMore: false }
-// 1168.485958 _read
-// 12
-// undefined
+// { readableLength: 6, isSafeToPushMore: true }
+// { readableLength: 12, isSafeToPushMore: false }
+// { readableLength: 6, isSafeToPushMore: true }
+// { readableLength: 12, isSafeToPushMore: false }
+// { readableLength: 6, isSafeToPushMore: true }
+// { readableLength: 12, isSafeToPushMore: false }
+// { readableLength: 6, isSafeToPushMore: true }
+// { readableLength: 12, isSafeToPushMore: false }
+// { readableLength: 6, isSafeToPushMore: true }
+// { readableLength: 12, isSafeToPushMore: false }
 ```
 
-- 第一次 `push` 6 bytes，Internal Buffer 總共 6 bytes，沒有頂到 `highWaterMark`，印出 `{ isSafeToPushMore: true }`
-- 第二次 `push` 6 bytes，Internal Buffer 總共 12 bytes，頂到 `highWaterMark`，印出 `{ isSafeToPushMore: false }`
+- `readableLength` 代表目前 internal buffer 有多少 bytes 的資料等著被 `read` 讀取
+- 第一次 `push` 6 bytes，`readableLength` 總共 6 bytes，沒有頂到 `highWaterMark`，印出 `{ isSafeToPushMore: true }`
+- 第二次 `push` 6 bytes，`readableLength` 總共 12 bytes，頂到 `highWaterMark`，印出 `{ isSafeToPushMore: false }`
 - 我們遵循 backpressure，當 `{ isSafeToPushMore: false }` 就不繼續寫入 internal buffer
-- [readable.read()](https://nodejs.org/api/stream.html#readablereadsize) 不指定 size 的情況，會一次把 internal buffer 的資料讀出來
+<!-- - [readable.read()](https://nodejs.org/api/stream.html#readablereadsize) 不指定 size 的情況，會一次把 internal buffer 的資料讀出來
 
-```
+````
 If the size argument is not specified, all of the data contained in the internal buffer will be returned.
-```
+``` -->
 
 ## 生命週期 3: 結束、關閉
 
@@ -325,24 +302,21 @@ myReadable.on("close", () => {
 // 918.7669 end { readableEnded: true }
 // 919.0596 _destroy
 // 1021.6917 close { closed: true }
-```
+````
 
 執行順序如下：
 
 ```mermaid
 flowchart TD
     A[_read] --> B["push(null)"]
-    B --> C[emit end]
-    C --> D["on('end')<br/>readableEnded = true"]
-    D --> E[destroy<br/>autoDestroy = true]
-    E --> F[_destroy]
-    F --> G[emit close]
-    G --> H["on('close')<br/>closed = true<br/>destoryed = true"]
+    B --> C["on('end')<br/>readableEnded = true"]
+    C --> D[destroy + _destroy]
+    D --> E["on('close')<br/>closed = true<br/>destoryed = true"]
 ```
 
 ## `writable._final` vs `readable.push`
 
-在 stream.Readable，結束的訊號 (`readable.push`) 是由實作者在 `_read` 的實作內主動呼叫的
+在 stream.Readable，結束的訊號 `readable.push(null)` 是由實作者在 `_read` 的實作內主動呼叫的
 
 ```ts
 _read(size: number): void {
@@ -351,7 +325,7 @@ _read(size: number): void {
 }
 ```
 
-在 stream.Writable，結束的訊號 (`writable.end`) 是由使用者主動呼叫的
+在 stream.Writable，結束的訊號 `writable.end()` 是由使用者主動呼叫的
 
 ```ts
 class MyWritable extends Writable {
@@ -364,20 +338,17 @@ myWritable.write("some data");
 myWritable.end();
 ```
 
-也因此，stream.Readable 沒有 `_final` 這個 internal method
+也因此，stream.Readable 沒有 `_final` 這個 internal method，因為實作者可以在 `_read` 實作 async 操作
 
 ## handle error
 
-Readable 只有三個 internal method 要實作
+Readable 只有三個 internal method 要實作，其中 `_read` 跟 `_construct` 若有錯誤處理，最後都會執行到 `_destroy`
 
 ```ts
 class MyReadable extends Readable {
-  _read(size: number): void {}
-  _construct(callback: (error?: Error | null) => void): void {}
-  _destroy(
-    error: Error | null,
-    callback: (error?: Error | null) => void,
-  ): void {}
+  _read(size: number): void;
+  _construct(callback: (error?: Error | null) => void): void;
+  _destroy(error: Error | null, callback: (error?: Error | null) => void): void;
 }
 ```
 
@@ -423,8 +394,7 @@ myReadable.on("error", (err) => {
 flowchart LR
     A[_construct] --> B["callback(err)"]
     B --> C[destroy + _destroy]
-    C --> D[emit error]
-    D --> E["on('error')<br/>errored = err<br/>destoryed = true"]
+    C --> D["on('error')<br/>errored = err<br/>destoryed = true"]
 ```
 
 ### `_read` 階段正確呼叫 `destroy`
@@ -468,76 +438,21 @@ myReadable.on("error", (err) => {
 ```mermaid
 flowchart LR
     A[_read] --> B[destroy + _destroy]
-    B --> C[emit error]
-    C --> D["on('error')<br/>errored = err<br/>destoryed = true"]
-```
-
-## `writable._write` vs `readable._read` 錯誤處理
-
-先來看看 `write` 跟 `_write` 的介面
-
-```ts
-write(chunk: any, encoding: BufferEncoding, callback?: (error: Error | null | undefined) => void): boolean;
-_write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
-```
-
-寫個 PoC 來釐清兩者的執行順序
-
-```ts
-class MyWritable extends Writable {
-  _write(
-    chunk: any,
-    encoding: BufferEncoding,
-    callback: (error?: Error | null) => void,
-  ): void {
-    console.log(performance.now(), "_write");
-    callback(new Error(`_write ${chunk}`));
-  }
-}
-
-const myWritable = new MyWritable();
-myWritable.write("123", (err) => {
-  console.log("write callback");
-  console.log(err);
-});
-
-// Prints
-// _write
-// write callback
-// Error: _write 123
-```
-
-執行順序如下：
-
-```mermaid
-flowchart LR
-    A[使用者呼叫 write] --> B[底層呼叫 _write]
-    B --> C["實作者調用 _write<br/>的 callback(err)"]
-    C --> D["底層呼叫使用者傳入的<br/>write callback<br/>並且傳入 err 當作參數"]
-```
-
-而 `readable._read` 則需要使用 `readable.destroy` 來處理錯誤
-
-再來看看 `read`, `_read` 跟 `push` 的介面
-
-```ts
-read(size?: number): any;
-_read(size: number): void
-push(chunk: any, encoding?: BufferEncoding): boolean
+    B --> C["on('error')<br/>errored = err<br/>destoryed = true"]
 ```
 
 ## Readable vs Writable
 
-若從介面設計的對等性來看
-
 |                                               | Readable                                           | Writable                                              |
 | --------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------- |
-| 誰負責把資料寫入 internal buffer<br/>(生產者) | `push(chunk)` (實作者)                             | `write(chunk)` (使用者)                               |
-| 誰負責消化 internal buffer<br/>(消費者)       | `read(size)` (使用者)                              | `_write(chunk)` (實作者)                              |
-| 啟動訊號                                      | `_read(size)` (Node.js 觸發)                       | `write(chunk)` (使用者)                               |
+| 誰負責把資料寫入 internal buffer<br/>(生產者) | 實作者 `push(chunk)`                               | 使用者 `write(chunk)`                                 |
+| 誰負責消化 internal buffer<br/>(消費者)       | 使用者 `read(size)`                                | 實作者 `_write(chunk)`                                |
+| 啟動訊號                                      | Node.js 觸發 `_read(size)`                         | 使用者 `write(chunk)`                                 |
 | 對應關係                                      | 1 : N <br/>1 次 `_read(size)` : N 次 `push(chunk)` | 1 : 1 <br/>1 次 `write(chunk)` : 1 次 `_write(chunk)` |
 | backpressure 訊號                             | `push(chunk)` 的回傳值 (給實作者看)                | `_write(chunk)` 的回傳值 (給使用者看)                 |
-| 錯誤處理                                      | `_read` 內部實作呼叫 `destroy`                     | `_write` 內部實作呼叫 `callback(err)`<br/>            |
-| 錯誤歸屬                                      | Transaction-based<br/>關聯到特定的 `write(chunk)`  | Source-based<br/>關聯到整個資料源                     |
+| 錯誤處理                                      | `_read` 內部實作呼叫 `destroy()`                   | `_write` 內部實作呼叫 `callback(err)`<br/>            |
+| 錯誤歸屬                                      | Source-based<br/>關聯到整個資料源                  | Transaction-based<br/>關聯到特定的 `write(chunk)`     |
 
-<!-- todo-yus -->
+## 小結
+
+本來以為 Readable 跟 Writable 應該就是完全對稱的設計，但若深入了解，會發現其實沒有那麼簡單～在這篇文章，我盡量把兩者的差異列出來，中間我其實也有卡關，重複閱讀了官方文件很多次，才比較理解　Readable 跟 Writable　的設計哲學差異。

@@ -2,7 +2,7 @@
 title: Node.js stream.Writable 生命週期
 description: Node.js stream.Writable 生命週期
 last_update:
-  date: "2026-01-20T08:00:00+08:00"
+  date: "2026-01-25T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -104,9 +104,9 @@ flowchart TD
     E --> F[write callback]
 ```
 
-1. 根據 [readable.\_construct](https://nodejs.org/api/stream.html#readable_constructcallback) 的描述，`constructor` 執行完後，`process.nextTick` 才會執行 `_construct`，所以 `write` 的回傳值 `isSafeToWriteMore` 會先印出來。雖然 `writable._construct` 的官方文件沒有描述到這個行為，但基本上兩者的概念是相通的
-2. `_construct` 完成後，執行 `callback`，代表可以開始 `_write`
-3. `_write` 完成後，執行 `callback`，代表可以開始 `write` 的 `callback`
+1. 根據 [`readable._construct`](https://nodejs.org/api/stream.html#readable_constructcallback) 的描述，`constructor` 執行完後，`process.nextTick` 才會執行 `_construct`，所以 `write` 的回傳值 `isSafeToWriteMore` 會先印出來。雖然 `writable._construct` 的官方文件沒有描述到這個行為，但基本上兩者的概念是相通的
+2. `_construct` 完成後（執行 `_construct` 的 `callback`），代表可以開始 `_write`
+3. `_write` 完成後（執行 `_write` 的 `callback`），代表可以開始 `write` 的 `callback`
 
 只能讚嘆 Node.js 的 Event-driven architecture 設計真的很精妙，大量的利用 `callback` 把各種 async 事件串連起來
 
@@ -114,7 +114,7 @@ flowchart TD
 
 ## 記憶體管理：backpressure 與 highWaterMark
 
-在 create instance 的階段可以指定 `highWaterMark`，單位是 bytes
+在 create instance 的階段可以指定 highWaterMark，單位是 bytes
 
 ```ts
 const myWritable = new MyWritable({ highWaterMark: 1024 });
@@ -134,6 +134,8 @@ const myWritable = new MyWritable({ highWaterMark: 1024 });
 - 反之，則回傳 true
 
 我們試著寫個 PoC 來驗證
+
+<!-- todo-yus print 太多廢物 -->
 
 ```ts
 // class MyWritable 實作不變...
@@ -395,20 +397,13 @@ flowchart LR
 若仔細觀察每個 internal method 的參數，會發現 callback function 都有一個 optional error 參數，以 `_construct` 為例：
 
 ```ts
-_construct(callback: (error?: Error | null) => void): void {
-
-}
+_construct(callback: (error?: Error | null) => void): void
 ```
 
 而 `_destroy` 比較特殊，參數還有一個 error
 
 ```ts
-_destroy(
-  error: Error | null,
-  callback: (error?: Error | null) => void,
-): void {
-
-}
+_destroy(error: Error | null, callback: (error?: Error | null) => void): void
 ```
 
 因為 `_destroy` 是最後一個階段，在 `_construct`, `_write`, `_writev` 或 `_final` 任一階段拋錯，都會接著觸發 `_destroy`
@@ -436,20 +431,67 @@ myWritable.on("error", (error) => {
 });
 
 // Prints
-// 600.948167 _construct
-// 603.178708 _destroy
-// 603.284458 error _construct error
+// 859.5278 _construct
+// 862.8454 _destroy
+// 863.061 error _construct error
+// 863.273 close
 ```
 
-時序圖如下
+執行順序如下
 
 ```mermaid
 flowchart LR
-    A[_construct] --> E["callback(new Error())"]
-    B[_write] --> E["callback(new Error())"]
-    C[_writev] --> E["callback(new Error())"]
-    D[_final] --> E["callback(new Error())"]
-    E["callback(new Error())"] --> F[_destroy]
+    A[_construct] --> E["callback(err)"]
+    B[_write] --> E
+    C[_writev] --> E
+    D[_final] --> E
+    E --> F[_destroy]
+    F --> G["on('error')"]
+    G --> H["on('close')"]
+```
+
+不過 `write` 跟 `_write` 是 1:1 的關係，從它們的介面設計可以看出對稱性
+
+```ts
+write(chunk: any, encoding: BufferEncoding, callback?: (error: Error | null | undefined) => void): boolean;
+_write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
+```
+
+寫個 PoC 來測試 `_write` 拋出的 `callback(err)` 會先傳遞給 `write` 的 `callback(err)`
+
+```ts
+class MyWritable extends Writable {
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log("_write");
+    callback(new Error(`_write ${chunk}`));
+  }
+}
+
+const myWritable = new MyWritable();
+myWritable.write("123", (err) => {
+  console.log("write callback", err);
+});
+
+// Prints
+// _write
+// write callback Error: _write 123
+```
+
+執行順序如下：
+
+```mermaid
+flowchart LR
+    A[_write] --> B["_write<br/>callback(err)"]
+    B --> C["write<br/>callback(err)"]
+    C --> D[_destroy]
+    D --> E["on('error')"]
+    E --> F["on('close')"]
+
+    style C fill:#fff5ad,stroke:#aaaa33
 ```
 
 ## 小結
