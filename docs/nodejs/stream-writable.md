@@ -2,7 +2,7 @@
 title: Node.js stream.Writable 生命週期
 description: Node.js stream.Writable 生命週期
 last_update:
-  date: "2026-01-25T08:00:00+08:00"
+  date: "2026-01-26T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -20,10 +20,7 @@ class MyWritable extends Writable {
   _construct(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_construct");
     // 模擬 async 操作，例如：建立 TCP 連線
-    setTimeout(() => {
-      console.log(performance.now(), "_construct complete");
-      callback();
-    }, 1000);
+    setTimeout(callback, 1000);
   }
   _write(
     chunk: any,
@@ -72,12 +69,35 @@ myWritable.write("123");
 myWritable.write("456");
 ```
 
-但如果仔細查看 [`writable.write`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [`writable._write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 highWaterMark 這兩個名詞一直被提到
+但如果仔細查看 [`write`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [`_write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 highWaterMark 這兩個名詞一直被提到
 
 我們先來看看 `write` 的 `callback` 何時會被觸發
 
 ```ts
-// class MyWritable 實作不變...
+import { Writable, WritableOptions } from "stream";
+
+class MyWritable extends Writable {
+  constructor(opts?: WritableOptions) {
+    super(opts);
+    console.log(performance.now(), "constructor");
+  }
+  _construct(callback: (error?: Error | null) => void): void {
+    console.log(performance.now(), "_construct");
+    // 模擬 async 操作，例如：建立 TCP 連線
+    setTimeout(callback, 1000);
+  }
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    // 模擬寫入延遲
+    setTimeout(() => {
+      console.log(performance.now(), chunk);
+      callback();
+    }, 100);
+  }
+}
 
 const myWritable = new MyWritable();
 const isSafeToWriteMore = myWritable.write("123", () =>
@@ -135,42 +155,66 @@ const myWritable = new MyWritable({ highWaterMark: 1024 });
 
 我們試著寫個 PoC 來驗證
 
-<!-- todo-yus print 太多廢物 -->
-
 ```ts
-// class MyWritable 實作不變...
+import { Writable, WritableOptions } from "stream";
+
+class MyWritable extends Writable {
+  constructor(opts?: WritableOptions) {
+    super(opts);
+    console.log(performance.now(), "constructor");
+  }
+  _construct(callback: (error?: Error | null) => void): void {
+    console.log(performance.now(), "_construct");
+    // 模擬 async 操作，例如：建立 TCP 連線
+    setTimeout(callback, 1000);
+  }
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    // 模擬寫入延遲
+    setTimeout(callback, 100);
+  }
+}
 
 const myWritable = new MyWritable({ highWaterMark: 10 });
 let isSafeToWriteMore;
 isSafeToWriteMore = myWritable.write("12345", () =>
   console.log(performance.now(), "12345 is flushed"),
 );
-console.log(performance.now(), "12345", { isSafeToWriteMore });
+console.log(performance.now(), "12345", {
+  writableLength: myWritable.writableLength,
+  isSafeToWriteMore,
+});
 isSafeToWriteMore = myWritable.write("67890", () =>
   console.log(performance.now(), "67890 is flushed"),
 );
-console.log(performance.now(), "67890", { isSafeToWriteMore });
+console.log(performance.now(), "67890", {
+  writableLength: myWritable.writableLength,
+  isSafeToWriteMore,
+});
 isSafeToWriteMore = myWritable.write("abcde", () =>
   console.log(performance.now(), "abcde is flushed"),
 );
-console.log(performance.now(), "abcde", { isSafeToWriteMore });
+console.log(performance.now(), "abcde", {
+  writableLength: myWritable.writableLength,
+  isSafeToWriteMore,
+});
 
 // Prints
-// 652.767084 constructor
-// 653.107417 12345 { isSafeToWriteMore: true }
-// 653.22175 67890 { isSafeToWriteMore: false }
-// 653.28425 abcde { isSafeToWriteMore: false }
-// 653.408042 _construct
-// 1754.594667 <Buffer 31 32 33 34 35>
-// 1755.236625 12345 is flushed
-// 1856.598917 <Buffer 36 37 38 39 30>
-// 1858.051542 67890 is flushed
-// 1959.317584 <Buffer 61 62 63 64 65>
-// 1959.665167 abcde is flushed
+// 645.202834 constructor
+// 645.543209 12345 { writableLength: 5, isSafeToWriteMore: true }
+// 645.690542 67890 { writableLength: 10, isSafeToWriteMore: false }
+// 645.738042 abcde { writableLength: 15, isSafeToWriteMore: false }
+// 645.910417 _construct
+// 1748.1655 12345 is flushed
+// 1850.025125 67890 is flushed
+// 1951.147625 abcde is flushed
 ```
 
-- 第二次 `write("67890")` 剛好頂到 10 bytes 的水位，所以回傳 `{ isSafeToWriteMore: false }` 符合預期
-- 從 1754 > 1856 > 1959 幾乎都是 100ms 的間隔，得知 `_write` 是依序處理，確保 `write` 跟 `_write` 的寫入順序一致
+- 第二次 `write("67890")` 剛好頂到 10 bytes 的水位，所以印出 `{ isSafeToWriteMore: false }` 符合預期
+- 從 1748 > 1850 > 1951 幾乎都是 100ms 的間隔，得知是依序處理，確保 `write` 跟 `_write` 的寫入順序一致
 - 第三次 `write("abcde")` 雖然頂到水位，但還是有被處理，這點是符合預期的，參考 [writable.write](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 的描述
 
 ```
@@ -236,27 +280,22 @@ process.nextTick(() => httpRequestWritable.uncork()); // ✅ 寫入完成後，�
 // ❗ p.s. 這邊先不探討 TCP packet size，假設這些資料都會在同一個 packet 送出
 ```
 
-而為了優化 Array of chunks 的寫入，Node.js 提供了 [`writable._writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback)，我們直接實作一個 PoC
+而為了優化 Array of chunks 的寫入，Node.js 提供了 [`_writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback) 讓實作者可以實作，我們直接實作一個 PoC
 
 ```ts
-import { Writable, WritableOptions } from "stream";
+import { Writable } from "stream";
 
 class MyWritable extends Writable {
-  // constructor, _construct, _write 實作不變
-
   _writev(
     chunks: Array<{ chunk: any; encoding: BufferEncoding }>,
     callback: (error?: Error | null) => void,
   ): void {
+    const rawHttpRequest = chunks
+      .map((chunk) => (chunk.chunk as Buffer).toString("utf8"))
+      .join("");
+    console.log(performance.now(), "_writev", { rawHttpRequest });
     // 模擬寫入延遲
-    setTimeout(() => {
-      console.log(
-        performance.now(),
-        "_writev",
-        ...chunks.map((chunk) => chunk.chunk),
-      );
-      callback();
-    }, 100);
+    setTimeout(callback, 100);
   }
 }
 
@@ -270,9 +309,7 @@ myWritable.write("\r\n\r\n");
 process.nextTick(() => myWritable.uncork());
 
 // Prints
-// 643.791833 constructor
-// 644.234125 _construct
-// 1747.523958 _writev <Buffer 47 45 54 20 2f 20 48 54 54 50 2f 31 2e 31> <Buffer 0d 0a> <Buffer 48 6f 73 74 3a 20 65 78 61 6d 70 6c 65 2e 63 6f 6d> <Buffer 0d 0a 0d 0a>
+// 626.334916 _writev { rawHttpRequest: 'GET / HTTP/1.1\r\nHost: example.com\r\n\r\n' }
 ```
 
 如果沒有實作 `_writev` 的話，就會 fallback 變成迴圈的呼叫 `_write`，對效能就會影響，參考 [writable.cork](https://nodejs.org/api/stream.html#writablecork) 的描述：
@@ -317,20 +354,22 @@ httpRequestWritable.end("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
 也因此 `end` 之後不能再 `write`，否則就會報錯
 
 ```ts
-// class MyWritable 實作不變...
-const myWritable = new MyWritable();
-myWritable.end();
-myWritable.write("123"); // Error: write after end
+const httpRequestWritable = getWritableSomehow();
+httpRequestWritable.end("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
+httpRequestWritable.write("123"); // Error: write after end
 ```
 
 寫個 PoC 來觀察 `end`, `_final` 跟 `_destroy` 的觸發順序
 
 ```ts
-import { Writable, WritableOptions } from "stream";
+import { Writable } from "stream";
 
 class MyWritable extends Writable {
-  // constructor, _construct, _write, _writev 實作不變
-
+  _construct(callback: (error?: Error | null) => void): void {
+    console.log(performance.now(), "_construct");
+    // 模擬 async 操作，例如：建立 TCP 連線
+    setTimeout(callback, 1000);
+  }
   _final(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_final");
     // 模擬 async 操作，例如：關閉 TCP 連線
@@ -344,6 +383,23 @@ class MyWritable extends Writable {
     // 模擬 async 操作，例如：關閉 TCP 連線
     setTimeout(() => callback(), 1000);
   }
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_write");
+    // 模擬寫入延遲
+    setTimeout(callback, 100);
+  }
+  _writev(
+    chunks: Array<{ chunk: any; encoding: BufferEncoding }>,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_writev");
+    // 模擬寫入延遲
+    setTimeout(callback, 100);
+  }
 }
 
 const myWritable = new MyWritable();
@@ -354,14 +410,13 @@ myWritable.on("finish", () => console.log(performance.now(), "on('finish')"));
 myWritable.on("close", () => console.log(performance.now(), "on('close')"));
 
 // Prints
-// 591.258416 constructor
-// 591.951166 _construct
-// 1695.200166 _writev <Buffer 31 32 33 34 35> <Buffer 36 37 38 39 30> <Buffer 61 62 63 64 65>
-// 1696.403 _final
-// 2698.55075 end callback
-// 2698.973833 on('finish')
-// 2699.621333 _destroy
-// 3701.73175 on('close')
+// 708.142667 _construct
+// 1709.220417 _writev
+// 1810.945917 _final
+// 2812.627 end callback
+// 2813.00425 on('finish')
+// 2813.522209 _destroy
+// 3815.098334 on('close')
 ```
 
 時間軸如下
@@ -376,28 +431,33 @@ flowchart LR
     F --> G["on('close')"]
 ```
 
-另外補充
-
-- 由於我們的 `_construct` 延遲了 `_write`
-- 加上我們有實作 `_writev`
+- 由於我們的 `_construct` 延遲了 `_write`，加上我們有實作 `_writev`
 - 所以 Node.js 會幫我們把 internal buffer 用 `_writev` 一次處理
 
 若把 `_construct` 的實作註解，則會變成
 
 ```ts
 // Prints
-// 696.73825 <Buffer 31 32 33 34 35>
-// 798.611792 _writev <Buffer 36 37 38 39 30> <Buffer 61 62 63 64 65>
+// 642.668042 _write
+// 744.745125 _writev
+// 846.356167 _final
+// 1847.872209 end callback
+// 1848.167542 on('finish')
+// 1848.923875 _destroy
+// 2850.768459 on('close')
 ```
 
 這個現象蠻有趣的，Node.js 會先用 `write` 盡快地送出第一個 chunk，後續的 Array of chunks 則用 `_writev` 一次處理
 
 ## handle error
 
-若仔細觀察每個 internal method 的參數，會發現 callback function 都有一個 optional error 參數，以 `_construct` 為例：
+若仔細觀察每個 internal method 的參數，會發現 callback function 都有一個 optional error 參數：
 
 ```ts
 _construct(callback: (error?: Error | null) => void): void
+_write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
+_writev(chunks: Array<{ chunk: any; encoding: BufferEncoding; }>, callback: (error?: Error | null) => void): void
+_final(callback: (error?: Error | null) => void): void
 ```
 
 而 `_destroy` 比較特殊，參數還有一個 error
@@ -408,9 +468,11 @@ _destroy(error: Error | null, callback: (error?: Error | null) => void): void
 
 因為 `_destroy` 是最後一個階段，在 `_construct`, `_write`, `_writev` 或 `_final` 任一階段拋錯，都會接著觸發 `_destroy`
 
-所以 `_destroy` 也需要正確拋錯，才可以被 `on('error')` 捕捉
+所以 `_destroy` 也需要正確拋錯，才可以被 `on("error")` 捕捉
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   _construct(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_construct");
@@ -429,6 +491,9 @@ const myWritable = new MyWritable();
 myWritable.on("error", (error) => {
   console.error(performance.now(), "error", error.message);
 });
+myWritable.on("close", () => {
+  console.error(performance.now(), "close");
+});
 
 // Prints
 // 859.5278 _construct
@@ -442,43 +507,62 @@ myWritable.on("error", (error) => {
 ```mermaid
 flowchart LR
     A[_construct] --> E["callback(err)"]
-    B[_write] --> E
-    C[_writev] --> E
-    D[_final] --> E
     E --> F[_destroy]
     F --> G["on('error')"]
     G --> H["on('close')"]
 ```
 
-不過 `write` 跟 `_write` 是 1:1 的關係，從它們的介面設計可以看出對稱性
+### 特殊案例: `write` 跟 `_write` 的錯誤傳遞
+
+`_write` 拋出的 `callback(err)` 會先傳遞給 `write` 的 `callback(err)`，再來才會進到 `_destroy`
+
+從它們的介面設計可以看出對稱性，`write` 跟 `_write` 是 1:1 的關係
 
 ```ts
 write(chunk: any, encoding: BufferEncoding, callback?: (error: Error | null | undefined) => void): boolean;
 _write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
 ```
 
-寫個 PoC 來測試 `_write` 拋出的 `callback(err)` 會先傳遞給 `write` 的 `callback(err)`
+寫個 PoC 來測試
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   _write(
     chunk: any,
     encoding: BufferEncoding,
     callback: (error?: Error | null) => void,
   ): void {
-    console.log("_write");
+    console.log(performance.now(), "_write");
     callback(new Error(`_write ${chunk}`));
+  }
+  _destroy(
+    error: Error | null,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_destroy");
+    if (error) return callback(error);
   }
 }
 
 const myWritable = new MyWritable();
 myWritable.write("123", (err) => {
-  console.log("write callback", err);
+  console.log(performance.now(), "write callback", err?.message);
+});
+myWritable.on("error", (error) => {
+  console.error(performance.now(), "error", error.message);
+});
+myWritable.on("close", () => {
+  console.error(performance.now(), "close");
 });
 
 // Prints
-// _write
-// write callback Error: _write 123
+// 714.752667 _write
+// 720.340417 write callback _write 123
+// 720.524417 _destroy
+// 720.735292 error _write 123
+// 720.82075 close
 ```
 
 執行順序如下：
