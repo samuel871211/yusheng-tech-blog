@@ -373,7 +373,7 @@ class MyWritable extends Writable {
   _final(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_final");
     // 模擬 async 操作，例如：關閉 TCP 連線
-    setTimeout(() => callback(), 1000);
+    setTimeout(callback, 1000);
   }
   _destroy(
     error: Error | null,
@@ -381,7 +381,7 @@ class MyWritable extends Writable {
   ): void {
     console.log(performance.now(), "_destroy");
     // 模擬 async 操作，例如：關閉 TCP 連線
-    setTimeout(() => callback(), 1000);
+    setTimeout(callback, 1000);
   }
   _write(
     chunk: any,

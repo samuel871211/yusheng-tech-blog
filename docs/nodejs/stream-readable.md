@@ -2,7 +2,7 @@
 title: Node.js stream.Readable 生命週期
 description: Node.js stream.Readable 生命週期
 last_update:
-  date: "2026-01-25T08:00:00+08:00"
+  date: "2026-01-27T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -20,7 +20,7 @@ class MyReadable extends Readable {
   _construct(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_construct");
     // 模擬 async 操作，例如：建立 TCP 連線
-    setTimeout(() => callback(), 1000);
+    setTimeout(callback, 1000);
   }
   _read(size: number): void {
     console.log(performance.now(), "_read");
@@ -96,14 +96,13 @@ myReadable.readableFlowing; // true
 
 - [readableFlowing](https://nodejs.org/api/stream.html#readablereadableflowing) 有 `null`, `true`, `false` 三種狀態，初始值是 `null`
 - 當 `on('data')` 開始監聽後，`readableFlowing` 會轉成 `true`
-- 自動讀取的設計哲學是 "有多少讀多少"，所以 Node.js 會直接在底層呼叫 `_read(highWaterMark)`
+- 自動讀取的設計哲學是 "有多少讀多少"，所以 Node.js 會直接在背後呼叫 `_read(highWaterMark)`
 - 承上，根據 [Node.js 原始碼](https://github.com/nodejs/node/blob/main/lib/internal/streams/state.js)，Windows 11 的預設 `highWaterMark` 16KiB 符合預期
-<!-- prettier-ignore -->
 
+<!-- prettier-ignore -->
 ```js
 // TODO (fix): For some reason Windows CI fails with bigger hwm.
-let defaultHighWaterMarkBytes =
-  process.platform === "win32" ? 16 * 1024 : 64 * 1024;
+let defaultHighWaterMarkBytes = process.platform === "win32" ? 16 * 1024 : 64 * 1024;
 ```
 
 ### 自動讀取: 用 `pause` 跟 `resume` 來控制讀取速率
@@ -111,7 +110,22 @@ let defaultHighWaterMarkBytes =
 ```ts
 class MyReadable extends Readable {
   public shouldPause = true;
-  // 其餘實作不變...
+  private maxCount = 5;
+  private curCount = 0;
+  _read(size: number): void {
+    console.log(performance.now(), "_read");
+    // 模擬讀取資料的延遲
+    setTimeout(() => {
+      if (this.curCount < this.maxCount) {
+        this.push(this.curCount.toString().repeat(size));
+        this.curCount++;
+        return;
+      }
+      // https://nodejs.org/api/stream.html#readablepushchunk-encoding
+      // Passing chunk as null signals the end of the stream (EOF), after which no more data can be written.
+      this.push(null);
+    }, 100);
+  }
 }
 
 const myReadable = new MyReadable();
@@ -150,7 +164,21 @@ flowchart TD
 ```ts
 class MyReadable extends Readable {
   private maxCount = 2;
-  // 其餘實作不變...
+  private curCount = 0;
+  _read(size: number): void {
+    console.log(performance.now(), "_read");
+    // 模擬讀取資料的延遲
+    setTimeout(() => {
+      if (this.curCount < this.maxCount) {
+        this.push(this.curCount.toString().repeat(size));
+        this.curCount++;
+        return;
+      }
+      // https://nodejs.org/api/stream.html#readablepushchunk-encoding
+      // Passing chunk as null signals the end of the stream (EOF), after which no more data can be written.
+      this.push(null);
+    }, 100);
+  }
 }
 
 // 統一使用 16KiB，避免跨作業系統的預設值不一樣
@@ -293,7 +321,7 @@ myReadable.on("end", () => {
   });
 });
 myReadable.on("close", () => {
-  console.log(performance.now(), "close", { readableEnded: myReadable.closed });
+  console.log(performance.now(), "close", { closed: myReadable.closed });
 });
 
 // Prints
@@ -338,11 +366,11 @@ myWritable.write("some data");
 myWritable.end();
 ```
 
-也因此，stream.Readable 沒有 `_final` 這個 internal method，因為實作者可以在 `_read` 實作 async 操作
+也因此，stream.Readable 沒有 `_final` 這個 internal method，因為 Node.js 已經提供在 `_read` 實作 async 操作的彈性了
 
 ## handle error
 
-Readable 只有三個 internal method 要實作，其中 `_read` 跟 `_construct` 若有錯誤處理，最後都會執行到 `_destroy`
+Readable 只有三個 internal method 要實作，其中 `_read` 跟 `_construct` 的錯誤，最後都會執行到 `_destroy`
 
 ```ts
 class MyReadable extends Readable {
@@ -365,7 +393,7 @@ class MyReadable extends Readable {
     callback: (error?: Error | null) => void,
   ): void {
     console.log(performance.now(), "_destroy");
-    // ✅ _construct 拋出的錯誤會傳入 _destroy，請記得傳遞到 callback
+    // ✅ _construct 拋出的錯誤會傳到 _destroy，請記得傳遞到 callback
     if (error) return callback(error);
     callback();
   }
@@ -375,16 +403,14 @@ const myReadable = new MyReadable();
 // ✅ 使用者請記得用 on('error') 捕捉錯誤
 myReadable.on("error", (err) => {
   console.log("on('error')");
-  console.log(myReadable.destroyed); // true
-  console.log(err === myReadable.errored); // true
+  myReadable.destroyed; // true
+  err === myReadable.errored; // true
   console.log(err);
 });
 
 // Prints
 // 1747.335125 _destroy
 // on('error')
-// true
-// true
 // Error: _construct failed
 ```
 
@@ -420,16 +446,14 @@ const myReadable = new MyReadable();
 // ✅ 使用者請記得用 on('error') 捕捉錯誤
 myReadable.on("error", (err) => {
   console.log("on('error')");
-  console.log(myReadable.destroyed); // true
-  console.log(err === myReadable.errored); // true
+  myReadable.destroyed; // true
+  err === myReadable.errored; // true
   console.log(err);
 });
 
 // Prints
 // 1658.621167 _destroy
 // on('error')
-// true
-// true
 // Error: _read failed
 ```
 
@@ -446,8 +470,8 @@ flowchart LR
 |                                               | Readable                                           | Writable                                              |
 | --------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------- |
 | 誰負責把資料寫入 internal buffer<br/>(生產者) | 實作者 `push(chunk)`                               | 使用者 `write(chunk)`                                 |
+| (承上) 啟動訊號                               | Node.js 觸發 `_read(size)`                         | 使用者 `write(chunk)`                                 |
 | 誰負責消化 internal buffer<br/>(消費者)       | 使用者 `read(size)`                                | 實作者 `_write(chunk)`                                |
-| 啟動訊號                                      | Node.js 觸發 `_read(size)`                         | 使用者 `write(chunk)`                                 |
 | 對應關係                                      | 1 : N <br/>1 次 `_read(size)` : N 次 `push(chunk)` | 1 : 1 <br/>1 次 `write(chunk)` : 1 次 `_write(chunk)` |
 | backpressure 訊號                             | `push(chunk)` 的回傳值 (給實作者看)                | `_write(chunk)` 的回傳值 (給使用者看)                 |
 | 錯誤處理                                      | `_read` 內部實作呼叫 `destroy()`                   | `_write` 內部實作呼叫 `callback(err)`<br/>            |
@@ -455,4 +479,4 @@ flowchart LR
 
 ## 小結
 
-本來以為 Readable 跟 Writable 應該就是完全對稱的設計，但若深入了解，會發現其實沒有那麼簡單～在這篇文章，我盡量把兩者的差異列出來，中間我其實也有卡關，重複閱讀了官方文件很多次，才比較理解　Readable 跟 Writable　的設計哲學差異。
+本來以為 Readable 跟 Writable 應該就是完全對稱的設計，但若深入了解，會發現其實沒有那麼簡單～在這篇文章，我盡量把兩者的差異列出來，中間我其實也有卡關，重複閱讀了官方文件很多次，才比較理解 Readable 跟 Writable　的設計哲學差異。
