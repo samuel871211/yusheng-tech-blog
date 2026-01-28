@@ -480,3 +480,7 @@ flowchart LR
 ## 小結
 
 本來以為 Readable 跟 Writable 應該就是完全對稱的設計，但若深入了解，會發現其實沒有那麼簡單～在這篇文章，我盡量把兩者的差異列出來，中間我其實也有卡關，重複閱讀了官方文件很多次，才比較理解 Readable 跟 Writable　的設計哲學差異。
+
+## 參考資料
+
+- https://nodejs.org/api/stream.html

@@ -581,3 +581,7 @@ flowchart LR
 ## 小結
 
 我們在這篇文章學到了 stream.Writable 的生命週期 & 基本操作方法，希望對大家有幫助～
+
+## 參考資料
+
+- https://nodejs.org/api/stream.html
