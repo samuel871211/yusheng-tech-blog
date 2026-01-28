@@ -7,7 +7,7 @@ last_update:
 
 ## encode & decode
 
-我們之前的範例都是讀寫 string，並且沒有指定任何 `encoding` 或是 `decodeStrings`，所以從 internal buffer 取出來的資料都是 `Buffer`
+我們之前的範例都是寫 string 進 internal buffer，並且沒有指定任何 `encoding` 或是 `decodeStrings`，從 internal buffer 取出來的資料都是 `Buffer`
 
 ```ts
 readable.push("123");
@@ -197,6 +197,8 @@ pipe 的中文是管子，在這邊的意思是把 readable 資料源 (source) "
 
 聽起來很抽象，但實際上各種 HTTP 中間層（Web Server, CDN, Proxy）就是用這個概念在轉發 HTTP Request / Response
 
+### HTTP Proxy as Example
+
 若以 "HTTP 中間層" 當作第一人稱的話
 
 ```mermaid
@@ -210,6 +212,70 @@ sequenceDiagram
   server ->> middle: Receive HTTP Response<br/>(stream.Readable)
   middle ->> client: 將 HTTP Request 轉傳回去<br/>Readable.pipe(res)
 ```
+
+我們用 Node.js 實作一個簡單的 HTTP 中間層 + server 架構
+
+```ts
+const httpProxyServer = createServer().listen(5000);
+const httpServer = createServer().listen(5001);
+
+httpProxyServer.on("request", (req, res) => {
+  const proxyToSeverRequest = request({
+    hostname: "localhost",
+    port: 5001,
+    path: req.url,
+    method: req.method,
+    headers: req.headers,
+  });
+  proxyToSeverRequest.on("response", (serverToProxyResponse) => {
+    const { statusCode, headers } = serverToProxyResponse;
+    res.writeHead(statusCode as number, headers);
+    // server ->> proxy 的 response body (Readable) 透過 pipe 水管接到 proxy ->> client 的 response body (Writable)
+    serverToProxyResponse.pipe(res);
+  });
+  // client ->> proxy 的 request body (Readable) 透過 pipe 水管接到 proxy ->> server 的 request body (Writable)
+  req.pipe(proxyToSeverRequest);
+});
+
+httpServer.on("request", (req, res) => {
+  let body = "";
+  req.setEncoding("utf8");
+  req.on("data", (chunk) => {
+    body += chunk;
+  });
+  req.on("end", () => {
+    // 把 request url, headers, body 包成 json 原封不動吐回去
+    res.setHeader("content-type", "application/json");
+    res.end(
+      JSON.stringify({
+        url: req.url,
+        headers: req.headers,
+        body,
+      }),
+    );
+  });
+});
+```
+
+用 Postman 發個 POST 請求到 http://localhost:5000/ ，就可以成功收到 http://localhost:5001/ 回傳的 HTTP Response 了
+![postman-post-5000-proxy](../../static/img/postman-post-5000-proxy.jpg)
+
+不過以上只是簡單的 PoC，實際上 HTTP 中間層需要處理很多細節，包含且不限於以下：
+
+1. keep-alive
+2. change origin header
+3. keep or omit cookie
+4. HTTPS ->> HTTP
+5. HTTP/2 ->> HTTP
+6. error handle
+
+所以通常不會自己手刻 http-proxy，而是會用現成的套件，例如 [http-proxy-3](https://www.npmjs.com/package/http-proxy-3)，處理了大部分 HTTP 的 edge case
+
+<!-- todo-yus -->
+<!-- ### 為何要用 readalble.pipe
+
+承上面的範例，如果不用 readable.pipe 的話，就要自己處理很多細節、錯誤處理，包含且不限於以下：
+1. 若 Readable Side 發生錯誤， -->
 
 ## unshift
 
