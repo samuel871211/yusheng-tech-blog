@@ -1,8 +1,8 @@
 ---
-title: Node.js stream 進階：objectMode, pipe, unshift
-description: Node.js stream 進階：ObjectMode, pipe, unshift
+title: Node.js stream 進階：objectMode, pipe
+description: Node.js stream 進階：objectMode, pipe
 last_update:
-  date: "2026-01-28T08:00:00+08:00"
+  date: "2026-01-29T08:00:00+08:00"
 ---
 
 ## encode & decode
@@ -271,13 +271,11 @@ httpServer.on("request", (req, res) => {
 
 所以通常不會自己手刻 http-proxy，而是會用現成的套件，例如 [http-proxy-3](https://www.npmjs.com/package/http-proxy-3)，處理了大部分 HTTP 的 edge case
 
-<!-- todo-yus -->
-<!-- ### 為何要用 readalble.pipe
+## 小結
 
-承上面的範例，如果不用 readable.pipe 的話，就要自己處理很多細節、錯誤處理，包含且不限於以下：
-1. 若 Readable Side 發生錯誤， -->
+關於 stream 的解說，分了四篇才講完，下一章節終於要進到 Socket 啦～
 
-## unshift
+<!-- ## unshift -->
 
 ## 參考資料
 
