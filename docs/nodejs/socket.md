@@ -80,7 +80,11 @@ httpServer.on("request", (req, res) => {
   res.end("ok");
 });
 httpServer.listen(5000);
+```
 
+用 curl 戳看看
+
+```ts
 // curl http://localhost:5000 -v
 // * Host localhost:5000 was resolved.
 // * IPv6: ::1
@@ -114,7 +118,11 @@ server.on("connection", (socket) => {
   });
 });
 server.listen(5000);
+```
 
+用 curl 戳看看
+
+```ts
 // curl http://localhost:5000 -v
 // * Host localhost:5000 was resolved.
 // * IPv6: ::1
@@ -136,11 +144,116 @@ server.listen(5000);
 
 ## net.Server (net.createServer)
 
+要創建一個 TCP Server 的話，可以使用
+
+```ts
+const server5000 = new net.Server();
+server5000.listen(5000);
+
+const server5001 = net.createServer();
+server5001.listen(5001);
+```
+
+這兩者是等效的，其中 `createServer` 是一個 wrapper function，單純是語意上比較好理解，這也是 Node.js 的一貫風格
+
+https://github.com/nodejs/node/blob/main/lib/net.js
+
+```ts
+function createServer(options, connectionListener) {
+  return new Server(options, connectionListener);
+}
+```
+
 ## net.connect (net.createConnection)
 
-<!-- ## net.Socket -->
+要創建一個 TCP Client 連線到 localhost:5000 的話，可以使用
 
-<!-- NodeJS HTTP 就是繼承 Socket -->
+```ts
+const socket = net.connect({
+  host: "localhost",
+  port: 5000,
+});
+
+const socket = net.createConnection({
+  host: "localhost",
+  port: 5000,
+});
+```
+
+這兩者是完全一樣的 function，只是名稱不一樣
+
+https://github.com/nodejs/node/blob/main/lib/net.js
+
+```ts
+module.exports = {
+  connect,
+  createConnection: connect,
+};
+```
+
+從 [Node.js 官方文件](https://nodejs.org/api/net.html#netcreateconnection) 可以得知這是一個 factory function
+
+```
+A factory function, which creates a new net.Socket, immediately initiates connection with socket.connect(), then returns the net.Socket that starts the connection.
+```
+
+直接看 [Node.js 原始碼](https://github.com/nodejs/node/blob/main/lib/net.js) 的話
+
+```ts
+function connect(...args) {
+  const normalized = normalizeArgs(args);
+  const options = normalized[0];
+  debug("createConnection", normalized);
+  const socket = new Socket(options);
+
+  if (options.timeout) {
+    socket.setTimeout(options.timeout);
+  }
+
+  return socket.connect(normalized);
+}
+```
+
+其實就是幫忙設定 `socket.setTimeout` 跟 `socket.connect` 而已
+
+## Client / Server 小結
+
+我們現在學會了創建 TCP Client / Server 的語法，並且也成功傳輸 HTTP/1.1 Plain Text。接下來要針對 `net.Socket` 深入講解
+
+## keepAlive, keepAliveInitialDelay
+
+我在去年寫的 [HTTP: Keep-Alive 和 Connection](../http/keep-alive-and-connection.md) 有提到 keepAlive，但 HTTP 層級跟 TCP Socket 層級的 keepAlive 是不同的概念
+
+HTTP 層級的 `keepAlive: timeout=5, max=200` 代表的是
+
+- 這條 TCP Connection 若 5 秒沒有傳輸資料則關閉
+- 這條 TCP Connection 最多只能傳送 200 個 HTTP Round Trip 就要關閉
+
+而 TCP 層級的 `keepAlive` 則是一個 "heartbeat" 機制，可由 Client 或 Server 發出，確認對方是否還活著
+
+以 Server 發出 "keepAlive heartbeat" 為例
+
+```ts
+const server = net.createServer({
+  keepAlive: true,
+  keepAliveInitialDelay: 3000,
+});
+server.listen(5000);
+server.on("listening", () => {
+  const socket = net.connect({
+    host: "localhost",
+    port: 5000,
+    keepAlive: false,
+  });
+});
+```
+
+用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000
+![tcp-keep-alive](../../static/img/tcp-keep-alive.jpg)
+
+- 可以看到每 3 秒，由 TCP Server 發出 TCP Keep-Alive 封包，Client 回應 TCP Keep-Alive ACK 封包
+- 雖說 `keepAliveInitialDelay: 3000` 的語意是指 TCP 三方交握，過了 3 秒都沒傳輸資料的話，Server 就會發出 "heartbeat"
+- 但實際上我用 Node.js v24.13.0 + macOS 15.6.1 測試的結果，每 3 秒就會傳送一次 TCP Keep-Alive，這邊我沒深入研究原因
 
 ## 參考資料
 
