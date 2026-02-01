@@ -1,11 +1,13 @@
 ---
-title: Node.js net.Socket
-description: 用 net 模組創建 TCP Server / Client
+title: Node.js net 模組
+description: 用 net 模組創建 TCP Server / Client，並且了解 Socket 的概念、用法
+last_update:
+  date: "2026-02-01T08:00:00+08:00"
 ---
 
 ## 前言
 
-Node.js 的 net.Socket 是一個 TCP 的抽象 & 封裝，讓開發者不必理解 TCP (Layer 4) 的架構，使用封裝好的 API 就可以建立 TCP 連線、傳輸資料
+Node.js 的 net.Socket 是一個 TCP (Layer 4) 的抽象 & 封裝，讓開發者不必理解 TCP 的架構，直接使用封裝好的 API 就可以建立 TCP 連線、傳輸資料
 
 所謂的 TCP 架構，包含但不限於以下：
 
@@ -17,13 +19,17 @@ Node.js 的 net.Socket 是一個 TCP 的抽象 & 封裝，讓開發者不必理�
 
 透過封裝好的 API，就可以不必關注以上細節
 
+:::info
+TCP Socket 這個抽象 & 封裝並非 Node.js 獨有的概念，許多程式語言都有實作 Socket 模組
+:::
+
 ## From HTTP Point of View
 
 ✅ 為了簡化邏輯，我們先以 HTTP/1.1 Plain Text 當作舉例
 
 ### As a HTTP Client
 
-正常要發起 HTTP Request
+身為前端工程師，正常要發起 HTTP Request
 
 ```ts
 fetch("http://example.com")
@@ -65,14 +71,14 @@ socket.on("data", console.log); // ✅ on('data') 是 stream.Readable 的 event
 //
 ```
 
-- 我們平常用的 HTTP Client (curl, fetch, Postman...)，底層也是透過 TCP Socket 來傳輸 raw bytes
+- 我們平常用的 HTTP Client (curl, fetch, Postman...) 底層也是透過 TCP Client Socket 來傳輸 raw bytes
 - 在 net 模組的範例，可以看到 16 進位的 201 跟 0，這是 [Transfer-Encoding](../http/transfer-encoding.md) 用來宣告下一行的資料有多少 bytes
 - HTTP Client 幫開發者處理好了 HTTP Parsing, Connection Reuse 等等底層細節
 - 在 [stream-overview](stream-overview.md#streamduplex) 有提到 Socket 繼承 stream.Duplex，故包含 Readable 跟 Writable 的所有 methods
 
 ### As a HTTP Server
 
-正常要創建一個 HTTP Server
+正常要用 Node.js 創建一個 HTTP Server
 
 ```ts
 const httpServer = http.createServer();
@@ -191,7 +197,7 @@ module.exports = {
 };
 ```
 
-從 [Node.js 官方文件](https://nodejs.org/api/net.html#netcreateconnection) 可以得知這是一個 factory function
+並且從 [Node.js 官方文件](https://nodejs.org/api/net.html#netcreateconnection) 可以得知這是一個用來創建 [net.Socket](https://nodejs.org/api/net.html#class-netsocket) 的 factory function
 
 ```
 A factory function, which creates a new net.Socket, immediately initiates connection with socket.connect(), then returns the net.Socket that starts the connection.
@@ -214,15 +220,19 @@ function connect(...args) {
 }
 ```
 
-其實就是幫忙設定 `socket.setTimeout` 跟 `socket.connect` 而已
+其實就是幫忙設定 `socket.setTimeout` 跟 `socket.connect` 而已XD
 
 ## Client / Server 小結
 
 我們現在學會了創建 TCP Client / Server 的語法，並且也成功傳輸 HTTP/1.1 Plain Text。接下來要針對 `net.Socket` 深入講解
 
-## keepAlive, keepAliveInitialDelay
+:::info
+`net.Socket` 跟 TCP Socket 在本篇文章會大量提到，並且代表的是同樣的概念
+:::
 
-我在去年寫的 [HTTP: Keep-Alive 和 Connection](../http/keep-alive-and-connection.md) 有提到 keepAlive，但 HTTP 層級跟 TCP Socket 層級的 keepAlive 是不同的概念
+## TCP Socket 也有 keepAlive ?!
+
+我在去年寫的 HTTP 文章 [Keep-Alive 和 Connection](../http/keep-alive-and-connection.md) 有提到 keepAlive，但 HTTP 層級跟 TCP Socket 層級的 keepAlive 是不同的概念
 
 HTTP 層級的 `keepAlive: timeout=5, max=200` 代表的是
 
@@ -253,7 +263,309 @@ server.on("listening", () => {
 
 - 可以看到每 3 秒，由 TCP Server 發出 TCP Keep-Alive 封包，Client 回應 TCP Keep-Alive ACK 封包
 - 雖說 `keepAliveInitialDelay: 3000` 的語意是指 TCP 三方交握，過了 3 秒都沒傳輸資料的話，Server 就會發出 "heartbeat"
-- 但實際上我用 Node.js v24.13.0 + macOS 15.6.1 測試的結果，每 3 秒就會傳送一次 TCP Keep-Alive，這邊我沒深入研究原因
+- 但實際上我用 Node.js v24.13.0 (LTS) + macOS 15.6.1 測試的結果，每 3 秒就會傳送一次 TCP Keep-Alive，這邊我沒深入研究原因
+
+## TCP Client Socket 生命週期 1: lookup
+
+<!-- todo-yus -->
+
+## TCP Client Socket 生命週期 2: connection
+
+connect 開頭的 events 有這四個：
+
+- [connect](https://nodejs.org/api/net.html#event-connect)
+- [connectionAttempt](https://nodejs.org/api/net.html#event-connectionattempt)
+- [connectionAttemptFailed](https://nodejs.org/api/net.html#event-connectionattemptfailed)
+- [connectionAttemptTimeout](https://nodejs.org/api/net.html#event-connectionattempttimeout)
+
+針對 "localhost" 解出來的 addresses 為
+
+```ts
+import dns from "dns";
+dns.lookup("localhost", { all: true }, (err, addresses) =>
+  console.log(addresses),
+);
+
+// Prints
+// [({ address: "::1", family: 6 }, { address: "127.0.0.1", family: 4 })]
+```
+
+每一個 address 的連線，都會觸發一個 `connectionAttempt`，並且可能會觸發
+
+- `connect`：連線成功
+- `connectionAttemptFailed`：連線失敗
+- `connectionAttemptTimeout`：連線超時
+
+### 正常情境
+
+啟一個 TCP Server 監聽 localhost:5000，並且開一個 TCP Client 連過去
+
+```ts
+const server = net.createServer();
+server.listen(5000, "localhost");
+
+const socket = net.createConnection({
+  host: "localhost",
+  port: 5000,
+});
+socket.on("connectionAttempt", (ip, port, family) => {
+  console.log("connectionAttempt", { ip, port, family });
+});
+socket.on("connect", () => console.log("connect"));
+socket.on("connectionAttemptFailed", (ip, port, family, error) => {
+  console.log("connectionAttemptFailed", { ip, port, family, error });
+});
+socket.on("connectionAttemptTimeout", (ip, port, family) => {
+  console.log("connectionAttemptTimeout", { ip, port, family });
+});
+
+// Prints
+// connectionAttempt { ip: '::1', port: 5000, family: 6 }
+// connect
+```
+
+### Server 沒開對應 port
+
+將 TCP Server 的 port 改成 5001
+
+```ts
+const server = net.createServer();
+server.listen(5001, "localhost");
+
+const socket = net.createConnection({
+  host: "localhost",
+  port: 5000,
+});
+socket.on("connectionAttempt", (ip, port, family) => {
+  console.log("connectionAttempt", { ip, port, family });
+});
+socket.on("connect", () => console.log("connect"));
+socket.on("connectionAttemptFailed", (ip, port, family, error) => {
+  console.log("connectionAttemptFailed", { ip, port, family, error });
+});
+socket.on("connectionAttemptTimeout", (ip, port, family) => {
+  console.log("connectionAttemptTimeout", { ip, port, family });
+});
+// ✅ 記得監聽 on("error") 才不會讓 process exit
+socket.on("error", (err) => console.log(err));
+```
+
+print 出來的結果是
+
+```ts
+// `net.createConnection` 會根據 "localhost" 解出來的 addresses 依序嘗試連線
+// 觸發 `connectionAttempt` 跟 `connectionAttemptFailed`
+connectionAttempt { ip: '::1', port: 5000, family: 6 }
+connectionAttemptFailed {
+  ip: '::1',
+  port: 5000,
+  family: 6,
+  error: Error: connect ECONNREFUSED ::1:5000
+      at createConnectionError (node:net:1678:14)
+      at afterConnectMultiple (node:net:1708:16) {
+    errno: -4078,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '::1',
+    port: 5000
+  }
+}
+connectionAttempt { ip: '127.0.0.1', port: 5000, family: 4 }
+connectionAttemptFailed {
+  ip: '127.0.0.1',
+  port: 5000,
+  family: 4,
+  error: Error: connect ECONNREFUSED 127.0.0.1:5000
+      at createConnectionError (node:net:1678:14)
+      at afterConnectMultiple (node:net:1708:16) {
+    errno: -4078,
+    code: 'ECONNREFUSED',
+    syscall: 'connect',
+    address: '127.0.0.1',
+    port: 5000
+  }
+}
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError
+// 代表的是 多個 error "聚合" 成的一個 error
+// 當所有 IPv6 跟 IPv4 的連線嘗試都失敗，就會拋出
+AggregateError
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5000
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -4078,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5000
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5000
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -4078,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5000
+    }
+  ]
+}
+```
+
+執行順序如下
+
+```mermaid
+flowchart TD
+  A["connectionAttempt<br/>[::1]:5000"] --> B["connectionAttemptFailed<br/>[::1]:5000"]
+  B --> C["connectionAttempt<br/>127.0.0.1:5000"]
+  C --> D["connectionAttemptFailed<br/>127.0.0.1:5000"]
+  D --> E["on('error')"]
+```
+
+至於為何 Node.js 會把所有 addresses 都嘗試連線一次呢？根據 [socket.connect](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的官方文件，重點的預設值為：
+
+- `family: 0`：IPv6 跟 IPv4 都允許
+- `autoSelectFamily: true`：會嘗試連線所有的 IPv6 跟 IPv4，直到其中一個成功
+
+### 連線 timeout
+
+由於 [autoSelectFamilyAttemptTimeout](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的最小值是 10ms，本機互連很難超過，所以我們使用 example.com:81 來當範例
+
+先測試 example.com 解出來的 addresses
+
+```ts
+dns.lookup("example.com", { all: true }, (err, addresses) =>
+  console.log(addresses),
+);
+// Prints
+// [{ address: '104.18.26.120', family: 4 }, { address: '104.18.27.120', family: 4 }]
+```
+
+再來連到 example.com:81 試試看
+
+```ts
+const socket = net.createConnection({
+  host: "example.com",
+  port: 81,
+  autoSelectFamilyAttemptTimeout: 10,
+});
+socket.on("connectionAttempt", (ip, port, family) => {
+  console.log(performance.now(), "connectionAttempt", { ip, port, family });
+});
+socket.on("connect", () => console.log(performance.now(), "connect"));
+socket.on("connectionAttemptFailed", (ip, port, family, error) => {
+  console.log(performance.now(), "connectionAttemptFailed", {
+    ip,
+    port,
+    family,
+    error,
+  });
+});
+socket.on("connectionAttemptTimeout", (ip, port, family) => {
+  console.log(performance.now(), "connectionAttemptTimeout", {
+    ip,
+    port,
+    family,
+  });
+});
+```
+
+print 出來的結果是
+
+```ts
+765.0478 connectionAttempt { ip: '104.18.26.120', port: 81, family: 4 }
+776.1741 connectionAttemptTimeout { ip: '104.18.26.120', port: 81, family: 4 }
+776.762 connectionAttempt { ip: '104.18.27.120', port: 81, family: 4 }
+21811.692 connectionAttemptFailed {
+  ip: '104.18.27.120',
+  port: 81,
+  family: 4,
+  error: Error: connect ETIMEDOUT 104.18.27.120:81
+      at createConnectionError (node:net:1678:14)
+      at afterConnectMultiple (node:net:1708:16) {
+    errno: -4039,
+    code: 'ETIMEDOUT',
+    syscall: 'connect',
+    address: '104.18.27.120',
+    port: 81
+  }
+}
+AggregateError
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7) {
+  code: 'ETIMEDOUT',
+  [errors]: [
+    Error: connect ETIMEDOUT 104.18.26.120:81
+        at createConnectionError (node:net:1678:14)
+        at Timeout.internalConnectMultipleTimeout (node:net:1737:38)
+        at listOnTimeout (node:internal/timers:610:11)
+        at processTimers (node:internal/timers:543:7) {
+      errno: -4039,
+      code: 'ETIMEDOUT',
+      syscall: 'connect',
+      address: '104.18.26.120',
+      port: 81
+    },
+    Error: connect ETIMEDOUT 104.18.27.120:81
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -4039,
+      code: 'ETIMEDOUT',
+      syscall: 'connect',
+      address: '104.18.27.120',
+      port: 81
+    }
+  ]
+}
+```
+
+執行順序如下
+
+```mermaid
+flowchart TD
+  A["connectionAttempt<br/>104.18.26.120:81"] --> B["connectionAttemptTimeout<br/>104.18.26.120:81"]
+  B --> C["connectionAttempt<br/>104.18.27.120:81"]
+  C --> D["connectionAttemptFailed<br/>104.18.27.120:81"]
+  D --> E["on('error')"]
+```
+
+- 第一組 IP 104.18.26.120 經過 10ms 就 timeout
+- 第二組 IP 104.18.27.120 由於是最後一組，所以不受 10ms 的 timeout 限制（畢竟要以連線成功為優先）
+
+我們可以從 [Node.js 原始碼](https://github.com/nodejs/node/blob/main/lib/net.js) 看到最後一組 address 確實不受 timeout 限制
+
+```ts
+function internalConnectMultiple(context, canceled) {
+  // ... other code
+
+  if (current < context.addresses.length - 1) {
+    debug(
+      "connect/multiple: setting the attempt timeout to %d ms",
+      context.timeout,
+    );
+
+    // If the attempt has not returned an error, start the connection timer
+    context[kTimeout] = setTimeout(
+      internalConnectMultipleTimeout,
+      context.timeout,
+      context,
+      req,
+      self._handle,
+    );
+  }
+}
+```
+
+##
+
+<!-- ## noDelay -->
+
+<!-- ## file descriptor -->
+
+<!-- ## onread, single buffer -->
 
 ## 參考資料
 
