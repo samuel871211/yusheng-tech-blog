@@ -583,16 +583,172 @@ function internalConnectMultiple(context, canceled) {
 
 ## TCP Client Socket 生命週期 3: 讀寫資料
 
-### 讀資料 (Readable)
-
 雖說在先前 [stream.Readable](./stream-readable.md) 那篇文章有提到，讀取資料有兩種模式
 
 - [自動讀取: `on('data')`](./stream-readable.md#自動讀取-ondata)
 - [手動讀取: `on('readable')` 搭配 `read`](./stream-readable.md#手動讀取-onreadable-搭配-read)
 
-但 `net.Socket` 僅支援 `on('data')`，並且
+但 `net.Socket` 僅支援第一種**自動讀取**
 
-### 寫資料 (Writable)
+並且讀取資料的方法都是繼承 stream.Readable，故這邊就不再贅述～
+
+- [socket.on('data')](https://nodejs.org/api/net.html#event-data)
+- [socket.setEncoding([encoding])](https://nodejs.org/api/net.html#socketsetencodingencoding)
+- [socket.pause()](https://nodejs.org/api/net.html#socketpause)
+- [socket.resume()](https://nodejs.org/api/net.html#socketresume)
+
+主要多了
+
+- [socket.bytesRead](https://nodejs.org/api/net.html#socketbytesread)，用來得知總讀取的資料量
+- [socket.bytesWritten](https://nodejs.org/api/net.html#socketbyteswritten)，用來得知總寫入的資料量
+
+```ts
+// localhost:5000 架一個簡易的 TCP Server
+const server = net.createServer();
+server.listen(5000, "localhost");
+server.on("connection", (socket) => {
+  const cb = () => console.log({ bytesWritten: socket.bytesWritten });
+  // server 依序寫入 123, 456 給 client
+  socket.write("123", cb);
+  setTimeout(() => socket.write("456", cb));
+});
+
+// 連線到 TCP Server，讀取資料
+const socket = net.createConnection({ host: "localhost", port: 5000 });
+socket.setEncoding("utf8");
+socket.on("data", (data) => console.log(data, socket.bytesRead));
+
+// Prints
+// { bytesWritten: 3 }
+// { data: '123', bytesRead: 3 }
+// { bytesWritten: 6 }
+// { data: '456', bytesRead: 6 }
+```
+
+## TCP Client Socket 生命週期 4: 關閉連線
+
+TCP 的 4-way-Handshake 用來關閉連線，Client 跟 Server 皆可以主動發起關閉連線 (FIN) 的封包
+
+- FIN：Finish (結束，我不會再寫入資料了)
+- ACK：Acknowledgement (確認)
+
+以 Client 主動發起關閉連線 (FIN) 的封包為例，範例如下：
+
+```ts
+// TCP Server
+const server = net.createServer();
+server.listen(5000, "localhost");
+server.on("connection", (socket) => {
+  socket.on("end", () => {
+    // Note: 我們無法透過 Node.js 觀察到 ACK 封包何時會發送
+    console.log(
+      `Step 2: TCP Server received TCP Client's FIN via socket.on("end")`,
+    );
+    console.log("Step 3: TCP Server initiates FIN via socket.end()");
+    socket.end();
+  });
+});
+
+// TCP Client
+const socket = net.createConnection({ host: "localhost", port: 5000 });
+socket.on("connect", () => {
+  console.log("Step 1: TCP Client initiates FIN via socket.end()");
+  socket.end();
+});
+socket.on("end", () => {
+  // Note: 我們無法透過 Node.js 觀察到 ACK 封包何時會發送
+  console.log(
+    `Step 4: TCP Client received TCP Server's FIN via socket.on("end")`,
+  );
+});
+
+// Prints
+// Step 1: TCP Client initiates FIN via socket.end()
+// Step 2: TCP Server received TCP Client's FIN via socket.on("end")
+// Step 3: TCP Server initiates FIN via socket.end()
+// Step 4: TCP Client received TCP Server's FIN via socket.on("end")
+```
+
+用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察由 TCP Client 主動發起的關閉連線
+![tcp-client-4-way](../../static/img/tcp-client-4-way.jpg)
+
+<!-- todo-yus 調整 -->
+
+流程如下：
+
+```mermaid
+sequenceDiagram
+  participant TCP Client
+  participant TCP Server
+
+  TCP Client ->> TCP Server: FIN
+  TCP Server ->> TCP Client: ACK
+  Note Over TCP Client: TCP Client's Writable has ended
+  Note Over TCP Server: TCP Server's Readable has ended
+
+  TCP Server ->> TCP Client: FIN
+  TCP Client ->> TCP Server: ACK
+  Note Over TCP Server: TCP Server's Writable has ended
+  Note Over TCP Client: TCP Client's Readable has ended
+```
+
+以 Server 主動發起關閉連線 (FIN) 的封包為例，範例如下：
+
+```ts
+// TCP Server
+const server = net.createServer();
+server.listen(5000, "localhost");
+server.on("connection", (socket) => {
+  console.log("Step 1: TCP Server initiates FIN via socket.end()");
+  socket.end();
+  socket.on("end", () => {
+    // Note: 我們無法透過 Node.js 觀察到 ACK 封包何時會發送
+    console.log(
+      `Step 4: TCP Server received TCP Client's FIN via socket.on("end")`,
+    );
+  });
+});
+
+// TCP Client
+const socket = net.createConnection({ host: "localhost", port: 5000 });
+socket.on("end", () => {
+  // Note: 我們無法透過 Node.js 觀察到 ACK 封包何時會發送
+  console.log(
+    `Step 2: TCP Client received TCP Server's FIN via socket.on("end")`,
+  );
+  console.log("Step 3: TCP Client initiates FIN via socket.end()");
+  socket.end();
+});
+
+// Prints
+// Step 1: TCP Server initiates FIN via socket.end()
+// Step 2: TCP Client received TCP Server's FIN via socket.on("end")
+// Step 3: TCP Client initiates FIN via socket.end()
+// Step 4: TCP Server received TCP Client's FIN via socket.on("end")
+```
+
+用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察由 TCP Server 主動發起的關閉連線
+![tcp-server-4-way](../../static/img/tcp-server-4-way.jpg)
+
+<!-- todo-yus 調整 -->
+
+流程如下：
+
+```mermaid
+sequenceDiagram
+  participant TCP Client
+  participant TCP Server
+
+  TCP Server ->> TCP Client: FIN
+  TCP Client ->> TCP Server: ACK
+  Note Over TCP Server: TCP Server's Writable has ended
+  Note Over TCP Client: TCP Client's Readable has ended
+
+  TCP Client ->> TCP Server: FIN
+  TCP Server ->> TCP Client: ACK
+  Note Over TCP Client: TCP Client's Writable has ended
+  Note Over TCP Server: TCP Server's Readable has ended
+```
 
 <!-- ## noDelay -->
 
