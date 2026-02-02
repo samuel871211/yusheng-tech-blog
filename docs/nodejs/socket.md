@@ -88,7 +88,7 @@ httpServer.on("request", (req, res) => {
 httpServer.listen(5000);
 ```
 
-用 curl 戳看看
+用 curl 戳看看，確認真的有收到 HTTP Response
 
 ```ts
 // curl http://localhost:5000 -v
@@ -126,7 +126,7 @@ server.on("connection", (socket) => {
 server.listen(5000);
 ```
 
-用 curl 戳看看
+用 curl 戳看看，確認真的有收到 HTTP Response
 
 ```ts
 // curl http://localhost:5000 -v
@@ -267,11 +267,33 @@ server.on("listening", () => {
 
 ## TCP Client Socket 生命週期 1: lookup
 
-<!-- todo-yus -->
+lookup event 會在 `dns.lookup` 之後觸發，但如果指定 IP 的情況就不會觸發。
+
+✅ 正確觸發
+
+```ts
+const socket = net.createConnection({ host: "example.com", port: 80 });
+socket.on("lookup", (err, address, family, host) =>
+  console.log(performance.now(), { err, address, family, host }),
+);
+
+// Prints
+// 635.062125 { err: null, address: '104.18.26.120', family: 4, host: 'example.com' }
+// 635.566666 { err: null, address: '104.18.27.120', family: 4, host: 'example.com' }
+```
+
+❌ 不會觸發
+
+```ts
+const socket = net.createConnection({ host: "104.18.26.120", port: 80 });
+socket.on("lookup", (err, address, family, host) =>
+  console.log(performance.now(), { err, address, family, host }),
+);
+```
 
 ## TCP Client Socket 生命週期 2: connection
 
-connect 開頭的 events 有這四個：
+成功把 domain 解成 IP 之後，接下來就可以開始連線。connect 開頭的 events 有這四個：
 
 - [connect](https://nodejs.org/api/net.html#event-connect)
 - [connectionAttempt](https://nodejs.org/api/net.html#event-connectionattempt)
@@ -559,7 +581,18 @@ function internalConnectMultiple(context, canceled) {
 }
 ```
 
-##
+## TCP Client Socket 生命週期 3: 讀寫資料
+
+### 讀資料 (Readable)
+
+雖說在先前 [stream.Readable](./stream-readable.md) 那篇文章有提到，讀取資料有兩種模式
+
+- [自動讀取: `on('data')`](./stream-readable.md#自動讀取-ondata)
+- [手動讀取: `on('readable')` 搭配 `read`](./stream-readable.md#手動讀取-onreadable-搭配-read)
+
+但 `net.Socket` 僅支援 `on('data')`，並且
+
+### 寫資料 (Writable)
 
 <!-- ## noDelay -->
 
