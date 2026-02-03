@@ -291,7 +291,7 @@ socket.on("lookup", (err, address, family, host) =>
 );
 ```
 
-## TCP Client Socket 生命週期 2: connection
+## TCP Client Socket 生命週期 2: connect
 
 成功把 domain 解成 IP 之後，接下來就可以開始連線。connect 開頭的 events 有這四個：
 
@@ -581,7 +581,7 @@ function internalConnectMultiple(context, canceled) {
 }
 ```
 
-## TCP Client Socket 生命週期 3: 讀寫資料
+## TCP Socket 生命週期 3: 讀寫資料
 
 雖說在先前 [stream.Readable](./stream-readable.md) 那篇文章有提到，讀取資料有兩種模式
 
@@ -625,55 +625,56 @@ socket.on("data", (data) => console.log(data, socket.bytesRead));
 // { data: '456', bytesRead: 6 }
 ```
 
-## TCP Client Socket 生命週期 4: 關閉連線
+## TCP Socket 生命週期 4: 關閉連線
 
 TCP 的 4-way-Handshake 用來關閉連線，Client 跟 Server 皆可以主動發起關閉連線 (FIN) 的封包
 
-- FIN：Finish (結束，我不會再寫入資料了)
-- ACK：Acknowledgement (確認)
+|      | FIN                                                   | ACK                                        |
+| ---- | ----------------------------------------------------- | ------------------------------------------ |
+| 全名 | Finish                                                | Acknowledgement                            |
+| 語意 | 結束，我不會再寫入資料了<br/>half-close writable side | 確認收到 TCP 封包（含 FIN）                |
+| 觸發 | 透過 socket.end()                                     | Node.js 沒有提供 API 控制 ACK 封包的發送   |
+| 接收 | 透過 socket.on("end")                                 | Node.js 沒有提供 Event 監控 ACK 封包的抵達 |
 
-以 Client 主動發起關閉連線 (FIN) 的封包為例，範例如下：
+### Client 透過 socket.end() 發起關閉連線
 
+<!-- prettier-ignore -->
 ```ts
 // TCP Server
-const server = net.createServer();
+const server = net.createServer({ allowHalfOpen: true });
 server.listen(5000, "localhost");
-server.on("connection", (socket) => {
-  socket.on("end", () => {
-    // Note: 我們無法透過 Node.js 觀察到 ACK 封包何時會發送
-    console.log(
-      `Step 2: TCP Server received TCP Client's FIN via socket.on("end")`,
-    );
+server.on("connection", (serverSocket) => {
+  serverSocket.on("end", () => {
+    assert(serverSocket.readableEnded === true); 
+    console.log(`Step 2: TCP Server received Client's FIN via socket.on("end")`,);
     console.log("Step 3: TCP Server initiates FIN via socket.end()");
-    socket.end();
+    serverSocket.end();
+    assert(serverSocket.writableEnded === true);
   });
 });
 
 // TCP Client
-const socket = net.createConnection({ host: "localhost", port: 5000 });
-socket.on("connect", () => {
+const clientSocket = net.createConnection({ host: "localhost", port: 5000, allowHalfOpen: true });
+clientSocket.on("connect", () => {
   console.log("Step 1: TCP Client initiates FIN via socket.end()");
-  socket.end();
+  clientSocket.end();
+  assert(clientSocket.writableEnded === true);
 });
-socket.on("end", () => {
-  // Note: 我們無法透過 Node.js 觀察到 ACK 封包何時會發送
-  console.log(
-    `Step 4: TCP Client received TCP Server's FIN via socket.on("end")`,
-  );
+clientSocket.on("end", () => {
+  assert(clientSocket.readableEnded === true);
+  console.log(`Step 4: TCP Client received Server's FIN via socket.on("end")`);
 });
 
 // Prints
 // Step 1: TCP Client initiates FIN via socket.end()
-// Step 2: TCP Server received TCP Client's FIN via socket.on("end")
+// Step 2: TCP Server received Client's FIN via socket.on("end")
 // Step 3: TCP Server initiates FIN via socket.end()
-// Step 4: TCP Client received TCP Server's FIN via socket.on("end")
+// Step 4: TCP Client received Server's FIN via socket.on("end")
 ```
 
 用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察由 TCP Client 主動發起的關閉連線
 ![tcp-client-4-way](../../static/img/tcp-client-4-way.jpg)
 
-<!-- todo-yus 調整 -->
-
 流程如下：
 
 ```mermaid
@@ -681,57 +682,54 @@ sequenceDiagram
   participant TCP Client
   participant TCP Server
 
-  TCP Client ->> TCP Server: FIN
-  TCP Server ->> TCP Client: ACK
-  Note Over TCP Client: TCP Client's Writable has ended
-  Note Over TCP Server: TCP Server's Readable has ended
+  TCP Client ->> TCP Server: clientSocket.end()<br/>(FIN will be sent)
+  Note Over TCP Client: clientSocket's Writable has ended
+  TCP Server ->> TCP Client: ACK (sent automatically by OS)
+  Note Over TCP Server: serverSocket.on("end")<br/>serverSocket's Readable has ended
 
-  TCP Server ->> TCP Client: FIN
-  TCP Client ->> TCP Server: ACK
-  Note Over TCP Server: TCP Server's Writable has ended
-  Note Over TCP Client: TCP Client's Readable has ended
+  TCP Server ->> TCP Client: serverSocket.end()<br/>(FIN will be sent)
+  Note Over TCP Server: serverSocket's Writable has ended
+  TCP Client ->> TCP Server: ACK (sent automatically by OS)
+  Note Over TCP Client: clientSocket.on("end")<br/>clientSocket's Readable has ended
 ```
 
-以 Server 主動發起關閉連線 (FIN) 的封包為例，範例如下：
+### Server 透過 socket.end() 發起關閉連線
 
+<!-- prettier-ignore -->
 ```ts
 // TCP Server
 const server = net.createServer();
 server.listen(5000, "localhost");
-server.on("connection", (socket) => {
+server.on("connection", (serverSocket) => {
   console.log("Step 1: TCP Server initiates FIN via socket.end()");
-  socket.end();
-  socket.on("end", () => {
-    // Note: 我們無法透過 Node.js 觀察到 ACK 封包何時會發送
-    console.log(
-      `Step 4: TCP Server received TCP Client's FIN via socket.on("end")`,
-    );
+  serverSocket.end();
+  assert(serverSocket.writableEnded === true);
+  serverSocket.on("end", () => {
+    assert(serverSocket.readableEnded === true);
+    console.log(`Step 4: TCP Server received Client's FIN via socket.on("end")`);
   });
 });
 
 // TCP Client
-const socket = net.createConnection({ host: "localhost", port: 5000 });
-socket.on("end", () => {
-  // Note: 我們無法透過 Node.js 觀察到 ACK 封包何時會發送
-  console.log(
-    `Step 2: TCP Client received TCP Server's FIN via socket.on("end")`,
-  );
+const clientSocket = net.createConnection({ host: "localhost", port: 5000, allowHalfOpen: true });
+clientSocket.on("end", () => {
+  assert(clientSocket.readableEnded === true);
+  console.log(`Step 2: TCP Client received Server's FIN via socket.on("end")`,);
   console.log("Step 3: TCP Client initiates FIN via socket.end()");
-  socket.end();
+  clientSocket.end();
+  assert(clientSocket.writableEnded === true);
 });
 
 // Prints
 // Step 1: TCP Server initiates FIN via socket.end()
-// Step 2: TCP Client received TCP Server's FIN via socket.on("end")
+// Step 2: TCP Client received Server's FIN via socket.on("end")
 // Step 3: TCP Client initiates FIN via socket.end()
-// Step 4: TCP Server received TCP Client's FIN via socket.on("end")
+// Step 4: TCP Server received Client's FIN via socket.on("end")
 ```
 
 用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察由 TCP Server 主動發起的關閉連線
 ![tcp-server-4-way](../../static/img/tcp-server-4-way.jpg)
 
-<!-- todo-yus 調整 -->
-
 流程如下：
 
 ```mermaid
@@ -739,17 +737,32 @@ sequenceDiagram
   participant TCP Client
   participant TCP Server
 
-  TCP Server ->> TCP Client: FIN
-  TCP Client ->> TCP Server: ACK
-  Note Over TCP Server: TCP Server's Writable has ended
-  Note Over TCP Client: TCP Client's Readable has ended
+  TCP Server ->> TCP Client: serverSocket.end()<br/>(FIN will be sent)
+  Note Over TCP Server: serverSocket's Writable has ended
+  TCP Client ->> TCP Server: ACK (sent automatically by OS)
+  Note Over TCP Client: clientSocket.on("end")<br/>clientSocket's Readable has ended
 
-  TCP Client ->> TCP Server: FIN
-  TCP Server ->> TCP Client: ACK
-  Note Over TCP Client: TCP Client's Writable has ended
-  Note Over TCP Server: TCP Server's Readable has ended
+  TCP Client ->> TCP Server: clientSocket.end()<br/>(FIN will be sent)
+  Note Over TCP Client: clientSocket's Writable has ended
+  TCP Server ->> TCP Client: ACK (sent automatically by OS)
+  Note Over TCP Server: serverSocket.on("end")<br/>serverSocket's Readable has ended
 ```
 
+## TCP Socket 生命週期 4-1: 強制關閉連線
+
+正常情況走的是 TCP 4-way-Handshake 優雅的關閉連線，但也有情況必須強制關閉連線，這時候就需要用到 destroy 開頭的 methods
+
+- [socket.destroy([error])](https://nodejs.org/api/net.html#socketdestroyerror)
+  - Ensures that no more I/O activity happens on this socket.
+  - Destroys the stream and closes the connection.
+- [socket.destroySoon()](https://nodejs.org/api/net.html#socketdestroysoon)
+  - Destroys the socket after all data is written.
+- [socket.resetAndDestroy()](https://nodejs.org/api/net.html#socketresetanddestroy)
+  - Close the TCP connection by sending an RST packet and destroy the stream.
+
+以上是 Node.js 官方文件的描述
+
+<!-- todo-yus -->
 <!-- ## noDelay -->
 
 <!-- ## file descriptor -->
