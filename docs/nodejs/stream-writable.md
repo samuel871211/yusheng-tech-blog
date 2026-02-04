@@ -2,7 +2,7 @@
 title: Node.js stream.Writable 生命週期
 description: Node.js stream.Writable 生命週期
 last_update:
-  date: "2026-01-26T08:00:00+08:00"
+  date: "2026-02-04T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -363,6 +363,7 @@ httpRequestWritable.write("123"); // Error: write after end
 
 ```ts
 import { Writable } from "stream";
+import assert from "assert";
 
 class MyWritable extends Writable {
   _construct(callback: (error?: Error | null) => void): void {
@@ -406,8 +407,17 @@ const myWritable = new MyWritable();
 myWritable.write("12345");
 myWritable.write("67890");
 myWritable.end("abcde", () => console.log(performance.now(), "end callback"));
-myWritable.on("finish", () => console.log(performance.now(), "on('finish')"));
-myWritable.on("close", () => console.log(performance.now(), "on('close')"));
+assert(myWritable.writable === false);
+assert(myWritable.writableEnded === true);
+myWritable.on("finish", () => {
+  assert(myWritable.writableFinished === true);
+  console.log(performance.now(), "on('finish')");
+});
+myWritable.on("close", () => {
+  assert(myWritable.destroyed === true);
+  assert(myWritable.closed === true);
+  console.log(performance.now(), "on('close')");
+});
 
 // Prints
 // 708.142667 _construct
@@ -489,9 +499,12 @@ class MyWritable extends Writable {
 
 const myWritable = new MyWritable();
 myWritable.on("error", (error) => {
+  assert(myWritable.errored === error);
+  assert(myWritable.writableAborted === true);
   console.error(performance.now(), "error", error.message);
 });
 myWritable.on("close", () => {
+  assert(myWritable.closed === true);
   console.error(performance.now(), "close");
 });
 
@@ -551,9 +564,12 @@ myWritable.write("123", (err) => {
   console.log(performance.now(), "write callback", err?.message);
 });
 myWritable.on("error", (error) => {
+  assert(myWritable.errored === error);
+  assert(myWritable.writableAborted === true);
   console.error(performance.now(), "error", error.message);
 });
 myWritable.on("close", () => {
+  assert(myWritable.closed === true);
   console.error(performance.now(), "close");
 });
 
