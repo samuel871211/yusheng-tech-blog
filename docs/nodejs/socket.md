@@ -2,7 +2,7 @@
 title: Node.js net 模組
 description: 用 net 模組創建 TCP Server / Client，並且了解 Socket 的概念、用法
 last_update:
-  date: "2026-02-01T08:00:00+08:00"
+  date: "2026-02-04T08:00:00+08:00"
 ---
 
 ## 前言
@@ -265,509 +265,54 @@ server.on("listening", () => {
 - 雖說 `keepAliveInitialDelay: 3000` 的語意是指 TCP 三方交握，過了 3 秒都沒傳輸資料的話，Server 就會發出 "heartbeat"
 - 但實際上我用 Node.js v24.13.0 (LTS) + macOS 15.6.1 測試的結果，每 3 秒就會傳送一次 TCP Keep-Alive，這邊我沒深入研究原因
 
-## TCP Client Socket 生命週期 1: lookup
+## BlockList
 
-lookup event 會在 `dns.lookup` 之後觸發，但如果指定 IP 的情況就不會觸發。
+Node.js 在 [createServer](https://nodejs.org/api/net.html#netcreateserveroptions-connectionlistener) 時，有個參數是 [blockList](https://nodejs.org/api/net.html#class-netblocklist)，可以阻擋特定 IP addresses, ranges, 或 subnets 的連線
 
-✅ 正確觸發
+使用方式也很簡單，先創建一個 blockList
 
 ```ts
-const socket = net.createConnection({ host: "example.com", port: 80 });
-socket.on("lookup", (err, address, family, host) =>
-  console.log(performance.now(), { err, address, family, host }),
-);
-
-// Prints
-// 635.062125 { err: null, address: '104.18.26.120', family: 4, host: 'example.com' }
-// 635.566666 { err: null, address: '104.18.27.120', family: 4, host: 'example.com' }
+const blockList = new BlockList();
+blockList.addAddress("127.0.0.1", "ipv4");
 ```
 
-❌ 不會觸發
+再來創建一個最小 TCP Server
 
 ```ts
-const socket = net.createConnection({ host: "104.18.26.120", port: 80 });
-socket.on("lookup", (err, address, family, host) =>
-  console.log(performance.now(), { err, address, family, host }),
-);
+const server = net.createServer({ blockList });
+server.listen(5000);
+server.on("connection", (serverSocket) => console.log("connection"));
 ```
 
-## TCP Client Socket 生命週期 2: connect
-
-成功把 domain 解成 IP 之後，接下來就可以開始連線。connect 開頭的 events 有這四個：
-
-- [connect](https://nodejs.org/api/net.html#event-connect)
-- [connectionAttempt](https://nodejs.org/api/net.html#event-connectionattempt)
-- [connectionAttemptFailed](https://nodejs.org/api/net.html#event-connectionattemptfailed)
-- [connectionAttemptTimeout](https://nodejs.org/api/net.html#event-connectionattempttimeout)
-
-針對 "localhost" 解出來的 addresses 為
+最後創建一個 TCP Client 連過去
 
 ```ts
-import dns from "dns";
-dns.lookup("localhost", { all: true }, (err, addresses) =>
-  console.log(addresses),
-);
-
-// Prints
-// [({ address: "::1", family: 6 }, { address: "127.0.0.1", family: 4 })]
-```
-
-每一個 address 的連線，都會觸發一個 `connectionAttempt`，並且可能會觸發
-
-- `connect`：連線成功
-- `connectionAttemptFailed`：連線失敗
-- `connectionAttemptTimeout`：連線超時
-
-### 正常情境
-
-啟一個 TCP Server 監聽 localhost:5000，並且開一個 TCP Client 連過去
-
-```ts
-const server = net.createServer();
-server.listen(5000, "localhost");
-
-const socket = net.createConnection({
+const clientSocket = net.createConnection({
   host: "localhost",
   port: 5000,
+  family: 4,
 });
-socket.on("connectionAttempt", (ip, port, family) => {
-  console.log("connectionAttempt", { ip, port, family });
-});
-socket.on("connect", () => console.log("connect"));
-socket.on("connectionAttemptFailed", (ip, port, family, error) => {
-  console.log("connectionAttemptFailed", { ip, port, family, error });
-});
-socket.on("connectionAttemptTimeout", (ip, port, family) => {
-  console.log("connectionAttemptTimeout", { ip, port, family });
-});
+clientSocket.on("connectionAttempt", () => console.log("connectionAttempt"));
+clientSocket.on("connect", () => console.log("connect"));
+clientSocket.on("connectionAttemptFailed", () =>
+  console.log("connectionAttemptFailed"),
+);
+clientSocket.on("connectionAttemptTimeout", () =>
+  console.log("connectionAttemptTimeout"),
+);
+clientSocket.on("error", () => console.log("err"));
+clientSocket.on("close", () => console.log("close"));
 
 // Prints
-// connectionAttempt { ip: '::1', port: 5000, family: 6 }
+// connectionAttempt
 // connect
+// close
 ```
 
-### Server 沒開對應 port
+若用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000
+![wireshark-blocklist](../../static/img/wireshark-blocklist.jpg)
 
-將 TCP Server 的 port 改成 5001
-
-```ts
-const server = net.createServer();
-server.listen(5001, "localhost");
-
-const socket = net.createConnection({
-  host: "localhost",
-  port: 5000,
-});
-socket.on("connectionAttempt", (ip, port, family) => {
-  console.log("connectionAttempt", { ip, port, family });
-});
-socket.on("connect", () => console.log("connect"));
-socket.on("connectionAttemptFailed", (ip, port, family, error) => {
-  console.log("connectionAttemptFailed", { ip, port, family, error });
-});
-socket.on("connectionAttemptTimeout", (ip, port, family) => {
-  console.log("connectionAttemptTimeout", { ip, port, family });
-});
-// ✅ 記得監聽 on("error") 才不會讓 process exit
-socket.on("error", (err) => console.log(err));
-```
-
-print 出來的結果是
-
-```ts
-// `net.createConnection` 會根據 "localhost" 解出來的 addresses 依序嘗試連線
-// 觸發 `connectionAttempt` 跟 `connectionAttemptFailed`
-connectionAttempt { ip: '::1', port: 5000, family: 6 }
-connectionAttemptFailed {
-  ip: '::1',
-  port: 5000,
-  family: 6,
-  error: Error: connect ECONNREFUSED ::1:5000
-      at createConnectionError (node:net:1678:14)
-      at afterConnectMultiple (node:net:1708:16) {
-    errno: -4078,
-    code: 'ECONNREFUSED',
-    syscall: 'connect',
-    address: '::1',
-    port: 5000
-  }
-}
-connectionAttempt { ip: '127.0.0.1', port: 5000, family: 4 }
-connectionAttemptFailed {
-  ip: '127.0.0.1',
-  port: 5000,
-  family: 4,
-  error: Error: connect ECONNREFUSED 127.0.0.1:5000
-      at createConnectionError (node:net:1678:14)
-      at afterConnectMultiple (node:net:1708:16) {
-    errno: -4078,
-    code: 'ECONNREFUSED',
-    syscall: 'connect',
-    address: '127.0.0.1',
-    port: 5000
-  }
-}
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AggregateError
-// 代表的是 多個 error "聚合" 成的一個 error
-// 當所有 IPv6 跟 IPv4 的連線嘗試都失敗，就會拋出
-AggregateError
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7) {
-  code: 'ECONNREFUSED',
-  [errors]: [
-    Error: connect ECONNREFUSED ::1:5000
-        at createConnectionError (node:net:1678:14)
-        at afterConnectMultiple (node:net:1708:16) {
-      errno: -4078,
-      code: 'ECONNREFUSED',
-      syscall: 'connect',
-      address: '::1',
-      port: 5000
-    },
-    Error: connect ECONNREFUSED 127.0.0.1:5000
-        at createConnectionError (node:net:1678:14)
-        at afterConnectMultiple (node:net:1708:16) {
-      errno: -4078,
-      code: 'ECONNREFUSED',
-      syscall: 'connect',
-      address: '127.0.0.1',
-      port: 5000
-    }
-  ]
-}
-```
-
-執行順序如下
-
-```mermaid
-flowchart TD
-  A["connectionAttempt<br/>[::1]:5000"] --> B["connectionAttemptFailed<br/>[::1]:5000"]
-  B --> C["connectionAttempt<br/>127.0.0.1:5000"]
-  C --> D["connectionAttemptFailed<br/>127.0.0.1:5000"]
-  D --> E["on('error')"]
-```
-
-至於為何 Node.js 會把所有 addresses 都嘗試連線一次呢？根據 [socket.connect](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的官方文件，重點的預設值為：
-
-- `family: 0`：IPv6 跟 IPv4 都允許
-- `autoSelectFamily: true`：會嘗試連線所有的 IPv6 跟 IPv4，直到其中一個成功
-
-### 連線 timeout
-
-由於 [autoSelectFamilyAttemptTimeout](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的最小值是 10ms，本機互連很難超過，所以我們使用 example.com:81 來當範例
-
-先測試 example.com 解出來的 addresses
-
-```ts
-dns.lookup("example.com", { all: true }, (err, addresses) =>
-  console.log(addresses),
-);
-// Prints
-// [{ address: '104.18.26.120', family: 4 }, { address: '104.18.27.120', family: 4 }]
-```
-
-再來連到 example.com:81 試試看
-
-```ts
-const socket = net.createConnection({
-  host: "example.com",
-  port: 81,
-  autoSelectFamilyAttemptTimeout: 10,
-});
-socket.on("connectionAttempt", (ip, port, family) => {
-  console.log(performance.now(), "connectionAttempt", { ip, port, family });
-});
-socket.on("connect", () => console.log(performance.now(), "connect"));
-socket.on("connectionAttemptFailed", (ip, port, family, error) => {
-  console.log(performance.now(), "connectionAttemptFailed", {
-    ip,
-    port,
-    family,
-    error,
-  });
-});
-socket.on("connectionAttemptTimeout", (ip, port, family) => {
-  console.log(performance.now(), "connectionAttemptTimeout", {
-    ip,
-    port,
-    family,
-  });
-});
-```
-
-print 出來的結果是
-
-```ts
-765.0478 connectionAttempt { ip: '104.18.26.120', port: 81, family: 4 }
-776.1741 connectionAttemptTimeout { ip: '104.18.26.120', port: 81, family: 4 }
-776.762 connectionAttempt { ip: '104.18.27.120', port: 81, family: 4 }
-21811.692 connectionAttemptFailed {
-  ip: '104.18.27.120',
-  port: 81,
-  family: 4,
-  error: Error: connect ETIMEDOUT 104.18.27.120:81
-      at createConnectionError (node:net:1678:14)
-      at afterConnectMultiple (node:net:1708:16) {
-    errno: -4039,
-    code: 'ETIMEDOUT',
-    syscall: 'connect',
-    address: '104.18.27.120',
-    port: 81
-  }
-}
-AggregateError
-    at internalConnectMultiple (node:net:1134:18)
-    at afterConnectMultiple (node:net:1715:7) {
-  code: 'ETIMEDOUT',
-  [errors]: [
-    Error: connect ETIMEDOUT 104.18.26.120:81
-        at createConnectionError (node:net:1678:14)
-        at Timeout.internalConnectMultipleTimeout (node:net:1737:38)
-        at listOnTimeout (node:internal/timers:610:11)
-        at processTimers (node:internal/timers:543:7) {
-      errno: -4039,
-      code: 'ETIMEDOUT',
-      syscall: 'connect',
-      address: '104.18.26.120',
-      port: 81
-    },
-    Error: connect ETIMEDOUT 104.18.27.120:81
-        at createConnectionError (node:net:1678:14)
-        at afterConnectMultiple (node:net:1708:16) {
-      errno: -4039,
-      code: 'ETIMEDOUT',
-      syscall: 'connect',
-      address: '104.18.27.120',
-      port: 81
-    }
-  ]
-}
-```
-
-執行順序如下
-
-```mermaid
-flowchart TD
-  A["connectionAttempt<br/>104.18.26.120:81"] --> B["connectionAttemptTimeout<br/>104.18.26.120:81"]
-  B --> C["connectionAttempt<br/>104.18.27.120:81"]
-  C --> D["connectionAttemptFailed<br/>104.18.27.120:81"]
-  D --> E["on('error')"]
-```
-
-- 第一組 IP 104.18.26.120 經過 10ms 就 timeout
-- 第二組 IP 104.18.27.120 由於是最後一組，所以不受 10ms 的 timeout 限制（畢竟要以連線成功為優先）
-
-我們可以從 [Node.js 原始碼](https://github.com/nodejs/node/blob/main/lib/net.js) 看到最後一組 address 確實不受 timeout 限制
-
-```ts
-function internalConnectMultiple(context, canceled) {
-  // ... other code
-
-  if (current < context.addresses.length - 1) {
-    debug(
-      "connect/multiple: setting the attempt timeout to %d ms",
-      context.timeout,
-    );
-
-    // If the attempt has not returned an error, start the connection timer
-    context[kTimeout] = setTimeout(
-      internalConnectMultipleTimeout,
-      context.timeout,
-      context,
-      req,
-      self._handle,
-    );
-  }
-}
-```
-
-## TCP Socket 生命週期 3: 讀寫資料
-
-雖說在先前 [stream.Readable](./stream-readable.md) 那篇文章有提到，讀取資料有兩種模式
-
-- [自動讀取: `on('data')`](./stream-readable.md#自動讀取-ondata)
-- [手動讀取: `on('readable')` 搭配 `read`](./stream-readable.md#手動讀取-onreadable-搭配-read)
-
-但 `net.Socket` 僅支援第一種**自動讀取**
-
-並且讀取資料的方法都是繼承 stream.Readable，故這邊就不再贅述～
-
-- [socket.on('data')](https://nodejs.org/api/net.html#event-data)
-- [socket.setEncoding([encoding])](https://nodejs.org/api/net.html#socketsetencodingencoding)
-- [socket.pause()](https://nodejs.org/api/net.html#socketpause)
-- [socket.resume()](https://nodejs.org/api/net.html#socketresume)
-
-主要多了
-
-- [socket.bytesRead](https://nodejs.org/api/net.html#socketbytesread)，用來得知總讀取的資料量
-- [socket.bytesWritten](https://nodejs.org/api/net.html#socketbyteswritten)，用來得知總寫入的資料量
-
-```ts
-// localhost:5000 架一個簡易的 TCP Server
-const server = net.createServer();
-server.listen(5000, "localhost");
-server.on("connection", (socket) => {
-  const cb = () => console.log({ bytesWritten: socket.bytesWritten });
-  // server 依序寫入 123, 456 給 client
-  socket.write("123", cb);
-  setTimeout(() => socket.write("456", cb));
-});
-
-// 連線到 TCP Server，讀取資料
-const socket = net.createConnection({ host: "localhost", port: 5000 });
-socket.setEncoding("utf8");
-socket.on("data", (data) => console.log(data, socket.bytesRead));
-
-// Prints
-// { bytesWritten: 3 }
-// { data: '123', bytesRead: 3 }
-// { bytesWritten: 6 }
-// { data: '456', bytesRead: 6 }
-```
-
-## TCP Socket 生命週期 4: 關閉連線
-
-TCP 的 4-way-Handshake 用來關閉連線，Client 跟 Server 皆可以主動發起關閉連線 (FIN) 的封包
-
-|      | FIN                                                   | ACK                                        |
-| ---- | ----------------------------------------------------- | ------------------------------------------ |
-| 全名 | Finish                                                | Acknowledgement                            |
-| 語意 | 結束，我不會再寫入資料了<br/>half-close writable side | 確認收到 TCP 封包（含 FIN）                |
-| 觸發 | 透過 socket.end()                                     | Node.js 沒有提供 API 控制 ACK 封包的發送   |
-| 接收 | 透過 socket.on("end")                                 | Node.js 沒有提供 Event 監控 ACK 封包的抵達 |
-
-### Client 透過 socket.end() 發起關閉連線
-
-<!-- prettier-ignore -->
-```ts
-// TCP Server
-const server = net.createServer({ allowHalfOpen: true });
-server.listen(5000, "localhost");
-server.on("connection", (serverSocket) => {
-  serverSocket.on("end", () => {
-    assert(serverSocket.readableEnded === true); 
-    console.log(`Step 2: TCP Server received Client's FIN via socket.on("end")`,);
-    console.log("Step 3: TCP Server initiates FIN via socket.end()");
-    serverSocket.end();
-    assert(serverSocket.writableEnded === true);
-  });
-});
-
-// TCP Client
-const clientSocket = net.createConnection({ host: "localhost", port: 5000, allowHalfOpen: true });
-clientSocket.on("connect", () => {
-  console.log("Step 1: TCP Client initiates FIN via socket.end()");
-  clientSocket.end();
-  assert(clientSocket.writableEnded === true);
-});
-clientSocket.on("end", () => {
-  assert(clientSocket.readableEnded === true);
-  console.log(`Step 4: TCP Client received Server's FIN via socket.on("end")`);
-});
-
-// Prints
-// Step 1: TCP Client initiates FIN via socket.end()
-// Step 2: TCP Server received Client's FIN via socket.on("end")
-// Step 3: TCP Server initiates FIN via socket.end()
-// Step 4: TCP Client received Server's FIN via socket.on("end")
-```
-
-用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察由 TCP Client 主動發起的關閉連線
-![tcp-client-4-way](../../static/img/tcp-client-4-way.jpg)
-
-流程如下：
-
-```mermaid
-sequenceDiagram
-  participant TCP Client
-  participant TCP Server
-
-  TCP Client ->> TCP Server: clientSocket.end()<br/>(FIN will be sent)
-  Note Over TCP Client: clientSocket's Writable has ended
-  TCP Server ->> TCP Client: ACK (sent automatically by OS)
-  Note Over TCP Server: serverSocket.on("end")<br/>serverSocket's Readable has ended
-
-  TCP Server ->> TCP Client: serverSocket.end()<br/>(FIN will be sent)
-  Note Over TCP Server: serverSocket's Writable has ended
-  TCP Client ->> TCP Server: ACK (sent automatically by OS)
-  Note Over TCP Client: clientSocket.on("end")<br/>clientSocket's Readable has ended
-```
-
-### Server 透過 socket.end() 發起關閉連線
-
-<!-- prettier-ignore -->
-```ts
-// TCP Server
-const server = net.createServer();
-server.listen(5000, "localhost");
-server.on("connection", (serverSocket) => {
-  console.log("Step 1: TCP Server initiates FIN via socket.end()");
-  serverSocket.end();
-  assert(serverSocket.writableEnded === true);
-  serverSocket.on("end", () => {
-    assert(serverSocket.readableEnded === true);
-    console.log(`Step 4: TCP Server received Client's FIN via socket.on("end")`);
-  });
-});
-
-// TCP Client
-const clientSocket = net.createConnection({ host: "localhost", port: 5000, allowHalfOpen: true });
-clientSocket.on("end", () => {
-  assert(clientSocket.readableEnded === true);
-  console.log(`Step 2: TCP Client received Server's FIN via socket.on("end")`,);
-  console.log("Step 3: TCP Client initiates FIN via socket.end()");
-  clientSocket.end();
-  assert(clientSocket.writableEnded === true);
-});
-
-// Prints
-// Step 1: TCP Server initiates FIN via socket.end()
-// Step 2: TCP Client received Server's FIN via socket.on("end")
-// Step 3: TCP Client initiates FIN via socket.end()
-// Step 4: TCP Server received Client's FIN via socket.on("end")
-```
-
-用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察由 TCP Server 主動發起的關閉連線
-![tcp-server-4-way](../../static/img/tcp-server-4-way.jpg)
-
-流程如下：
-
-```mermaid
-sequenceDiagram
-  participant TCP Client
-  participant TCP Server
-
-  TCP Server ->> TCP Client: serverSocket.end()<br/>(FIN will be sent)
-  Note Over TCP Server: serverSocket's Writable has ended
-  TCP Client ->> TCP Server: ACK (sent automatically by OS)
-  Note Over TCP Client: clientSocket.on("end")<br/>clientSocket's Readable has ended
-
-  TCP Client ->> TCP Server: clientSocket.end()<br/>(FIN will be sent)
-  Note Over TCP Client: clientSocket's Writable has ended
-  TCP Server ->> TCP Client: ACK (sent automatically by OS)
-  Note Over TCP Server: serverSocket.on("end")<br/>serverSocket's Readable has ended
-```
-
-## TCP Socket 生命週期 4-1: 強制關閉連線
-
-正常情況走的是 TCP 4-way-Handshake 優雅的關閉連線，但也有情況必須強制關閉連線，這時候就需要用到 destroy 開頭的 methods
-
-- [socket.destroy([error])](https://nodejs.org/api/net.html#socketdestroyerror)
-  - Ensures that no more I/O activity happens on this socket.
-  - Destroys the stream and closes the connection.
-- [socket.destroySoon()](https://nodejs.org/api/net.html#socketdestroysoon)
-  - Destroys the socket after all data is written.
-- [socket.resetAndDestroy()](https://nodejs.org/api/net.html#socketresetanddestroy)
-  - Close the TCP connection by sending an RST packet and destroy the stream.
-
-以上是 Node.js 官方文件的描述
-
-<!-- todo-yus -->
-<!-- ## noDelay -->
-
-<!-- ## file descriptor -->
-
-<!-- ## onread, single buffer -->
+## 小結
 
 ## 參考資料
 
