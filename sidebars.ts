@@ -197,7 +197,8 @@ const sidebars: SidebarsConfig = {
         "nodejs/stream-writable",
         "nodejs/stream-readable",
         "nodejs/stream-advance",
-        "nodejs/socket",
+        "nodejs/socket-overview",
+        "nodejs/socket-life-cycle",
       ],
     },
     {

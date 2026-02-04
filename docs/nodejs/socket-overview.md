@@ -1,5 +1,5 @@
 ---
-title: Node.js net 模組
+title: Node.js TCP Socket overview
 description: 用 net 模組創建 TCP Server / Client，並且了解 Socket 的概念、用法
 last_update:
   date: "2026-02-04T08:00:00+08:00"
@@ -286,33 +286,100 @@ server.on("connection", (serverSocket) => console.log("connection"));
 
 最後創建一個 TCP Client 連過去
 
+<!-- prettier-ignore -->
 ```ts
 const clientSocket = net.createConnection({
   host: "localhost",
   port: 5000,
   family: 4,
+  allowHalfOpen: true
 });
 clientSocket.on("connectionAttempt", () => console.log("connectionAttempt"));
 clientSocket.on("connect", () => console.log("connect"));
-clientSocket.on("connectionAttemptFailed", () =>
-  console.log("connectionAttemptFailed"),
-);
-clientSocket.on("connectionAttemptTimeout", () =>
-  console.log("connectionAttemptTimeout"),
-);
+clientSocket.on("connectionAttemptFailed", () => console.log("connectionAttemptFailed"));
+clientSocket.on("connectionAttemptTimeout", () => console.log("connectionAttemptTimeout"));
+clientSocket.on("finish", () => console.log("finish"));
+clientSocket.on("end", () => console.log("end"));
 clientSocket.on("error", () => console.log("err"));
 clientSocket.on("close", () => console.log("close"));
 
 // Prints
 // connectionAttempt
 // connect
-// close
+// end
 ```
 
 若用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000
 ![wireshark-blocklist](../../static/img/wireshark-blocklist.jpg)
 
+透過以上觀察，我們可以發現：
+
+- TCP 有成功三次交握，並且 Server 後續立即發送 FIN (Finish) 封包
+- 由於 TCP Client 有設定 allowHalfOpen，所以連線還是會維持半開
+- 對 TCP Server 來說，不會觸發 `on("connection")`，因為 blockList 已經擋掉了這個連線
+
+## maxConnections
+
+Node.js 的 [net.Server](https://nodejs.org/api/net.html#class-netserver) 有個 [maxconnections](https://nodejs.org/api/net.html#servermaxconnections) 可以控制，我們來測測看
+
+啟動 TCP Server，將 maxConnections 設成 1
+
+```ts
+const server = net.createServer();
+server.maxConnections = 1;
+server.listen(5000);
+server.on("connection", (serverSocket) => {
+  console.log("connection");
+});
+server.on("drop", console.log);
+```
+
+建立 2 個 TCP Client，依序連過去
+
+```ts
+// TCP Client
+const clientSocket1 = net.createConnection({
+  host: "localhost",
+  port: 5000,
+  family: 4,
+  allowHalfOpen: true,
+});
+clientSocket1.on("connect", () => {
+  const clientSocket2 = net.createConnection({
+    host: "localhost",
+    port: 5000,
+    family: 4,
+    allowHalfOpen: true,
+  });
+});
+```
+
+最終結果，第 1 個成功建立連線，第 2 個觸發 `on("drop")`
+
+```ts
+connection
+[Object: null prototype] {
+  localAddress: '::ffff:127.0.0.1',
+  localPort: 5000,
+  localFamily: 'IPv6',
+  remoteAddress: '::ffff:127.0.0.1',
+  remotePort: 7278,
+  remoteFamily: 'IPv6'
+}
+```
+
+若用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000
+![wireshark-maxconnections](../../static/img/wireshark-maxconnections.jpg)
+
+透過以上觀察，我們可以發現第二個連線，其行為與觸發 [blocklist](#blocklist) 幾乎是一樣的：
+
+- TCP 有成功三次交握，並且 Server 後續立即發送 FIN (Finish) 封包
+- 由於 TCP Client 有設定 allowHalfOpen，所以連線還是會維持半開
+- 對 TCP Server 來說，不會觸發 `on("connection")`，而是會觸發 `on("drop")`
+
 ## 小結
+
+這篇文章，我們以 HTTP 的視角來對比 TCP Client / Server，並且也學會了基本的語法跟參數。接下來，會進到 TCP Socket 的生命週期～
 
 ## 參考資料
 

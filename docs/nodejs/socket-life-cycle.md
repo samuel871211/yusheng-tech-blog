@@ -2,7 +2,7 @@
 title: Node.js TCP Socket Life Cycle
 description: 深入解說 Node.js TCP Socket 的生命週期
 last_update:
-  date: "2026-02-01T08:00:00+08:00"
+  date: "2026-02-04T08:00:00+08:00"
 ---
 
 ## TCP "Client" Socket 生命週期 1: lookup
@@ -72,11 +72,17 @@ dns.lookup("localhost", { all: true }, (err, addresses) =>
 // [({ address: "::1", family: 6 }, { address: "127.0.0.1", family: 4 })]
 ```
 
-每一個 address 的連線，都會觸發一個 `connectionAttempt`，並且可能會觸發
+每一個 address 的連線，都會觸發一個 `connectionAttempt`，並且可能會觸發以下三個其中一個
 
 - `connect`：連線成功
 - `connectionAttemptFailed`：連線失敗
 - `connectionAttemptTimeout`：連線超時
+
+另外，[autoSelectFamilyAttemptedAddresses](https://nodejs.org/api/net.html#socketautoselectfamilyattemptedaddresses) 會記錄所有嘗試過的 address，其格式為
+
+```ts
+["::1:5000", "127.0.0.1:5000"];
+```
 
 ### 正常情境
 
