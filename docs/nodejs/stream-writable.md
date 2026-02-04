@@ -499,8 +499,10 @@ class MyWritable extends Writable {
 
 const myWritable = new MyWritable();
 myWritable.on("error", (error) => {
+  assert(myWritable.writable === false);
   assert(myWritable.errored === error);
   assert(myWritable.writableAborted === true);
+  assert(myWritable.destroyed === true);
   console.error(performance.now(), "error", error.message);
 });
 myWritable.on("close", () => {
@@ -564,6 +566,8 @@ myWritable.write("123", (err) => {
   console.log(performance.now(), "write callback", err?.message);
 });
 myWritable.on("error", (error) => {
+  assert(myWritable.writable === false);
+  assert(myWritable.destroyed === true);
   assert(myWritable.errored === error);
   assert(myWritable.writableAborted === true);
   console.error(performance.now(), "error", error.message);

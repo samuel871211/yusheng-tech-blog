@@ -2,7 +2,7 @@
 title: Node.js stream.Readable 生命週期
 description: Node.js stream.Readable 生命週期
 last_update:
-  date: "2026-01-27T08:00:00+08:00"
+  date: "2026-02-04T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -316,21 +316,23 @@ myReadable.on("readable", () => {
   console.log(performance.now(), data?.byteLength, "bytes");
 });
 myReadable.on("end", () => {
-  console.log(performance.now(), "end", {
-    readableEnded: myReadable.readableEnded,
-  });
+  assert(myReadable.readable === false);
+  assert(myReadable.readableEnded === true);
+  console.log(performance.now(), "end");
 });
 myReadable.on("close", () => {
-  console.log(performance.now(), "close", { closed: myReadable.closed });
+  assert(myReadable.destroyed === true);
+  assert(myReadable.closed === true);
+  console.log(performance.now(), "close");
 });
 
 // Prints
 // 917.4708 _read
 // 918.5436 10 bytes
-// 918.7669 end { readableEnded: true }
+// 918.7669 end
 // 919.0596 _destroy
-// 1021.6917 close { closed: true }
-````
+// 1021.6917 close
+```
 
 執行順序如下：
 
@@ -392,7 +394,7 @@ class MyReadable extends Readable {
     error: Error | null,
     callback: (error?: Error | null) => void,
   ): void {
-    console.log(performance.now(), "_destroy");
+    console.log("_destroy");
     // ✅ _construct 拋出的錯誤會傳到 _destroy，請記得傳遞到 callback
     if (error) return callback(error);
     callback();
@@ -402,16 +404,22 @@ class MyReadable extends Readable {
 const myReadable = new MyReadable();
 // ✅ 使用者請記得用 on('error') 捕捉錯誤
 myReadable.on("error", (err) => {
-  console.log("on('error')");
-  myReadable.destroyed; // true
-  err === myReadable.errored; // true
-  console.log(err);
+  assert(myReadable.readable === false);
+  assert(myReadable.readableAborted === true);
+  assert(myReadable.destroyed === true);
+  assert(err === myReadable.errored);
+  console.log("on('error')", err.message);
+
 });
+myReadable.on("close", () => {
+  assert(myReadable.closed === true);
+  console.log("on('close')");
+})
 
 // Prints
-// 1747.335125 _destroy
-// on('error')
-// Error: _construct failed
+// _destroy
+// on('error') _construct failed
+// on('close')
 ```
 
 執行順序如下：
@@ -435,7 +443,7 @@ class MyReadable extends Readable {
     error: Error | null,
     callback: (error?: Error | null) => void,
   ): void {
-    console.log(performance.now(), "_destroy");
+    console.log("_destroy");
     // ✅ destroy 背後會呼叫 _destroy，請記得把 error 傳遞到 callback
     if (error) return callback(error);
     callback();
@@ -443,18 +451,26 @@ class MyReadable extends Readable {
 }
 
 const myReadable = new MyReadable();
+myReadable.on('readable', () => {
+  myReadable.read();
+})
 // ✅ 使用者請記得用 on('error') 捕捉錯誤
 myReadable.on("error", (err) => {
-  console.log("on('error')");
-  myReadable.destroyed; // true
-  err === myReadable.errored; // true
-  console.log(err);
+  assert(myReadable.readable === false);
+  assert(myReadable.readableAborted === true);
+  assert(myReadable.destroyed === true);
+  assert(err === myReadable.errored);
+  console.log("on('error')", err.message);
 });
+myReadable.on("close", () => {
+  assert(myReadable.closed === true);
+  console.log("on('close')")
+})
 
 // Prints
-// 1658.621167 _destroy
-// on('error')
-// Error: _read failed
+// _destroy
+// on('error') _read failed
+// on('close')
 ```
 
 執行順序如下：
@@ -484,3 +500,4 @@ flowchart LR
 ## 參考資料
 
 - https://nodejs.org/api/stream.html
+````
