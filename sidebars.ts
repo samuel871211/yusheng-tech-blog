@@ -199,6 +199,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/stream-advance",
         "nodejs/socket-overview",
         "nodejs/socket-life-cycle",
+        "nodejs/http-overview",
       ],
     },
     {
