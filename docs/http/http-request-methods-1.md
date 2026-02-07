@@ -1,10 +1,10 @@
 ---
-title: HTTP Request Methods (上篇)
-description: HTTP Request Methods (上篇)
+title: HTTP "HEAD" & "CONNECT" Request Methods
+description: 帶你了解平常很少用的 HTTP "HEAD" & "CONNECT" Request Methods
 # last_update:
 #   date: "2025-07-01T08:00:00+08:00"
 last_update:
-  date: "2025-11-21T08:00:00+08:00"
+  date: "2026-02-07T08:00:00+08:00"
 ---
 
 ## 前言
@@ -374,7 +374,7 @@ sequenceDiagram
 
     Note over Client, Target: HTTP CONNECT 代理連線流程
 
-    Client->>Proxy: CONNECT target.com:443 HTTP/1.1
+    Client->>Proxy: CONNECT example.com:80 HTTP/1.1
     Note right of Client: 發送 CONNECT request<br/>包含目標 host 和 port
 
     Proxy->>Proxy: 解析 URL (host:port)
@@ -394,7 +394,7 @@ sequenceDiagram
     Proxy->>Target: 轉發 head 資料
     Note right of Proxy: proxyToTargetSocket.write(head)
 
-    Client->>Proxy: GET / HTTP/1.1
+    Client->>Proxy: GET / HTTP/1.1<br/>Host: example.com
     Proxy->>Target: 透過 pipe 轉發
     Note over Proxy: clientToProxySocket.pipe(proxyToTargetSocket)
 
