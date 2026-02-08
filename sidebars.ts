@@ -54,6 +54,8 @@ const sidebars: SidebarsConfig = {
         "http/http-caching-2",
         "http/http-caching-3",
         "http/articles-30-end",
+        // 以上是 2025 iThome 鐵人賽
+
         "http/http-1.1-pipelining-and-hol-blocking",
         "http/a-download-and-content-disposition",
         "http/link",
@@ -61,12 +63,13 @@ const sidebars: SidebarsConfig = {
         "http/nncoection-or-connection",
         "http/http-version-negotiation",
         "http/m3u8",
-        "http/node-http-proxy",
-        "http/from-http-to-vite-preview",
-        "http/sentry",
-        "http/webdav",
+        // "http/from-http-to-vite-preview",
+        // "http/node-http-proxy",
+        // "http/sentry",
+        // "http/webdav",
+        "http/http-2", // 可拆 ing
+
         // "http/service-worker-allowed",
-        // "http/http-2", // 可拆 ing
         // "http/http-caching-4", // ing
         // "http/request-target-and-host" // port swigger 延伸的
         // "http/cookie", // 必讀
@@ -80,7 +83,6 @@ const sidebars: SidebarsConfig = {
         // "http/beyond-cors-2", // 超難，想放後面
         // "http/integrity-policy", // 很新的技術
         // "http/http-response-status-codes", // 感覺可拆，放最後，因為會跟很多主題重複
-        // "http/end",
       ],
     },
     {
