@@ -1,6 +1,6 @@
 ---
-title: Retry After and Date
-description: Retry After and Date
+title: "深入了解 HTTP 的 Retry 機制: Retry-After"
+description: "深入了解 HTTP 的 Retry 機制: Retry-After"
 last_update:
   date: "2025-05-25T08:00:00+08:00"
 ---

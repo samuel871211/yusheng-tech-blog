@@ -1,6 +1,6 @@
 ---
-title: Upgrade
-description: Upgrade
+title: HTTP Upgrade Header
+description: HTTP Upgrade Header
 last_update:
   date: "2025-06-28T08:00:00+08:00"
 ---

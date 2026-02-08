@@ -1,6 +1,6 @@
 ---
-title: Refresh
-description: Refresh
+title: HTTP Refresh Header
+description: 除了 location.reload，HTTP 也有提供方法可以重整頁面?!
 last_update:
   date: "2025-06-25T08:00:00+08:00"
 ---

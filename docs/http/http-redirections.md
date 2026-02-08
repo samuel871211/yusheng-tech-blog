@@ -1,6 +1,6 @@
 ---
-title: HTTP redirections
-description: HTTP redirections
+title: HTTP 3xx status code & redirections
+description: 深入理解 3xx status code 的含意，以及 HTTP redirections
 last_update:
   date: "2025-06-29T08:00:00+08:00"
 ---

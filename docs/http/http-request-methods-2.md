@@ -1,6 +1,6 @@
 ---
-title: HTTP Request Methods (下篇)
-description: HTTP Request Methods (下篇)
+title: HTTP "OPTIONS", "TRACE" Request Methods & XST
+description: 深入了解平常很少用的 OPTIONS, TRACE Request Methods，順便看看 XST 這個歷史上的資安漏洞
 last_update:
   date: "2025-07-02T08:00:00+08:00"
 ---
