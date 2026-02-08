@@ -2,7 +2,7 @@
 title: "從 Expect: 100-Continue 到 HTTP desync attack"
 description: "從 Expect: 100-Continue 到 HTTP desync attack"
 last_update:
-  date: "2025-12-16T08:00:00+08:00"
+  date: "2026-02-08T08:00:00+08:00"
 ---
 
 ## 前言
@@ -182,14 +182,15 @@ http server 會回傳
 我們實作 Node.js http server
 
 ```ts
-import { STATUS_CODES } from "http";
-import httpServer from "../httpServer";
+import http from "http";
 
+const httpServer = http.createServer();
+httpServer.listen(5000);
 httpServer.on("checkContinue", function checkContinueListener(req, res) {
   // >= 1MB 就 reject
   if (parseInt(req.headers["content-length"] || "0") >= 1024 * 1024) {
     res.statusCode = 413;
-    res.end(STATUS_CODES[413]);
+    res.end(http.STATUS_CODES[413]);
     return;
   }
   // < 1MB，讀取 request body，並且原封不動寫入 response body
@@ -203,11 +204,14 @@ httpServer.on("checkContinue", function checkContinueListener(req, res) {
 Client Side 使用 `net.Socket` 手動構造 Raw HTTP Request
 
 ```ts
-import net, { Socket } from "net";
+import net from "net";
 
-function sleep(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
+const rawHTTPRequestWithoutContent = `POST / HTTP/1.1
+Host: localhost:5000
+Expect: 100-continue
+Content-Length: 3
+
+`.replaceAll("\n", "\r\n");
 
 function createSocket(url: URL) {
   return new Promise<net.Socket>((resolve) => {
@@ -216,24 +220,18 @@ function createSocket(url: URL) {
   });
 }
 
-async function expect100Continue() {
+async function main() {
   const url = new URL("http://localhost:5000");
   const socket = await createSocket(url);
-  socket.write(
-    `GET / HTTP/1.1
-Host: localhost:5000
-Expect: 100-continue
-Content-Length: 3
-
-`.replaceAll("\n", "\r\n"),
-  );
-  socket.on("data", (chunk) => console.log(chunk.toString("utf8")));
-  // 延遲兩秒再送 request body (實務上應該是收到 100 Continue 就可以開始發送)
-  await sleep(2000);
-  socket.write("123");
+  socket.write(rawHTTPRequestWithoutContent);
+  socket.setEncoding("utf8");
+  socket.on("data", (chunk: string) => {
+    console.log(chunk);
+    if (chunk === "HTTP/1.1 100 Continue\r\n\r\n") socket.write("123");
+  });
 }
 
-expect100Continue();
+main();
 ```
 
 從 Node.js 的 log 可以觀察到，會先印出
@@ -251,12 +249,31 @@ expect100Continue();
   <div className="blue">Date: Mon, 15 Dec 2025 09:55:35 GMT</div>
   <div className="blue">Connection: keep-alive</div>
   <div className="blue">Keep-Alive: timeout=5</div>
-  <div className="blue">Content-Length: 2</div>
+  <div className="blue">Content-Length: 3</div>
   <div className="blue"></div>
-  <div className="blue">ok</div>
+  <div className="blue">123</div>
 </div>
 
-## 哪個 HTTP Client 預設有支援 `Expect: 100-continue`
+另外，Node.js 的 http client 其實也支援 100 continue
+
+```ts
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  path: "/",
+  method: "POST",
+  // ✅ 正常送出 expect: 100-continue 這個 request header
+  headers: { expect: "100-continue", "content-length": 3 },
+});
+// ✅ 等同於幫使用者處理 `if (chunk === "HTTP/1.1 100 Continue\r\n\r\n")`
+clientRequest.on("continue", () => clientRequest.end("123"));
+clientRequest.on("response", (response) => {
+  response.setEncoding("utf8");
+  response.on("data", console.log); // 123
+});
+```
+
+## curl 預設有支援 `Expect: 100-continue`
 
 根據 [everything.curl.dev](https://everything.curl.dev/http/post/expect100.html) 的描述
 
