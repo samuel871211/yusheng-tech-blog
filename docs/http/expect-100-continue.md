@@ -128,9 +128,9 @@ Response
   <div className="blue"></div>
 </div>
 
-## NodeJS http server 預設支援 100 Continue
+## Node.js http server 預設支援 100 Continue
 
-NodeJS http server，原生就有支援 100 Continue [Event: `'checkContinue'`](https://nodejs.org/api/http.html#event-checkcontinue) 的描述
+根據 [Event: 'checkContinue'](https://nodejs.org/api/http.html#event-checkcontinue) 的描述
 
 ```
 Emitted each time a request with an HTTP Expect: 100-continue is received. If this event is not listened for, the server will automatically respond with a 100 Continue as appropriate.
@@ -175,11 +175,11 @@ http server 會回傳
 建議使用 Burp Suite Repeater 或是可以完整印出 Raw HTTP Response 的 HTTP Client，才可以觀察到這個結果
 :::
 
-## NodeJS http server 自行處理 100 Continue
+## Node.js http server 自行處理 100 Continue
 
-實務上，幾乎不需要在 Application Layer 自行處理 100 Continue，因為很少有 Client 會發這種 Request，但 NodeJS http server 還是有提供這個 API 可以用
+實務上，幾乎不需要在 Application Layer 自行處理 100 Continue，因為很少有 Client 會發這種 Request，但 Node.js http server 還是有提供這個 API 可以用
 
-我們實作 NodeJS http server
+我們實作 Node.js http server
 
 ```ts
 import { STATUS_CODES } from "http";
@@ -236,7 +236,7 @@ Content-Length: 3
 expect100Continue();
 ```
 
-從 NodeJS 的 log 可以觀察到，會先印出
+從 Node.js 的 log 可以觀察到，會先印出
 
 <div className="httpRawRequest">
   <div className="blue">HTTP/1.1 100 Continue</div>
@@ -284,6 +284,8 @@ A client that sends a 100-continue expectation is not required to wait for any s
 這篇文章，帶大家了解 `Expect: 100-continue` 是如何在成熟的 HTTP Client / Server 運作
 
 下一篇文章，會進入 James Kettle 寫的 Paper [HTTP/1.1 must die: the desync endgame](https://portswigger.net/research/http1-must-die#expect-based-desync-attacks)
+
+<!-- todo-yus 還沒深入 -->
 
 ## 參考資料
 
