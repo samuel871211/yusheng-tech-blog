@@ -1,8 +1,8 @@
 ---
 title: Node.js http 模組
-description: "帶你了解 Node.js http 模組的設計"
+description: "為什麼 Node.js http 模組的 API 設計這麼低階？帶你了解 Node.js http 模組的設計理念"
 last_update:
-  date: "2026-02-05T08:00:00+08:00"
+  date: "2026-02-08T08:00:00+08:00"
 ---
 
 ## 前言
@@ -171,42 +171,115 @@ sequenceDiagram
 
 Node.js 跟 Request, Response 相關的 Class 有四個
 
-- [http.ClientRequest](https://nodejs.org/api/http.html#class-httpclientrequest)
-- [http.ServerResponse](https://nodejs.org/api/http.html#class-httpserverresponse)
-- [http.IncomingMessage](https://nodejs.org/api/http.html#class-httpincomingmessage)
-- [http.OutgoingMessage](https://nodejs.org/api/http.html#class-httpoutgoingmessage)
+- [http.ClientRequest](https://nodejs.org/api/http.html#class-httpclientrequest)：Client 送出的請求
+- [http.ServerResponse](https://nodejs.org/api/http.html#class-httpserverresponse)：Server 送出的回應
+- [http.IncomingMessage](https://nodejs.org/api/http.html#class-httpincomingmessage)：Server 讀取的請求 or Client 讀取的回應
+- [http.OutgoingMessage](https://nodejs.org/api/http.html#class-httpoutgoingmessage)：抽象 Class，ClientRequest 跟 ServerResponse 都繼承它
 
 之前在 [Node.js stream 入門](./stream-overview.md) 那篇文章有提到這些 Class 的關係，這邊再統整一次
 
-<!-- todo-yus -->
-
 ```mermaid
-graph TB
-    direction TB
+graph
     subgraph Server["Server 端"]
-        SSocket["Socket<br/>(stream.Duplex)"]
-        SReq["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP Request"]
-        SRes["ServerResponse<br/>(stream.Writable)<br/>寫入 HTTP Response"]
-
-        SReq -->|req.socket| SSocket
-        SRes -->|res.socket| SSocket
+        SReq["IncomingMessage"]
+        SRes["ServerResponse<br/>(extends OutgoingMessage)"]
     end
 
     subgraph Client["Client 端"]
-        direction RL
-        CSocket["Socket<br/>(stream.Duplex)"]
-        CReq["ClientRequest<br/>(stream.Writable)<br/>寫入 HTTP Request"]
-        CRes["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP Response"]
-
-        CReq -->|req.socket| CSocket
-        CRes -->|res.socket| CSocket
+        CReq["ClientRequest<br/>(extends OutgoingMessage)"]
+        CRes["IncomingMessage"]
     end
 
-    style CSocket fill:#f9f9f9
     style CReq fill:#ffd4d4
     style CRes fill:#d4edff
 
-    style SSocket fill:#f9f9f9
     style SReq fill:#d4edff
     style SRes fill:#ffd4d4
 ```
+
+Client Side Code
+
+```ts
+const clientRequest = http.get({
+  host: "example.com",
+  port: 80,
+  path: "/",
+});
+clientRequest.on("response", (response: http.IncomingMessage) =>
+  response.resume(),
+);
+```
+
+Server Side Code
+
+```ts
+const server = http
+  .createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
+    res.end();
+  })
+  .listen(5000);
+```
+
+## ClientRequest & ServerResponse
+
+### 到底啥時才會送出 header: 了解其 API 的設計
+
+setHeader
+
+- [request.setHeader(name, value)](https://nodejs.org/api/http.html#requestsetheadername-value)
+- [response.setHeader(name, value)](https://nodejs.org/api/http.html#responsesetheadername-value)
+- [outgoingMessage.setHeader(name, value)](https://nodejs.org/api/http.html#outgoingmessagesetheadername-value)
+
+setHeaders
+
+- [outgoingMessage.setHeaders(headers)](https://nodejs.org/api/http.html#outgoingmessagesetheadersheaders)
+
+flushHeaders
+
+- [request.flushHeaders()](https://nodejs.org/api/http.html#requestflushheaders)
+- [response.flushHeaders()](https://nodejs.org/api/http.html#responseflushheaders)
+- [outgoingMessage.flushHeaders()](https://nodejs.org/api/http.html#outgoingmessageflushheaders)
+
+removeHeader
+
+- [request.removeHeader(name)](https://nodejs.org/api/http.html#requestremoveheadername)
+- [response.removeHeader(name)](https://nodejs.org/api/http.html#responseremoveheadername)
+- [outgoingMessage.removeHeader(name)](https://nodejs.org/api/http.html#outgoingmessageremoveheadername)
+
+headersSent
+
+- [response.headersSent](https://nodejs.org/api/http.html#responseheaderssent)
+- [outgoingMessage.headersSent](https://nodejs.org/api/http.html#outgoingmessageheaderssent)
+
+writeHead
+
+- [response.writeHead(statusCode[, statusMessage][, headers])](https://nodejs.org/api/http.html#responsewriteheadstatuscode-statusmessage-headers)
+
+<!-- todo-yus 介紹 -->
+
+### 送出 body 的學問: Content-Length 跟 Transfer-Encoding
+
+- [request.write](https://nodejs.org/api/http.html#requestwritechunk-encoding-callback)
+- [response.write](https://nodejs.org/api/http.html#responsewritechunk-encoding-callback)
+
+### 取得 header 的相關 methods
+
+- [getHeader(name)](https://nodejs.org/api/http.html#outgoingmessagegetheadername)
+- [getHeaderNames()](https://nodejs.org/api/http.html#outgoingmessagegetheadernames)
+- [getHeaders()](https://nodejs.org/api/http.html#outgoingmessagegetheaders)
+- [hasHeader(name)](https://nodejs.org/api/http.html#outgoingmessagehasheadername)
+
+## http.ClientRequest
+
+### events
+
+- [close](https://nodejs.org/api/http.html#event-close)
+- [finish](https://nodejs.org/api/http.html#event-finish)
+- [information](https://nodejs.org/api/http.html#event-information)
+- [socket](https://nodejs.org/api/http.html#event-socket)
+- [timeout](https://nodejs.org/api/http.html#event-timeout)
+- [upgrade](https://nodejs.org/api/http.html#event-upgrade)
+
+<!-- ### 100-continue
+
+- [Event: `'continue'`](https://nodejs.org/api/http.html#event-continue) -->
