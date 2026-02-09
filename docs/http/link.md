@@ -1,6 +1,6 @@
 ---
-title: HTTP Link and HTML `<link>`
-description: HTTP Link and HTML `<link>`
+title: HTTP Link and HTML <link>
+description: HTTP Link and HTML <link>
 last_update:
   date: "2025-12-08T08:00:00+08:00"
 ---

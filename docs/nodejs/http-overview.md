@@ -259,8 +259,16 @@ writeHead
 
 ### 送出 body 的學問: Content-Length 跟 Transfer-Encoding
 
+write
+
 - [request.write](https://nodejs.org/api/http.html#requestwritechunk-encoding-callback)
 - [response.write](https://nodejs.org/api/http.html#responsewritechunk-encoding-callback)
+
+end
+
+- [request.end([data[, encoding]][, callback])](https://nodejs.org/api/http.html#requestenddata-encoding-callback)
+- [response.end([data[, encoding]][, callback])](https://nodejs.org/api/http.html#responseenddata-encoding-callback)
+- [outgoingMessage.end(chunk[, encoding][, callback])](https://nodejs.org/api/http.html#outgoingmessageendchunk-encoding-callback)
 
 ### 取得 header 的相關 methods
 
