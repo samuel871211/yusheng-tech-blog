@@ -259,34 +259,111 @@ writeHead
 
 ### 送出 body 的學問: Content-Length 跟 Transfer-Encoding
 
-write
+write()
 
-- [request.write](https://nodejs.org/api/http.html#requestwritechunk-encoding-callback)
-- [response.write](https://nodejs.org/api/http.html#responsewritechunk-encoding-callback)
+- [request.write(chunk[, encoding][, callback])](https://nodejs.org/api/http.html#requestwritechunk-encoding-callback)
+- [response.write(chunk[, encoding][, callback])](https://nodejs.org/api/http.html#responsewritechunk-encoding-callback)
+- [outgoingMessage.write(chunk[, encoding][, callback])](https://nodejs.org/api/http.html#outgoingmessagewritechunk-encoding-callback)
 
-end
+end()
 
 - [request.end([data[, encoding]][, callback])](https://nodejs.org/api/http.html#requestenddata-encoding-callback)
 - [response.end([data[, encoding]][, callback])](https://nodejs.org/api/http.html#responseenddata-encoding-callback)
 - [outgoingMessage.end(chunk[, encoding][, callback])](https://nodejs.org/api/http.html#outgoingmessageendchunk-encoding-callback)
 
+writableEnded
+
+- [request.writableEnded](https://nodejs.org/api/http.html#requestwritableended)
+- [response.writableEnded](https://nodejs.org/api/http.html#responsewritableended)
+- [outgoingMessage.writableEnded](https://nodejs.org/api/http.html#outgoingmessagewritableended)
+
+on('finish')
+
+- [request.on('finish')](https://nodejs.org/api/http.html#event-finish)
+- [response.on('finish')](https://nodejs.org/api/http.html#event-finish)
+- [outgoingMessage.on('finish')](https://nodejs.org/api/http.html#event-finish)
+
+writableFinished
+
+- [request.writableFinished](https://nodejs.org/api/http.html#requestwritablefinished)
+- [response.writableFinished](https://nodejs.org/api/http.html#responsewritablefinished)
+- [outgoingMessage.writableFinished](https://nodejs.org/api/http.html#outgoingmessagewritablefinished)
+
 ### 取得 header 的相關 methods
 
-- [getHeader(name)](https://nodejs.org/api/http.html#outgoingmessagegetheadername)
-- [getHeaderNames()](https://nodejs.org/api/http.html#outgoingmessagegetheadernames)
-- [getHeaders()](https://nodejs.org/api/http.html#outgoingmessagegetheaders)
-- [hasHeader(name)](https://nodejs.org/api/http.html#outgoingmessagehasheadername)
+getHeader()
+
+- [request.getHeader(name)](https://nodejs.org/api/http.html#requestgetheadername)
+- [response.getHeader(name)](https://nodejs.org/api/http.html#responsegetheadername)
+- [outgoingMessage.getHeader(name)](https://nodejs.org/api/http.html#outgoingmessagegetheadername)
+
+getHeaderNames()
+
+- [request.getHeaderNames()](https://nodejs.org/api/http.html#requestgetheadernames)
+- [response.getHeaderNames()](https://nodejs.org/api/http.html#responsegetheadernames)
+- [outgoingMessage.getHeaderNames()](https://nodejs.org/api/http.html#outgoingmessagegetheadernames)
+
+getHeaders()
+
+- [request.getHeaders()](https://nodejs.org/api/http.html#requestgetheaders)
+- [response.getHeaders()](https://nodejs.org/api/http.html#responsegetheaders)
+- [outgoingMessage.getHeaders()](https://nodejs.org/api/http.html#outgoingmessagegetheaders)
+
+hasHeader()
+
+- [request.hasHeader(name)](https://nodejs.org/api/http.html#requesthasheadername)
+- [response.hasHeader(name)](https://nodejs.org/api/http.html#responsehasheadername)
+- [outgoingMessage.hasHeader(name)](https://nodejs.org/api/http.html#outgoingmessagehasheadername)
+
+### 軟木塞
+
+cork
+
+- [request.cork()](https://nodejs.org/api/http.html#requestcork)
+- [response.cork()](https://nodejs.org/api/http.html#responsecork)
+- [outgoingMessage.cork()](https://nodejs.org/api/http.html#outgoingmessagecork)
+
+uncork
+
+- [request.uncork()](https://nodejs.org/api/http.html#requestuncork)
+- [response.uncork()](https://nodejs.org/api/http.html#responseuncork)
+- [outgoingMessage.uncork()](https://nodejs.org/api/http.html#outgoingmessageuncork)
+
+## 非對稱的設計: destroy
+
+- [request.destroy([error])](https://nodejs.org/api/http.html#requestdestroyerror)
+- [request.destroyed](https://nodejs.org/api/http.html#requestdestroyed)
+- [outgoingMessage.destroy([error])](https://nodejs.org/api/http.html#outgoingmessagedestroyerror)
+- [message.destroy([error])](https://nodejs.org/api/http.html#messagedestroyerror)
 
 ## http.ClientRequest
 
 ### events
 
-- [close](https://nodejs.org/api/http.html#event-close)
-- [finish](https://nodejs.org/api/http.html#event-finish)
-- [information](https://nodejs.org/api/http.html#event-information)
-- [socket](https://nodejs.org/api/http.html#event-socket)
-- [timeout](https://nodejs.org/api/http.html#event-timeout)
-- [upgrade](https://nodejs.org/api/http.html#event-upgrade)
+- [Event: 'close'](https://nodejs.org/api/http.html#event-close)
+- [Event: 'information'](https://nodejs.org/api/http.html#event-information)
+- [Event: 'upgrade'](https://nodejs.org/api/http.html#event-upgrade)
+
+### related to socket
+
+- [Event: 'socket'](https://nodejs.org/api/http.html#event-socket)
+- [request.setNoDelay([noDelay])](https://nodejs.org/api/http.html#requestsetnodelaynodelay)
+- [request.setSocketKeepAlive([enable][, initialDelay])](https://nodejs.org/api/http.html#requestsetsocketkeepaliveenable-initialdelay)
+- [request.setTimeout(timeout[, callback])](https://nodejs.org/api/http.html#requestsettimeouttimeout-callback)
+- [Event: 'timeout'](https://nodejs.org/api/http.html#event-timeout)
+- [request.reusedSocket](https://nodejs.org/api/http.html#requestreusedsocket)
+
+### maxHeadersCount
+
+- [request.maxHeadersCount](https://nodejs.org/api/http.html#requestmaxheaderscount)
+- [server.maxHeadersCount](https://nodejs.org/api/http.html#servermaxheaderscount)
+
+### request info
+
+- [request.path](https://nodejs.org/api/http.html#requestpath)
+- [request.method](https://nodejs.org/api/http.html#requestmethod)
+- [request.host](https://nodejs.org/api/http.html#requesthost)
+- [request.protocol](https://nodejs.org/api/http.html#requestprotocol)
 
 <!-- ### 100-continue
 
