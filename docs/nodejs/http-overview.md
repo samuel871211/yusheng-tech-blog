@@ -277,6 +277,10 @@ writableEnded
 - [response.writableEnded](https://nodejs.org/api/http.html#responsewritableended)
 - [outgoingMessage.writableEnded](https://nodejs.org/api/http.html#outgoingmessagewritableended)
 
+on('prefinish')
+
+- [outgoingMessage.on('prefinish')](https://nodejs.org/api/http.html#event-prefinish)
+
 on('finish')
 
 - [request.on('finish')](https://nodejs.org/api/http.html#event-finish)
@@ -340,23 +344,9 @@ uncork
 
 ### events
 
-- [Event: 'close'](https://nodejs.org/api/http.html#event-close)
-- [Event: 'information'](https://nodejs.org/api/http.html#event-information)
-- [Event: 'upgrade'](https://nodejs.org/api/http.html#event-upgrade)
-
-### related to socket
-
-- [Event: 'socket'](https://nodejs.org/api/http.html#event-socket)
-- [request.setNoDelay([noDelay])](https://nodejs.org/api/http.html#requestsetnodelaynodelay)
-- [request.setSocketKeepAlive([enable][, initialDelay])](https://nodejs.org/api/http.html#requestsetsocketkeepaliveenable-initialdelay)
-- [request.setTimeout(timeout[, callback])](https://nodejs.org/api/http.html#requestsettimeouttimeout-callback)
-- [Event: 'timeout'](https://nodejs.org/api/http.html#event-timeout)
-- [request.reusedSocket](https://nodejs.org/api/http.html#requestreusedsocket)
-
-### maxHeadersCount
-
-- [request.maxHeadersCount](https://nodejs.org/api/http.html#requestmaxheaderscount)
-- [server.maxHeadersCount](https://nodejs.org/api/http.html#servermaxheaderscount)
+- [request.on('close')](https://nodejs.org/api/http.html#event-close)
+- [request.on('information')](https://nodejs.org/api/http.html#event-information)
+- [request.on('upgrade')](https://nodejs.org/api/http.html#event-upgrade)
 
 ### request info
 
@@ -364,6 +354,137 @@ uncork
 - [request.method](https://nodejs.org/api/http.html#requestmethod)
 - [request.host](https://nodejs.org/api/http.html#requesthost)
 - [request.protocol](https://nodejs.org/api/http.html#requestprotocol)
+
+## http.ServerResponse
+
+## related to socket
+
+ClientRequest
+
+- [request.on('socket')](https://nodejs.org/api/http.html#event-socket)
+- [request.setNoDelay([noDelay])](https://nodejs.org/api/http.html#requestsetnodelaynodelay)
+- [request.setSocketKeepAlive([enable][, initialDelay])](https://nodejs.org/api/http.html#requestsetsocketkeepaliveenable-initialdelay)
+- [request.setTimeout(timeout[, callback])](https://nodejs.org/api/http.html#requestsettimeouttimeout-callback)
+- [request.on('timeout')](https://nodejs.org/api/http.html#event-timeout)
+- [request.reusedSocket](https://nodejs.org/api/http.html#requestreusedsocket)
+
+http.Server
+
+- [server.timeout](https://nodejs.org/api/http.html#servertimeout)
+- [server.keepAliveTimeout](https://nodejs.org/api/http.html#serverkeepalivetimeout)
+- [server.keepAliveTimeoutBuffer](https://nodejs.org/api/http.html#serverkeepalivetimeoutbuffer)
+
+ServerResponse
+
+- [response.setTimeout(msecs[, callback])]([response.setTimeout(msecs\[, callback\])](https://nodejs.org/api/http.html#responsesettimeoutmsecs-callback))
+
+IncomingMessage
+
+- [message.setTimeout(msecs[, callback])](https://nodejs.org/api/http.html#messagesettimeoutmsecs-callback)
+- []()
+
+## 防止 Server 亂來: response.strictContentLength
+
+https://nodejs.org/api/http.html#responsestrictcontentlength
+
+## maxHeadersCount
+
+- [request.maxHeadersCount](https://nodejs.org/api/http.html#requestmaxheaderscount)
+- [server.maxHeadersCount](https://nodejs.org/api/http.html#servermaxheaderscount)
+
+## server.maxRequestsPerSocket
+
+- [server.maxRequestsPerSocket](https://nodejs.org/api/http.html#servermaxrequestspersocket)
+- [server.on('droprequest')](https://nodejs.org/api/http.html#event-droprequest)
+
+## 一般開發者很少用到的
+
+### 100 Continue
+
+- [server.on('checkContinue')](https://nodejs.org/api/http.html#event-checkcontinue)
+- [response.writeContinue()](https://nodejs.org/api/http.html#responsewritecontinue)
+
+參考我寫過的 [Expect: 100-Continue](../http/expect-100-continue.md)
+
+### server.on('checkExpectation')
+
+https://nodejs.org/api/http.html#event-checkexpectation
+
+### server.on('clientError')
+
+https://nodejs.org/api/http.html#event-clienterror
+
+### server.on('connect')
+
+https://nodejs.org/api/http.html#event-connect_1
+
+參考我寫過的 [HTTP CONNECT Method](../http/http-request-methods-1.md#connect)
+
+### server.on('connection')
+
+參考我寫過的 [HTTP/1.1 為何只能 6 個連線?](../http/browser-max-tcp-connection-6-per-host.md)
+
+### server.on('upgrade')
+
+https://nodejs.org/api/http.html#event-upgrade_1
+
+Client 若送 Upgrade 請求，就會觸發這個事件
+
+```
+GET / HTTP/1.1
+Host: localhost:5000
+Connection: Upgrade
+Upgrade: Whatever
+
+
+```
+
+99% 的使用情境是需要 Upgrade 到 WebSocket，Server 才必須監聽此事件，不過 [ws: a Node.js WebSocket library](https://github.com/websockets/ws) 已經處理好這個細節了。如果真的要學習的話，我會等到之後需要學習 WebSocket，再去翻 ws 的原始碼來讀。
+
+## 關閉 server
+
+- [server.close([callback])](https://nodejs.org/api/http.html#serverclosecallback)
+- [server.closeAllConnections()](https://nodejs.org/api/http.html#servercloseallconnections)
+- [server.closeIdleConnections()](https://nodejs.org/api/http.html#servercloseidleconnections)
+
+## 資安相關
+
+- [server.headersTimeout](https://nodejs.org/api/http.html#serverheaderstimeout)
+- [server.requestTimeout](https://nodejs.org/api/http.html#serverrequesttimeout)
+
+## IncomingMessage
+
+### complete ?
+
+- [message.on('close')](https://nodejs.org/api/http.html#event-close_3)
+- [message.complete](https://nodejs.org/api/http.html#messagecomplete)
+
+### headers
+
+- [message.headers](https://nodejs.org/api/http.html#messageheaders)
+- [message.headersDistinct](https://nodejs.org/api/http.html#messageheadersdistinct)
+- [message.rawHeaders](https://nodejs.org/api/http.html#messagerawheaders)
+
+## trailers
+
+- [message.trailers](https://nodejs.org/api/http.html#messagetrailers)
+- [message.trailersDistinct](https://nodejs.org/api/http.html#messagetrailersdistinct)
+- [message.rawTrailers](https://nodejs.org/api/http.html#messagerawtrailers)
+
+### info
+
+Client, Server 都有的
+
+- [message.httpVersion](https://nodejs.org/api/http.html#messagehttpversion)
+
+Server 會收到的
+
+- [message.url](https://nodejs.org/api/http.html#messageurl)
+- [message.method](https://nodejs.org/api/http.html#messagemethod)
+
+Client 會收到的
+
+- [message.statusCode](https://nodejs.org/api/http.html#messagestatuscode)
 
 <!-- ### 100-continue
 
