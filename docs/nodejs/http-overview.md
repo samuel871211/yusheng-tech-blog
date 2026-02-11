@@ -222,42 +222,48 @@ const server = http
 
 ## ClientRequest & ServerResponse
 
-### 到底啥時才會送出 header: 了解其 API 的設計
+我們現在把視角拉入 "HTTP Request / Response 的寫入"
 
-setHeader
+```mermaid
+graph
+    subgraph Server["Server 端"]
+        SRes["ServerResponse<br/>(extends OutgoingMessage)"]
+    end
 
-- [request.setHeader(name, value)](https://nodejs.org/api/http.html#requestsetheadername-value)
-- [response.setHeader(name, value)](https://nodejs.org/api/http.html#responsesetheadername-value)
-- [outgoingMessage.setHeader(name, value)](https://nodejs.org/api/http.html#outgoingmessagesetheadername-value)
+    subgraph Client["Client 端"]
+        CReq["ClientRequest<br/>(extends OutgoingMessage)"]
+    end
 
-setHeaders
+    style CReq fill:#ffd4d4
 
-- [outgoingMessage.setHeaders(headers)](https://nodejs.org/api/http.html#outgoingmessagesetheadersheaders)
+    style SRes fill:#ffd4d4
+```
 
-flushHeaders
+### 寫入流程 1：何時才會送出 header ? 了解 Node.js API 的設計
 
-- [request.flushHeaders()](https://nodejs.org/api/http.html#requestflushheaders)
-- [response.flushHeaders()](https://nodejs.org/api/http.html#responseflushheaders)
-- [outgoingMessage.flushHeaders()](https://nodejs.org/api/http.html#outgoingmessageflushheaders)
-
-removeHeader
-
-- [request.removeHeader(name)](https://nodejs.org/api/http.html#requestremoveheadername)
-- [response.removeHeader(name)](https://nodejs.org/api/http.html#responseremoveheadername)
-- [outgoingMessage.removeHeader(name)](https://nodejs.org/api/http.html#outgoingmessageremoveheadername)
-
-headersSent
-
-- [response.headersSent](https://nodejs.org/api/http.html#responseheaderssent)
-- [outgoingMessage.headersSent](https://nodejs.org/api/http.html#outgoingmessageheaderssent)
-
-writeHead
-
-- [response.writeHead(statusCode[, statusMessage][, headers])](https://nodejs.org/api/http.html#responsewriteheadstatuscode-statusmessage-headers)
+- setHeader
+  - [request.setHeader(name, value)](https://nodejs.org/api/http.html#requestsetheadername-value)
+  - [response.setHeader(name, value)](https://nodejs.org/api/http.html#responsesetheadername-value)
+  - [outgoingMessage.setHeader(name, value)](https://nodejs.org/api/http.html#outgoingmessagesetheadername-value)
+- setHeaders
+  - [outgoingMessage.setHeaders(headers)](https://nodejs.org/api/http.html#outgoingmessagesetheadersheaders)
+- flushHeaders
+  - [request.flushHeaders()](https://nodejs.org/api/http.html#requestflushheaders)
+  - [response.flushHeaders()](https://nodejs.org/api/http.html#responseflushheaders)
+  - [outgoingMessage.flushHeaders()](https://nodejs.org/api/http.html#outgoingmessageflushheaders)
+- removeHeader
+  - [request.removeHeader(name)](https://nodejs.org/api/http.html#requestremoveheadername)
+  - [response.removeHeader(name)](https://nodejs.org/api/http.html#responseremoveheadername)
+  - [outgoingMessage.removeHeader(name)](https://nodejs.org/api/http.html#outgoingmessageremoveheadername)
+- headersSent
+  - [response.headersSent](https://nodejs.org/api/http.html#responseheaderssent)
+  - [outgoingMessage.headersSent](https://nodejs.org/api/http.html#outgoingmessageheaderssent)
+- writeHead
+  - [response.writeHead(statusCode[, statusMessage][, headers])](https://nodejs.org/api/http.html#responsewriteheadstatuscode-statusmessage-headers)
 
 <!-- todo-yus 介紹 -->
 
-### 送出 body 的學問: Content-Length 跟 Transfer-Encoding
+### 寫入流程 2：送出 body 的學問: Content-Length 跟 Transfer-Encoding
 
 write()
 
@@ -355,7 +361,7 @@ uncork
 - [request.host](https://nodejs.org/api/http.html#requesthost)
 - [request.protocol](https://nodejs.org/api/http.html#requestprotocol)
 
-## http.ServerResponse
+<!-- ## http.ServerResponse -->
 
 ## related to socket
 
@@ -381,7 +387,6 @@ ServerResponse
 IncomingMessage
 
 - [message.setTimeout(msecs[, callback])](https://nodejs.org/api/http.html#messagesettimeoutmsecs-callback)
-- []()
 
 ## 防止 Server 亂來: response.strictContentLength
 
@@ -441,6 +446,11 @@ Upgrade: Whatever
 
 99% 的使用情境是需要 Upgrade 到 WebSocket，Server 才必須監聽此事件，不過 [ws: a Node.js WebSocket library](https://github.com/websockets/ws) 已經處理好這個細節了。如果真的要學習的話，我會等到之後需要學習 WebSocket，再去翻 ws 的原始碼來讀。
 
+### validate header
+
+- [http.validateHeaderName(name[, label])](https://nodejs.org/api/http.html#httpvalidateheadernamename-label)
+- [http.validateHeaderValue](https://nodejs.org/api/http.html#httpvalidateheadervaluename-value)
+
 ## 關閉 server
 
 - [server.close([callback])](https://nodejs.org/api/http.html#serverclosecallback)
@@ -451,6 +461,7 @@ Upgrade: Whatever
 
 - [server.headersTimeout](https://nodejs.org/api/http.html#serverheaderstimeout)
 - [server.requestTimeout](https://nodejs.org/api/http.html#serverrequesttimeout)
+- [http.maxHeaderSize](https://nodejs.org/api/http.html#httpmaxheadersize)
 
 ## IncomingMessage
 
@@ -464,12 +475,6 @@ Upgrade: Whatever
 - [message.headers](https://nodejs.org/api/http.html#messageheaders)
 - [message.headersDistinct](https://nodejs.org/api/http.html#messageheadersdistinct)
 - [message.rawHeaders](https://nodejs.org/api/http.html#messagerawheaders)
-
-## trailers
-
-- [message.trailers](https://nodejs.org/api/http.html#messagetrailers)
-- [message.trailersDistinct](https://nodejs.org/api/http.html#messagetrailersdistinct)
-- [message.rawTrailers](https://nodejs.org/api/http.html#messagerawtrailers)
 
 ### info
 

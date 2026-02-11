@@ -11,7 +11,15 @@ last_update:
 
 ## trailer
 
-## http-proxy
+## Node.js
+
+- [outgoingMessage.addTrailers(headers)](https://nodejs.org/api/http.html#outgoingmessageaddtrailersheaders)
+- [response.addTrailers(headers)](https://nodejs.org/api/http.html#responseaddtrailersheaders)
+- [message.trailers](https://nodejs.org/api/http.html#messagetrailers)
+- [message.trailersDistinct](https://nodejs.org/api/http.html#messagetrailersdistinct)
+- [message.rawTrailers](https://nodejs.org/api/http.html#messagerawtrailers)
+
+response.addTrailers(headers)
 
 ## 小結
 
