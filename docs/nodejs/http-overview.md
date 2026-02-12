@@ -241,6 +241,8 @@ graph
 
 ### 寫入流程 1：何時才會送出 header ? 了解 Node.js API 的設計
 
+Node.js 提供了以下 methods 跟 properties 可以設定 headers
+
 - setHeader
   - [request.setHeader(name, value)](https://nodejs.org/api/http.html#requestsetheadername-value)
   - [response.setHeader(name, value)](https://nodejs.org/api/http.html#responsesetheadername-value)
@@ -261,7 +263,66 @@ graph
 - writeHead
   - [response.writeHead(statusCode[, statusMessage][, headers])](https://nodejs.org/api/http.html#responsewriteheadstatuscode-statusmessage-headers)
 
-<!-- todo-yus 介紹 -->
+並且以下 methods 可以取得 headers
+
+- getHeader()
+  - [request.getHeader(name)](https://nodejs.org/api/http.html#requestgetheadername)
+  - [response.getHeader(name)](https://nodejs.org/api/http.html#responsegetheadername)
+  - [outgoingMessage.getHeader(name)](https://nodejs.org/api/http.html#outgoingmessagegetheadername)
+- getHeaderNames()
+  - [request.getHeaderNames()](https://nodejs.org/api/http.html#requestgetheadernames)
+  - [response.getHeaderNames()](https://nodejs.org/api/http.html#responsegetheadernames)
+  - [outgoingMessage.getHeaderNames()](https://nodejs.org/api/http.html#outgoingmessagegetheadernames)
+- getHeaders()
+  - [request.getHeaders()](https://nodejs.org/api/http.html#requestgetheaders)
+  - [response.getHeaders()](https://nodejs.org/api/http.html#responsegetheaders)
+  - [outgoingMessage.getHeaders()](https://nodejs.org/api/http.html#outgoingmessagegetheaders)
+- hasHeader()
+  - [request.hasHeader(name)](https://nodejs.org/api/http.html#requesthasheadername)
+  - [response.hasHeader(name)](https://nodejs.org/api/http.html#responsehasheadername)
+  - [outgoingMessage.hasHeader(name)](https://nodejs.org/api/http.html#outgoingmessagehasheadername)
+
+Node.js 把整個 headers 的操作分成三個階段，我們可以用 git 的概念來類比
+
+|                 | 本地暫存             | 本地 Commit（不可再修改） | 真正送出  |
+| --------------- | -------------------- | ------------------------- | --------- |
+| OutgoingMessage | kOutHeaders (object) | `_headers` (string)       | `_send()` |
+| git             | local changes        | local commit              | git push  |
+
+```mermaid
+sequenceDiagram
+  participant A as user program
+  participant B as kOutHeaders
+  participant C as _headers<br/>(headersSent = true)
+  participant D as _send()
+
+  Note Over A, D: 設定 headers
+  A ->> B: setHeader(name, value)
+  A ->> B: setHeaders(headers)
+  A ->> B: removeHeader(name)
+  A ->> D: flushHeaders()
+  A ->> C: writeHead(statusCode[, statusMessage][, headers])
+
+  Note Over A, D: 取得 headers
+  A ->> B: getHeader(name)
+  A ->> B: getHeaderNames()
+  A ->> B: getHeaders()
+  A ->> B: hasHeader(name)
+```
+
+Node.js 的設計哲學是 "盡量把 headers 延遲到跟著 body 一起發送"，從 [`flushHeaders()`](https://nodejs.org/api/http.html#outgoingmessageflushheaders) 的官方文件可以得知
+
+```
+For efficiency reason, Node.js normally buffers the message headers until outgoingMessage.end() is called or the first chunk of message data is written. It then tries to pack the headers and data into a single TCP packet.
+
+It is usually desired (it saves a TCP round-trip), but not when the first data is not sent until possibly much later. outgoingMessage.flushHeaders() bypasses the optimization and kickstarts the message.
+```
+
+寫個 PoC 來測試 `writeHead(statusCode[, statusMessage][, headers])`
+
+```ts
+
+```
 
 ### 寫入流程 2：送出 body 的學問: Content-Length 跟 Transfer-Encoding
 
@@ -298,32 +359,6 @@ writableFinished
 - [request.writableFinished](https://nodejs.org/api/http.html#requestwritablefinished)
 - [response.writableFinished](https://nodejs.org/api/http.html#responsewritablefinished)
 - [outgoingMessage.writableFinished](https://nodejs.org/api/http.html#outgoingmessagewritablefinished)
-
-### 取得 header 的相關 methods
-
-getHeader()
-
-- [request.getHeader(name)](https://nodejs.org/api/http.html#requestgetheadername)
-- [response.getHeader(name)](https://nodejs.org/api/http.html#responsegetheadername)
-- [outgoingMessage.getHeader(name)](https://nodejs.org/api/http.html#outgoingmessagegetheadername)
-
-getHeaderNames()
-
-- [request.getHeaderNames()](https://nodejs.org/api/http.html#requestgetheadernames)
-- [response.getHeaderNames()](https://nodejs.org/api/http.html#responsegetheadernames)
-- [outgoingMessage.getHeaderNames()](https://nodejs.org/api/http.html#outgoingmessagegetheadernames)
-
-getHeaders()
-
-- [request.getHeaders()](https://nodejs.org/api/http.html#requestgetheaders)
-- [response.getHeaders()](https://nodejs.org/api/http.html#responsegetheaders)
-- [outgoingMessage.getHeaders()](https://nodejs.org/api/http.html#outgoingmessagegetheaders)
-
-hasHeader()
-
-- [request.hasHeader(name)](https://nodejs.org/api/http.html#requesthasheadername)
-- [response.hasHeader(name)](https://nodejs.org/api/http.html#responsehasheadername)
-- [outgoingMessage.hasHeader(name)](https://nodejs.org/api/http.html#outgoingmessagehasheadername)
 
 ### 軟木塞
 
