@@ -487,7 +487,7 @@ http server 之所以會在這裡
 - 或是剛好頂到 TCP Maximum Packet Size
 - [Nagle’s Algorithm 跟 TCP_NODELAY](../protocols/tcp.md) 的設定影響
 
-所以 http server 實務上通常可以設定 [timeout](./nodejs-http-1.1-timeout.md)，超過 timeout 沒有收到完整的 HTTP Request，就會把 "Incomplete HTTP Request" 丟棄
+所以 http server 實務上通常可以設定 timeout，超過 timeout 沒有收到完整的 HTTP Request，就會把 "Incomplete HTTP Request" 丟棄
 
 ## 小結
 

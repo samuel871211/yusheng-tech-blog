@@ -386,9 +386,10 @@ connection: 5.015s
 { event: 'close', hadError: false }
 ```
 
-:::info
+<!-- todo-yus -->
+<!-- :::info
 關於 NodeJS http 模組的各種 timeout，我打算在未來專門寫一篇文章來探討 [NodeJS HTTP/1.1 timeout](./nodejs-http-1.1-timeout.md)
-:::
+::: -->
 
 <!-- todo-yus timeout -->
 <!-- Chrome v142.0.7444.177 實測後
