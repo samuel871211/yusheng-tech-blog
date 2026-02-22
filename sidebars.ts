@@ -159,6 +159,7 @@ const sidebars: SidebarsConfig = {
         // "web-tech/tracking-user-activation",
         // "web-tech/jwt",
         // "web-tech/oauth",
+        "web-tech/javascript",
         "web-tech/binary-data-in-javascript",
       ],
     },
