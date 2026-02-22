@@ -2,7 +2,7 @@
 title: Node.js http 模組
 description: "為什麼 Node.js http 模組的 API 設計這麼低階？帶你了解 Node.js http 模組的設計理念"
 last_update:
-  date: "2026-02-08T08:00:00+08:00"
+  date: "2026-02-22T08:00:00+08:00"
 ---
 
 ## 前言
@@ -84,7 +84,7 @@ https://nodejs.org/api/http.html#new-agentoptions
 | maxSockets                  | 每個 Origin 最多可以有幾個 concurrent TCP Socket<br/>參考 [options.maxSockets 圖解](#optionsmaxsockets-圖解)<br/>(Origin 是 [agent.getName([options])](https://nodejs.org/api/http.html#agentgetnameoptions) 的回傳值)      |
 | maxTotalSockets             | 最多可以有幾個 concurrent TCP Socket                                                                                                                                                                                        |
 | maxFreeSockets              | Only works when `keepAlive = true`                                                                                                                                                                                          |
-| scheduling                  | 要如何從陣列中選擇 free Socket<br/>- fifo (First In First Out)<br/>- lifo (Last In First Out)                                                                                                                               |
+| scheduling                  | 要如何從 [freeSockets](https://nodejs.org/api/http.html#agentfreesockets) 陣列中選擇<br/>- fifo (First In First Out)<br/>- lifo (Last In First Out)                                                                         |
 | timeout                     | 同 [socket.timeout](https://nodejs.org/api/net.html#sockettimeout)                                                                                                                                                          |
 | proxyEnv                    | v24.5.0 加入的，暫不討論                                                                                                                                                                                                    |
 | defaultPort                 | Default port to use when the port is not specified in requests.                                                                                                                                                             |
@@ -110,9 +110,9 @@ https://nodejs.org/api/http.html#new-agentoptions
 
 ### Read-Only properties
 
-這三個則是由 http.Agent 控制的
+這三個則是由 `http.Agent` 控制的
 
-- [freeSockets](https://nodejs.org/api/http.html#agentfreesockets): 連線池，可使用的 sockets
+- [freeSockets](https://nodejs.org/api/http.html#agentfreesockets)：連線池，可使用的 sockets
 
 ```ts
 {
@@ -121,7 +121,7 @@ https://nodejs.org/api/http.html#new-agentoptions
 }
 ```
 
-- [requests](https://nodejs.org/api/http.html#agentrequests): Pending Request Queue，參考 [options.maxSockets](#optionsmaxsockets)
+- [requests](https://nodejs.org/api/http.html#agentrequests)：Pending Request Queue，參考 [options.maxSockets](#optionsmaxsockets)
 
 ```ts
 {
@@ -130,7 +130,7 @@ https://nodejs.org/api/http.html#new-agentoptions
 }
 ```
 
-- [sockets](https://nodejs.org/api/http.html#agentsockets): http.Agent 使用中的 sockets
+- [sockets](https://nodejs.org/api/http.html#agentsockets)：`http.Agent` 使用中的 sockets
 
 ```ts
 {
@@ -249,6 +249,8 @@ Node.js 提供了以下 methods 跟 properties 可以設定 headers
   - [outgoingMessage.setHeader(name, value)](https://nodejs.org/api/http.html#outgoingmessagesetheadername-value)
 - setHeaders
   - [outgoingMessage.setHeaders(headers)](https://nodejs.org/api/http.html#outgoingmessagesetheadersheaders)
+- appendHeader
+  - [outgoingMessage.appendHeader(name, value)](https://nodejs.org/api/http.html#outgoingmessageappendheadername-value)
 - flushHeaders
   - [request.flushHeaders()](https://nodejs.org/api/http.html#requestflushheaders)
   - [response.flushHeaders()](https://nodejs.org/api/http.html#responseflushheaders)
@@ -299,6 +301,7 @@ sequenceDiagram
   Note Over A, D: 設定 headers
   A ->> B: setHeader(name, value)
   A ->> B: setHeaders(headers)
+  A ->> B: appendHeader(name, value)
   A ->> B: removeHeader(name)
   A ->> D: flushHeaders()
   A ->> C: writeHead(statusCode[, statusMessage][, headers])
@@ -454,7 +457,7 @@ Node.js 提供了以下 methods 可以寫入 body
 The presence of a message body in a request is signaled by a Content-Length or Transfer-Encoding header field.
 ```
 
-### 寫入流程 2：使用 Content-Length
+### 寫入流程 2-1：使用 Content-Length
 
 假設我要 Serve 一個靜態網站，每個 HTML, CSS, JS 都是預先 build 好的檔案，這情況就屬於 "已知 body 長度"
 
@@ -479,7 +482,7 @@ httpServer.on("request", (req, res) => {
 <h1>hello world</h1>
 ```
 
-也可以自行設定 Content-Length
+也可以自行設定 `Content-Length`
 
 ```ts
 httpServer.on("request", (req, res) => {
@@ -510,7 +513,7 @@ httpServer.on("request", (req, res) => {
 <h1>hello world</h1>
 ```
 
-若檔案很大，則不建議用 `readFileSync` 把整個檔案讀進記憶體
+若檔案很大，則不建議用 `readFileSync` 把整個檔案讀進記憶體，可以使用 `pipe` 流式傳輸
 
 ```ts
 httpServer.on("request", (req, res) => {
@@ -528,7 +531,7 @@ httpServer.on("request", (req, res) => {
 });
 ```
 
-### 寫入流程 2：使用 `Transfer-Encoding: chunked`
+### 寫入流程 2-2：使用 `Transfer-Encoding: chunked`
 
 AI 工具在回應時，不會預先知道回應長度，這時候會使用 `Transfer-Encoding: chunked`，可參考我寫過的 [SSE: Server-Sent Events](../http/server-sent-events.md)
 
@@ -583,7 +586,7 @@ flowchart LR
   C --> D["end cb"]
 ```
 
-其中 [outgoingMessage.on('prefinish')](https://nodejs.org/api/http.html#event-prefinish) 其實是繼承 [stream.Writable](./stream-writable.md)，不過 [Node.js stream 官方文件](https://nodejs.org/api/stream.html) 完全沒提到 prefinish
+寫個 PoC 來測試
 
 ```ts
 httpServer.on("request", (req, res) => {
@@ -599,7 +602,17 @@ httpServer.on("request", (req, res) => {
 
   res.end("123", () => console.log("end cb"));
 });
+
+// Prints
+// prefinish
+// finish
+// end cb
 ```
+
+:::info
+[outgoingMessage.on('prefinish')](https://nodejs.org/api/http.html#event-prefinish) 其實是繼承 [stream.Writable](./stream-writable.md)<br/><br/>
+不過 [Node.js stream 官方文件](https://nodejs.org/api/stream.html) 完全沒提到 `prefinish`，所以就當作一個小知識先記著就好～
+:::
 
 <!-- ### 軟木塞
 
@@ -614,12 +627,299 @@ httpServer.on("request", (req, res) => {
 
 ## 非對稱的設計: destroy
 
-<!-- todo-yus -->
+Node.js 官方文件在描述 `destroy([error])` 跟 `destroyed` 時，並沒有把所有情境都列出來
 
-- [request.destroy([error])](https://nodejs.org/api/http.html#requestdestroyerror)
-- [request.destroyed](https://nodejs.org/api/http.html#requestdestroyed)
-- [outgoingMessage.destroy([error])](https://nodejs.org/api/http.html#outgoingmessagedestroyerror)
-- [message.destroy([error])](https://nodejs.org/api/http.html#messagedestroyerror)
+- destroy([error])
+  - [clientRequest.destroy([error])](https://nodejs.org/api/http.html#requestdestroyerror)
+  - serverResponse.destroy([error]) => 官方文件沒列出，但實際上有這個 method
+  - [outgoingMessage.destroy([error])](https://nodejs.org/api/http.html#outgoingmessagedestroyerror)
+  - [incomingMessage.destroy([error])](https://nodejs.org/api/http.html#messagedestroyerror)
+- destroyed
+  - [clientRequest.destroyed](https://nodejs.org/api/http.html#requestdestroyed)
+  - serverResponse.destroyed => 官方文件沒列出，但實際上有這個 property
+  - outgoingMessage.destroyed => 官方文件沒列出，但實際上有這個 property
+  - incomingMessage.destroyed => 官方文件沒列出，但實際上有這個 property
+
+我們複習一下 stream, Socket, http 的繼承關係
+
+```mermaid
+graph TB
+    direction TB
+    subgraph Server["Server 端"]
+        SSocket["Socket<br/>(stream.Duplex)"]
+        SReq["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP Request"]
+        SRes["ServerResponse<br/>(stream.Writable)<br/>寫入 HTTP Response"]
+
+        SReq -->|req.socket| SSocket
+        SRes -->|res.socket| SSocket
+    end
+
+    subgraph Client["Client 端"]
+        direction RL
+        CSocket["Socket<br/>(stream.Duplex)"]
+        CReq["ClientRequest<br/>(stream.Writable)<br/>寫入 HTTP Request"]
+        CRes["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP Response"]
+
+        CReq -->|req.socket| CSocket
+        CRes -->|res.socket| CSocket
+    end
+
+    style CSocket fill:#f9f9f9
+    style CReq fill:#ffd4d4
+    style CRes fill:#d4edff
+
+    style SSocket fill:#f9f9f9
+    style SReq fill:#d4edff
+    style SRes fill:#ffd4d4
+```
+
+- Socket 是一個可讀寫的資料流，但 http 模組刻意將讀、寫分成兩個抽象 Class（[IncomingMessage](https://nodejs.org/api/http.html#class-httpincomingmessage), [OutgoingMessage](https://nodejs.org/api/http.html#class-httpoutgoingmessage)）
+- 也因此，`request.socket` 跟 `response.socket` 必定為同一個 socket instance
+- 不管是 request 還是 response 呼叫 `destroy([error])`，背後都有可能會呼叫到對應的 `socket.destroy([error])`
+
+### IncomingMessage autoDestroy
+
+根據 [IncomingMessage 的 History](https://nodejs.org/api/http.html#class-httpincomingmessage)
+
+| Version | Changes                                                                   |
+| ------- | ------------------------------------------------------------------------- |
+| v15.5.0 | The `destroyed` value returns `true` after the incoming data is consumed. |
+
+`IncomingMessage` 繼承 `stream.Readable`，而 [new stream.Readable([options])](https://nodejs.org/api/stream.html#new-streamreadableoptions)
+
+- `autoDestroy`: Whether this stream should automatically call `.destroy()` on itself after ending. Default: `true`.
+
+並且我也在 Github 翻到了 v15.5.0 這個改動
+
+- PR: [http: use `autoDestroy: true` in incoming message](https://github.com/nodejs/node/pull/33035/changes)
+- Issue: [[Bug] `http.IncomingMessage.destroyed` is `true` after payload read since v15.5.0](https://github.com/nodejs/node/issues/36617)
+
+對於 `IncomingMessage` 的生命週期，讀完 HTTP Request / Response，其任務已經達成，故標記為 `destroyed: true` 是合理的
+
+寫個 PoC 來測試
+
+```ts
+httpServer.on("request", (req, res) => {
+  req.resume();
+  // ✅ Server 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
+  req.on("end", () => nextTick(() => assert(req.destroyed)));
+  res.end("123");
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  method: "POST",
+});
+clientRequest.end("123");
+clientRequest.on("response", (res) => {
+  res.resume();
+  // ✅ Client 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
+  res.on("end", () => nextTick(() => assert(res.destroyed)));
+});
+```
+
+不過 HTTP/1.1 預設是 [keepAlive](../http/keep-alive-and-connection.md)，Socket 會重複使用。若 `autoDestroy` 的話，就有可能會呼叫 `socket.destroy([error])`，Node.js 是怎麼避免這件事情的呢？以 http client 為例子，我們直接看 Node.js 原始碼：
+
+```ts
+// lib/_http_client.js
+function responseOnEnd() {
+  // if 條件省略
+
+  else if (req.writableFinished && !this.aborted) {
+    assert(req.finished);
+    responseKeepAlive(req);
+  }
+}
+
+function responseKeepAlive(req) {
+  // ... 前面省略
+
+  req.destroyed = true;
+  if (req.res) {
+    // Detach socket from IncomingMessage to avoid destroying the freed
+    // socket in IncomingMessage.destroy().
+    req.res.socket = null;
+  }
+}
+```
+
+```ts
+// lib/_http_incoming.js
+IncomingMessage.prototype._destroy = function _destroy(err, cb) {
+  // ... 前面省略
+
+  if (this.socket && !this.socket.destroyed && this.aborted) {
+    this.socket.destroy(err);
+
+    // ... 以下省略
+  }
+```
+
+其實連註解都有說，要在 `IncomingMessage.destroy()` 之前把 `req.res.socket` 設成 `null`，確保不會執行到 `socket.destroy()`
+
+function 的執行順序如下：
+
+```mermaid
+flowchart TD
+  A["responseOnEnd"] --> B["responseKeepAlive"]
+  B --> C["IncomingMessage.destroy()"]
+  C --> D["IncomingMessage._destroy()"]
+```
+
+在 http client 端，response body 完整接收後，這個 HTTP Round Trip 已結束，Socket 的 ownership 必須立刻回到 `Agent.freeSockets`，因此 Node.js 會主動執行 `req.res.socket = null`
+
+但 http server 端，request body 完整接收後，此時 response 通常還沒完整送出，user program 可能還需要存取 `request.socket`，所以 Socket 會等到 `response.on('finish')` 之後才會被解除關聯，直接來看 Node.js 原始碼：
+
+```ts
+// lib/_http_server.js
+function resOnFinish(req, res, socket, state, server) {
+  // ...以上省略
+  res.detachSocket(socket);
+  clearIncoming(req);
+  // ...以下省略
+}
+
+ServerResponse.prototype.detachSocket = function detachSocket(socket) {
+  assert(socket._httpMessage === this);
+  socket.removeListener("close", onServerResponseClose);
+  socket._httpMessage = null;
+  this.socket = null;
+};
+```
+
+寫個 PoC 來測試
+
+```ts
+httpServer.on("request", (req, res) => {
+  req.resume();
+  // ✅ Server 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
+  req.on("end", () => nextTick(() => assert(req.destroyed)));
+  // ✅ Server 的 Socket 在 HTTP Round Trip 結束後，會自動解除關聯
+  res.on("finish", () => assert(res.socket === null));
+  res.end("123");
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  method: "POST",
+});
+clientRequest.end("123");
+clientRequest.on("response", (res) => {
+  res.resume();
+  res.on("end", () => {
+    // ✅ Client 的 Socket 在 HTTP Round Trip 結束後，會自動解除關聯
+    assert(res.socket === null);
+    // ✅ Client 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
+    nextTick(() => assert(res.destroyed));
+  });
+});
+```
+
+### IncomingMessage.destroy([error])
+
+我們現在知道 `IncomingMessage` 繼承了 `Readable`，且 `Readable.on("end")` 之後，預設會 `autoDestroy`，那 user program 要呼叫 `IncomingMessage.destroy([error])` 的合理時間點就是 "資料讀完之前，我不想再接著讀了"。
+
+寫個 PoC 來實測 http server 的 `IncomingMessage`
+
+```ts
+httpServer.on("request", (req, res) => {
+  req.destroy();
+  assert(req.socket.destroyed);
+  assert(res.socket?.destroyed);
+  res.end("123"); // ❌ noop
+});
+```
+
+用 `curl http://localhost:5000` 測試，結果是沒收到任何回應，因為 Socket 已經被 destroy 了
+
+```
+curl: (52) Empty reply from server
+```
+
+寫個 PoC 來實測 http client 的 `IncomingMessage`
+
+```ts
+const clientRequest = http.request({
+  host: "example.com",
+  port: 80,
+});
+clientRequest.end();
+clientRequest.on("response", (res) => {
+  res.destroy();
+  assert(clientRequest.socket?.destroyed);
+  assert(res.socket.destroyed);
+});
+clientRequest.on("error", (e) => {
+  assert(e instanceof Error);
+  assert(e.message === "socket hang up");
+  assert((e as any).code === "ECONNRESET");
+});
+```
+
+至於為何會需要在 `clientRequest` 捕捉錯誤，直接看 Node.js 原始碼
+
+```ts
+// lib/_http_client.js
+
+function socketOnEnd() {
+  // 以上省略
+  if (!req.res && !req.socket._hadError) {
+    // If we don't have a response then we know that the socket
+    // ended prematurely and we need to emit an error on the request.
+    req.socket._hadError = true;
+    emitErrorEvent(req, new ConnResetException("socket hang up"));
+  }
+  // 以下省略
+}
+```
+
+### 為何 http client 有 "socket hang up" 這個錯誤 ?
+
+| 呼叫 `clientRequest.destroy()` 的時機點 | 解釋                                                                                                    |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| http client 的 response 已經收到        | ✅ Node.js 已經建立 HTTP response (`IncomingMessage`)<br/>接下來是 user program 的職責                  |
+| http client 的 response 尚未建立        | ❌ Node.js 尚未建立 HTTP response (`IncomingMessage`)<br/>就被切斷 Socket 連線，故拋出 "socket hang up" |
+
+### destroy 小結
+
+| 你想做的事                               | 正確 API           |
+| ---------------------------------------- | ------------------ |
+| server 不想讀 request body，但要正常回應 | `req.resume()`     |
+| client 不想讀 response body，但要成功    | `res.resume()`     |
+| 任一方放棄整個 HTTP 流程                 | `destroy([error])` |
+
+<!-- | Role                                     | Meaning of `destroy()` |
+| ---------------------------------------- | -------------------- |
+| http client's request (ClientRequest)    | Abort the request or stop reading response |
+| http client's response (IncomingMessage) | Stop reading response body |
+| http server's request (IncomingMessage)  | Stop reading request |
+| http server's response (ServerResponse)  | Stop sending response | -->
+
+<!-- ### ClientRequest 在不同階段呼叫 destroy() 的語意差異
+```mermaid
+sequenceDiagram
+  participant A as ClientRequest
+  participant B as Request Sent<br/>ClientRequest.end()
+  participant C as Response Receiving<br/>ClientRequest.on('response')
+  participant D as Response Body Fully Sent<br/>IncomingMessage.on('end')
+
+  Note Over A,B:  abort the request
+  Note Over C,D: stop reading response body
+``` -->
+
+<!-- ### http client's IncomingMessage 在不同階段呼叫 destroy() 的語意差異
+```mermaid
+sequenceDiagram
+  participant A as http client's IncomingMessage
+  participant B as Response Receiving<br/>ClientRequest.on('response')
+  participant C as Response Body Fully Sent<br/>IncomingMessage.on('end')
+
+  Note Over B,C: stop reading response body
+``` -->
+
+<!-- ### ClientRequest.destroy([error]) -->
 
 ## http.ClientRequest
 
@@ -629,6 +929,8 @@ httpServer.on("request", (req, res) => {
 - [request.on('information')](https://nodejs.org/api/http.html#event-information)
 - [request.on('upgrade')](https://nodejs.org/api/http.html#event-upgrade)
 
+<!-- todo-yus -->
+
 ### request info
 
 - [request.path](https://nodejs.org/api/http.html#requestpath)
@@ -636,9 +938,13 @@ httpServer.on("request", (req, res) => {
 - [request.host](https://nodejs.org/api/http.html#requesthost)
 - [request.protocol](https://nodejs.org/api/http.html#requestprotocol)
 
+<!-- todo-yus -->
+
 <!-- ## http.ServerResponse -->
 
 ## related to socket
+
+<!-- todo-yus -->
 
 ClientRequest
 
@@ -657,7 +963,7 @@ http.Server
 
 ServerResponse
 
-- [response.setTimeout(msecs[, callback])]([response.setTimeout(msecs\[, callback\])](https://nodejs.org/api/http.html#responsesettimeoutmsecs-callback))
+- [response.setTimeout(msecs[, callback])](https://nodejs.org/api/http.html#responsesettimeoutmsecs-callback)
 
 IncomingMessage
 
@@ -667,20 +973,20 @@ IncomingMessage
 
 https://nodejs.org/api/http.html#responsestrictcontentlength
 
-## maxHeadersCount
-
-- [request.maxHeadersCount](https://nodejs.org/api/http.html#requestmaxheaderscount)
-- [server.maxHeadersCount](https://nodejs.org/api/http.html#servermaxheaderscount)
+<!-- todo-yus -->
 
 ## server.maxRequestsPerSocket
 
 - [server.maxRequestsPerSocket](https://nodejs.org/api/http.html#servermaxrequestspersocket)
 - [server.on('droprequest')](https://nodejs.org/api/http.html#event-droprequest)
 
+<!-- todo-yus -->
+
 ## 一般開發者很少用到的
 
 ### 100 Continue
 
+- [request.on('continue')](https://nodejs.org/api/http.html#event-continue)
 - [server.on('checkContinue')](https://nodejs.org/api/http.html#event-checkcontinue)
 - [response.writeContinue()](https://nodejs.org/api/http.html#responsewritecontinue)
 
@@ -690,9 +996,21 @@ https://nodejs.org/api/http.html#responsestrictcontentlength
 
 https://nodejs.org/api/http.html#event-checkexpectation
 
+<!-- todo-yus -->
+
 ### server.on('clientError')
 
 https://nodejs.org/api/http.html#event-clienterror
+
+通常是在 Node.js 的 HTTPParser 沒辦法正確解析出 client 送出的 http request，包含但不限於以下
+
+| Node.js Error Code                                                                                | Description                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ERR_HTTP_REQUEST_TIMEOUT](https://nodejs.org/api/errors.html#err_http_request_timeout)           | [Incomplete request exceeded headersTimeout or requestTimeout](#prevent-incomplete-request)                                                              |
+| [HPE_CHUNK_EXTENSIONS_OVERFLOW](https://nodejs.org/api/errors.html#hpe_chunk_extensions_overflow) | [Transfer-Encoding: chunked](../http/transfer-encoding.md) 的 [chunked extensions](https://datatracker.ietf.org/doc/html/rfc9112#section-7.1.1) 超過上限 |
+| [HPE_HEADER_OVERFLOW](https://nodejs.org/api/errors.html#hpe_header_overflow)                     | [Exceeded maxHeaderSize](#限制-headers-大小)                                                                                                             |
+
+這些情境，基本上都是 DoS 或是 [HTTP request smuggling](../port-swigger/http-request-smuggling.md) 的溫床，Node.js 會在 user program 沒有註冊 `'clientError'` 的情況，直接用 `socket.destroy()` 關閉連線。如果 user program 有註冊 `'clientError'` 的話，則需要自行調用 `socket.destroy()` 來關閉連線
 
 ### server.on('connect')
 
@@ -723,6 +1041,8 @@ Upgrade: Whatever
 
 ### validate header
 
+這些是 Node.js internal 在設定 header 的時候會先驗證 key value 是否合法
+
 - [http.validateHeaderName(name[, label])](https://nodejs.org/api/http.html#httpvalidateheadernamename-label)
 - [http.validateHeaderValue](https://nodejs.org/api/http.html#httpvalidateheadervaluename-value)
 
@@ -732,26 +1052,446 @@ Upgrade: Whatever
 - [server.closeAllConnections()](https://nodejs.org/api/http.html#servercloseallconnections)
 - [server.closeIdleConnections()](https://nodejs.org/api/http.html#servercloseidleconnections)
 
-## 資安相關
+本機開發都是直接 Ctrl + C 去砍 Node.js process，所以對於 graceful shutdown http server 無感。但如果是 production 環境的 http server，每個 http request 都代表資料庫的 CRUD，中斷就有可能造成不可預期的後果，所以如何優雅的關閉 server 也是一門學問！
 
+先給結論：
+
+| method                        | Description                                                                        |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| server.close([callback])      | ✅ Graceful shutdown.                                                              |
+| server.closeAllConnections()  | ❌ Destroy all sockets immediately.<br/>Use with caution.                          |
+| server.closeIdleConnections() | ✅ Graceful shutdown.<br/>Call this function after<br/>`server.close([callback]) ` |
+
+再來看看官方文件對於 `server.close([callback])` 的描述：
+
+```
+Stops the server from accepting new connections and closes all connections connected to this server which are not sending a request or waiting for a response.
+```
+
+搭配原始碼服用，直接看看背後做了哪些事情
+
+`server.close([callback])`
+
+```ts
+Server.prototype.close = function close() {
+  httpServerPreClose(this);
+  ReflectApply(net.Server.prototype.close, this, arguments);
+  return this;
+};
+
+function httpServerPreClose(server) {
+  server.closeIdleConnections();
+  clearInterval(server[kConnectionsCheckingInterval]);
+}
+```
+
+`server.closeIdleConnections()`
+
+```ts
+Server.prototype.closeIdleConnections = function closeIdleConnections() {
+  if (!this[kConnections]) {
+    return;
+  }
+
+  const connections = this[kConnections].idle();
+
+  for (let i = 0, l = connections.length; i < l; i++) {
+    if (
+      connections[i].socket._httpMessage &&
+      !connections[i].socket._httpMessage.finished
+    ) {
+      continue;
+    }
+
+    connections[i].socket.destroy();
+  }
+};
+```
+
+`server.closeAllConnections()`
+
+```ts
+Server.prototype.closeAllConnections = function closeAllConnections() {
+  if (!this[kConnections]) {
+    return;
+  }
+
+  const connections = this[kConnections].all();
+
+  for (let i = 0, l = connections.length; i < l; i++) {
+    connections[i].socket.destroy();
+  }
+};
+```
+
+實務上在寫 production http server 時，通常都會處理優雅關閉 server 的邏輯：
+
+```ts
+// http server
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  // 模擬延遲
+  setTimeout(() => res.end("hello world"), 5000);
+});
+
+let closed = false;
+function gracefulClose() {
+  // 確保 gracefulClose 只被執行一次
+  if (closed) return;
+  closed = true;
+
+  // 主邏輯
+  httpServer.close(() => {
+    console.log("httpServer closed");
+    process.exit(0);
+  });
+  httpServer.closeIdleConnections();
+
+  // 避免惡意 client 掛著連線導致 process 永遠不結束，設定 10 秒的 timeout
+  const timeout = setTimeout(() => {
+    console.error("force exit");
+    process.exit(1);
+  }, 10000);
+  // 若 10 秒內就 close，別讓 timeout 掛著 Node.js process event loop
+  timeout.unref();
+}
+// 通常是 Ctrl + C
+process.once("SIGINT", gracefulClose);
+// Termination signal
+process.once("SIGTERM", gracefulClose);
+```
+
+假設在 process `SIGINT` 或 `SIGTERM` 之前，剛好有個 http request 正在處理中，預期的時間軸如下
+
+```mermaid
+timeline
+    0s: http request
+      : Node.js receives SIGINT or SIGTERM
+      : gracefulClose
+    5s: end("hello world")
+      : httpServer closed
+```
+
+用 `curl http://localhost:5000` 實測
+
+- curl 的 terminal 會收到 hello world
+- Node.js 的 terminal 會收到 httpServer closed
+
+將 http server 的 timeout 改成 20 秒
+
+```ts
+httpServer.on("request", (req, res) => {
+  // 模擬延遲
+  setTimeout(() => res.end("hello world"), 20000);
+});
+```
+
+預期的時間軸如下
+
+```mermaid
+timeline
+    0s : http request
+       : Node.js receives SIGINT or SIGTERM
+       : gracefulClose
+    10s: force exit
+       : curl Recv failure
+```
+
+用 `curl http://localhost:5000` 實測
+
+- curl 的 terminal 會收到 "curl: (56) Recv failure: Connection was reset"
+- Node.js 的 terminal 會收到 "force exit"
+
+## 防止 DoS, DDos 以及 Slowloris Attack
+
+http server 承受來自四面八方的 HTTP Request，需要有一套機制防止惡意的請求，避免 server 的資源被消耗完。
+
+### Prevent Incomplete Request
+
+Node.js 提供以下 properties 可以設定 http server 的 timeout
+
+- [http.createServer([options.connectionsCheckingInterval])](https://nodejs.org/api/http.html#httpcreateserveroptions-requestlistener)
 - [server.headersTimeout](https://nodejs.org/api/http.html#serverheaderstimeout)
 - [server.requestTimeout](https://nodejs.org/api/http.html#serverrequesttimeout)
+
+一個正常的 HTTP Request 如下
+
+```
+POST /user HTTP/1.1
+Host: example.com
+Content-Length: 23
+Content-Type: application/json
+
+{ "username": "hello" }
+```
+
+Node.js http server 只要收到完整的 headers 就可以觸發 `'request'` 事件。寫個 PoC 驗證：
+
+```ts
+import http from "http";
+
+// http server
+const httpServer = http.createServer().listen(5000);
+httpServer.on("request", (req, res) => {
+  console.log(req.headers);
+});
+
+// http client (use net.Socket to control raw bytes)
+const socket = net.createConnection({ host: "localhost", port: 5000 });
+socket.write(
+  "POST /user HTTP/1.1\r\nHost: example.com\r\nContent-Length: 23\r\nContent-Type: application/json\r\n\r\n",
+);
+
+// Prints
+// {
+//   host: 'example.com',
+//   'content-length': '23',
+//   'content-type': 'application/json'
+// }
+```
+
+[RFC 9110#section-5.3](https://datatracker.ietf.org/doc/html/rfc9110#section-5.3) 也有提到，http server 需要收到完整的 request headers section，才可以發送回應。所以 Node.js 選擇在 request headers 完整以後，才觸發 `'reuqest'` 事件，這邊是合理的（不需要等到 body 送完才觸發）
+
+```
+A server MUST NOT apply a request to the target resource until it receives the entire request header section
+```
+
+我們現在知道 request headers 區塊的邊界了，若 Client 刻意不發送完整的 request headers
+
+```ts
+import http from "http";
+
+// http server
+// ✅ 調低 connectionsCheckingInterval，比較好觀察 headersTimeout 的秒數
+const httpServer = http.createServer({ connectionsCheckingInterval: 0 });
+httpServer.headersTimeout = 3000;
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  console.log(req.headers);
+});
+
+// http client (use net.Socket to control raw bytes)
+const socket = net.createConnection({ host: "localhost", port: 5000 });
+// ✅ 刻意不包含 headers 結尾的 `\r\n\r\n`，觸發 `headersTimeout`
+const data =
+  "POST /user HTTP/1.1\r\nHost: example.com\r\nContent-Length: 23\r\nContent-Type: application/json";
+socket.write(data, () => console.log(performance.now())); // 884.3236
+socket.on("data", (chunk) => {
+  console.log(performance.now()); // 3892.4877
+  console.log({ chunk }); // { chunk: 'HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n' }
+});
+```
+
+粗略的計算 "client 送出 data" 到 "client 收到 408 Request Timeout" 的時間差，剛好 3 秒 => 符合預期
+
+再來測試 [server.requestTimeout](https://nodejs.org/api/http.html#serverrequesttimeout)
+
+```ts
+import http from "http";
+
+// http server
+// ✅ 調低 connectionsCheckingInterval，比較好觀察 headersTimeout 的秒數
+const httpServer = http.createServer({ connectionsCheckingInterval: 0 });
+// ✅ 由於 headersTimeout 的預設值是 Math.min(60000, requestTimeout)，故刻意設定一個比 requestTimeout 小的數字，方便觀察
+httpServer.headersTimeout = 3000;
+httpServer.requestTimeout = 4000;
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  req.resume();
+  console.log(performance.now()); // 871.1117
+  console.log(req.headers); // { 'content-length': '3', host: 'localhost:5000', connection: 'close' }
+});
+
+// http client
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  method: "POST",
+  agent: false,
+  // ✅ 宣告有 3 bytes 的 body
+  headers: { "content-length": 3 },
+});
+// ✅ 送出完整的 headers，但不送出 body，以此觸發 requestTimeout
+clientRequest.flushHeaders();
+clientRequest.on("response", (res) => {
+  console.log(performance.now()); // 4888.897
+  console.log(res.statusCode, res.headers); // 408 { connection: 'close' }
+});
+```
+
+粗略的計算 "client 送出 headers" 到 "client 收到 408 Request Timeout" 的時間差，剛好 4 秒 => 符合預期
+
+如果想要自行處理 Request Timeout 的邏輯，可以在 http server 監聽 `'clientError'` 事件：
+
+```ts
+// 參考 lib/_http_server.js function socketOnError 的邏輯
+httpServer.on("clientError", (err, socket) => {
+  // ✅ 當 'clientError' 事件觸發時，Node.js 可能沒有收到完整的 HTTP Request Headers => 無法組出 `IncomingMessage`
+  // ✅ 所以這個情況，user program 需要自行處理 `socket.write`, `socket.end` 以及 `socket.destroy`
+  // ✅ The socket must be closed or destroyed before the listener ends.
+  if (
+    err instanceof Error &&
+    (err as any).code === "ERR_HTTP_REQUEST_TIMEOUT" &&
+    // @ts-ignore
+    socket.writable &&
+    (!socket._httpMessage || !socket._httpMessage._headerSent)
+  ) {
+    socket.write("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+  }
+
+  if (!socket.destroyed) socket.destroy();
+});
+```
+
+### 限制 headers 大小
+
+Node.js 提供以下 properties 可以限制 http client, server 的 headers 大小
+
 - [http.maxHeaderSize](https://nodejs.org/api/http.html#httpmaxheadersize)
+- [http.createServer([options.maxHeaderSize])](https://nodejs.org/api/http.html#httpcreateserveroptions-requestlistener)
+- [http.request(url[, options.maxHeaderSize])](https://nodejs.org/api/http.html#httprequesturl-options-callback)
+- [request.maxHeadersCount](https://nodejs.org/api/http.html#requestmaxheaderscount)
+- [server.maxHeadersCount](https://nodejs.org/api/http.html#servermaxheaderscount)
 
-## IncomingMessage
+先來測試 http server 的 `maxHeaderSize`
 
-### complete ?
+```ts
+const httpServer = http.createServer({ maxHeaderSize: 100 });
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  res.end("hello world");
+});
+```
+
+http client 使用 `net.Socket` 精準計算 100 bytes
+
+```ts
+const socket = net.createConnection({
+  host: "localhost",
+  port: 5000,
+});
+const dummy80Bytes = Array(80).fill(0).join("");
+socket.write(`GET / HTTP/1.1\r\nHost: localhost:5000${dummy80Bytes}\r\n\r\n`);
+socket.setEncoding("latin1");
+socket.on("data", console.log);
+```
+
+正常回傳 200
+
+```
+HTTP/1.1 200 OK
+Date: Thu, 19 Feb 2026 13:08:34 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Content-Length: 11
+
+hello world
+```
+
+接著增加 1 byte
+
+```ts
+const socket = net.createConnection({
+  host: "localhost",
+  port: 5000,
+});
+const dummy81Bytes = Array(81).fill(0).join("");
+socket.write(`GET / HTTP/1.1\r\nHost: localhost:5000${dummy81Bytes}\r\n\r\n`);
+socket.setEncoding("latin1");
+socket.on("data", console.log);
+```
+
+收到 431，符合預期
+
+```
+HTTP/1.1 431 Request Header Fields Too Large
+Connection: close
+
+
+```
+
+<!-- todo-yus -->不過如果處理多個 headers，計算 bytes 的邏輯就跟我預期的有點不一樣，這邊應該是要看 [llhttp](https://github.com/nodejs/llhttp) 的實作，但目前還沒讀到這裡～
+
+再來測試 http server 的 `maxHeadersCount`
+
+```ts
+const httpServer = http.createServer();
+httpServer.maxHeadersCount = 2;
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  // ✅ 將 req.headers 回寫到 response body 方便觀察
+  res.end(JSON.stringify(req.headers));
+});
+```
+
+送出以下 HTTP Request
+
+```
+GET / HTTP/1.1
+Host: localhost:5000
+Test: 67890
+Foo: bar
+AAA: 123
+
+
+```
+
+收到的 HTTP Response，發現 Node.js 把第三個以後的 headers 都切掉了
+
+```
+HTTP/1.1 200 OK
+Date: Thu, 19 Feb 2026 15:11:38 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Content-Length: 40
+
+{"host":"localhost:5000","test":"67890"}
+```
+
+<!-- todo-yus -->
+
+<!-- ## IncomingMessage complete ?
 
 - [message.on('close')](https://nodejs.org/api/http.html#event-close_3)
-- [message.complete](https://nodejs.org/api/http.html#messagecomplete)
+- [message.complete](https://nod`ejs.org/api/http.html#messagecomplete) -->
 
-### headers
+## IncomingMessage headers
+
+Node.js 提供以下 properties 存取 `IncomingMessage` 的 headers
 
 - [message.headers](https://nodejs.org/api/http.html#messageheaders)
 - [message.headersDistinct](https://nodejs.org/api/http.html#messageheadersdistinct)
 - [message.rawHeaders](https://nodejs.org/api/http.html#messagerawheaders)
 
-### info
+假設以下 HTTP Request
+
+```
+GET / HTTP/1.1
+Host: localhost:5000
+host: 123
+
+
+```
+
+會得到以下 headers
+
+```json
+{
+  // ✅ `joinDuplicateHeaders` defaults to `false`, which means second `host` header will be discard.
+  "headers": {
+    "host": "localhost:5000"
+  },
+  // ✅ `headersDistinct` returns array of distinct values.
+  "headersDistinct": {
+    "host": ["localhost:5000", "123"]
+  },
+  // ✅ `rawHeaders` is exactly as they were received.
+  "rawHeaders": ["Host", "localhost:5000", "host", "123"]
+}
+```
+
+## IncomingMessage Start Line
 
 Client, Server 都有的
 
@@ -765,7 +1505,3 @@ Server 會收到的
 Client 會收到的
 
 - [message.statusCode](https://nodejs.org/api/http.html#messagestatuscode)
-
-<!-- ### 100-continue
-
-- [Event: `'continue'`](https://nodejs.org/api/http.html#event-continue) -->
