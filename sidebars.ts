@@ -63,6 +63,7 @@ const sidebars: SidebarsConfig = {
         "http/nncoection-or-connection",
         "http/http-version-negotiation",
         "http/m3u8",
+        "http/ABNF-cheat-sheet",
         // "http/from-http-to-vite-preview",
         // "http/node-http-proxy",
         // "http/sentry",
