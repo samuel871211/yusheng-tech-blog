@@ -986,7 +986,7 @@ httpServer.on("request", (req, res) => {
 });
 ```
 
-用 `curl http://localhost:5000/ -v` 測試，發現 curl 等待 3 秒左右就關閉連線了
+用 `curl http://localhost:5000/ -v` 測試，發現 curl 等待幾秒左右就關閉連線了
 
 ```
 < HTTP/1.1 200 OK
@@ -1000,6 +1000,43 @@ httpServer.on("request", (req, res) => {
 curl: (18) transfer closed with 1 bytes remaining to read
 12
 ```
+
+用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000。發現 Server 回傳 HTTP Response 的 6 秒後，Server 主動關閉連線
+![curl-cl-bigger](../../static/img/curl-cl-bigger.jpg)
+
+改用 Node.js `http.request` 測試
+
+```ts
+const clientRequest = http.request({ host: "localhost", port: 5000 });
+clientRequest.end();
+clientRequest.on("response", (res) => {
+  console.log(performance.now(), res.headers);
+  res.setEncoding("latin1");
+  res.on("data", console.log);
+  res.on("end", () => console.log("end")); // ❌ end will not trigger
+  res.on("error", console.log);
+  res.on("close", () => console.log(performance.now(), "close"));
+});
+
+// Prints
+// 1184.9179 {
+//   'content-length': '3',
+//   date: 'Mon, 23 Feb 2026 11:10:16 GMT',
+//   connection: 'keep-alive',
+//   'keep-alive': 'timeout=5'
+// }
+// 12
+// Error: aborted
+//     at Socket.socketCloseListener (node:_http_client:535:19)
+//     at Socket.emit (node:events:520:35)
+//     at Socket.emit (node:domain:489:12)
+//     at TCP.<anonymous> (node:net:346:12) {
+//   code: 'ECONNRESET'
+// }
+// 7190.6428 close
+```
+
+<!-- todo-yus why 6s -->
 
 若宣告 `Content-Length: 3`，實際送了 4 bytes，也會造成 http client 的錯誤
 
@@ -1025,6 +1062,8 @@ httpServer.on("request", (req, res) => {
 * Closing connection
 123
 ```
+
+改用
 
 <!-- todo-yus 用 Node.js http client 測試 -->
 
