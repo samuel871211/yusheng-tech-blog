@@ -971,9 +971,62 @@ IncomingMessage
 
 ## 防止 Server 亂來: response.strictContentLength
 
-https://nodejs.org/api/http.html#responsestrictcontentlength
+[response.strictContentLength](https://nodejs.org/api/http.html#responsestrictcontentlength)
 
-<!-- todo-yus -->
+Node.js http server 預設不會檢查 response header 的 `Content-Length` 跟實際送出的 body 是否 match
+
+若宣告 `Content-Length: 3`，實際只送 2 bytes，就會造成 http client 的錯誤
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  res.setHeader("Content-Length", 3);
+  res.end("12");
+});
+```
+
+用 `curl http://localhost:5000/ -v` 測試，發現 curl 等待 3 秒左右就關閉連線了
+
+```
+< HTTP/1.1 200 OK
+< Content-Length: 3
+< Date: Mon, 23 Feb 2026 06:29:32 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+<
+* transfer closed with 1 bytes remaining to read
+* Closing connection
+curl: (18) transfer closed with 1 bytes remaining to read
+12
+```
+
+若宣告 `Content-Length: 3`，實際送了 4 bytes，也會造成 http client 的錯誤
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  res.setHeader("Content-Length", 3);
+  res.end("1234");
+});
+```
+
+用 `curl http://localhost:5000/ -v` 測試，發現 curl 會把超過的 body 截斷，並且關閉連線
+
+```
+< HTTP/1.1 200 OK
+< Content-Length: 3
+< Date: Mon, 23 Feb 2026 06:32:44 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+<
+* Excess found writing body: excess = 1, size = 3, maxdownload = 3, bytecount = 3
+* Closing connection
+123
+```
+
+<!-- todo-yus 用 Node.js http client 測試 -->
 
 ## server.maxRequestsPerSocket
 
