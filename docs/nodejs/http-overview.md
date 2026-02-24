@@ -921,26 +921,26 @@ sequenceDiagram
 
 <!-- ### ClientRequest.destroy([error]) -->
 
-## http.ClientRequest
+## ClientRequest events
 
-### events
+<!-- todo-yus 有點不確定這三個的差別 -->
 
 - [request.on('close')](https://nodejs.org/api/http.html#event-close)
-- [request.on('information')](https://nodejs.org/api/http.html#event-information)
-- [request.on('upgrade')](https://nodejs.org/api/http.html#event-upgrade)
+- [message.on('close')](https://nodejs.org/api/http.html#event-close_3)
+- [message.complete](https://nodejs.org/api/http.html#messagecomplete)
 
-<!-- todo-yus -->
+<!-- |                     | Description |
+| ------------------- | ----------- |
+| request.on('close') |             |
+| message.on('close') |             |
+| message.on('end')   |             | -->
 
-### request info
+## ClientRequest info
 
 - [request.path](https://nodejs.org/api/http.html#requestpath)
 - [request.method](https://nodejs.org/api/http.html#requestmethod)
 - [request.host](https://nodejs.org/api/http.html#requesthost)
 - [request.protocol](https://nodejs.org/api/http.html#requestprotocol)
-
-<!-- todo-yus -->
-
-<!-- ## http.ServerResponse -->
 
 ## related to socket
 
@@ -958,8 +958,6 @@ ClientRequest
 http.Server
 
 - [server.timeout](https://nodejs.org/api/http.html#servertimeout)
-- [server.keepAliveTimeout](https://nodejs.org/api/http.html#serverkeepalivetimeout)
-- [server.keepAliveTimeoutBuffer](https://nodejs.org/api/http.html#serverkeepalivetimeoutbuffer)
 
 ServerResponse
 
@@ -974,6 +972,8 @@ IncomingMessage
 [response.strictContentLength](https://nodejs.org/api/http.html#responsestrictcontentlength)
 
 Node.js http server 預設不會檢查 response header 的 `Content-Length` 跟實際送出的 body 是否 match
+
+### `Content-Length` 大於 actual bytes
 
 若宣告 `Content-Length: 3`，實際只送 2 bytes，就會造成 http client 的錯誤
 
@@ -1003,6 +1003,11 @@ curl: (18) transfer closed with 1 bytes remaining to read
 
 用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000。發現 Server 回傳 HTTP Response 的 6 秒後，Server 主動關閉連線
 ![curl-cl-bigger](../../static/img/curl-cl-bigger.jpg)
+
+這 6 秒是以下兩個的預設值相加得來的
+
+- [server.keepAliveTimeout](https://nodejs.org/api/http.html#serverkeepalivetimeout)
+- [server.keepAliveTimeoutBuffer](https://nodejs.org/api/http.html#serverkeepalivetimeoutbuffer)
 
 改用 Node.js `http.request` 測試
 
@@ -1036,7 +1041,9 @@ clientRequest.on("response", (res) => {
 // 7190.6428 close
 ```
 
-<!-- todo-yus why 6s -->
+得出的結果也是 6 秒 (7190 - 1184)
+
+### `Content-Length` 小於 actual bytes
 
 若宣告 `Content-Length: 3`，實際送了 4 bytes，也會造成 http client 的錯誤
 
@@ -1049,7 +1056,7 @@ httpServer.on("request", (req, res) => {
 });
 ```
 
-用 `curl http://localhost:5000/ -v` 測試，發現 curl 會把超過的 body 截斷，並且關閉連線
+用 `curl http://localhost:5000/ -v` 測試，發現 curl 會把超過的 body 截斷，並且 curl 會立即關閉連線
 
 ```
 < HTTP/1.1 200 OK
@@ -1063,18 +1070,181 @@ httpServer.on("request", (req, res) => {
 123
 ```
 
-改用
+改用 Node.js `http.request` 測試
 
-<!-- todo-yus 用 Node.js http client 測試 -->
+```ts
+const clientRequest = http.request({ host: "localhost", port: 5000 });
+clientRequest.end();
+clientRequest.on("error", console.log); // ✅ Error: Parse Error: Expected HTTP/, RTSP/ or ICE/
+clientRequest.on("response", (res) => {
+  console.log(res.headers); // ✅ 會正確觸發
+  res.setEncoding("latin1");
+  res.on("data", console.log); // ✅ 123
+  res.on("end", () => console.log("end")); // ✅ 會正確觸發
+});
 
-## server.maxRequestsPerSocket
+// Prints
+// {
+//   'content-length': '3',
+//   date: 'Tue, 24 Feb 2026 01:04:22 GMT',
+//   connection: 'keep-alive',
+//   'keep-alive': 'timeout=5'
+// }
+// Error: Parse Error: Expected HTTP/, RTSP/ or ICE/
+//     at Socket.socketOnData (node:_http_client:615:22)
+//     at Socket.emit (node:events:508:28)
+//     at Socket.emit (node:domain:489:12)
+//     at addChunk (node:internal/streams/readable:559:12)
+//     at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+//     at Socket.Readable.push (node:internal/streams/readable:390:5)
+//     at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+//   bytesParsed: 125,
+//   code: 'HPE_INVALID_CONSTANT',
+//   reason: 'Expected HTTP/, RTSP/ or ICE/',
+//   rawPacket: <Buffer 48 54 54 50 2f 31 2e 31 20 32 30 30 20 4f 4b 0d 0a 43 6f 6e 74 65 6e 74 2d 4c 65 6e 67 74 68 3a 20 33 0d 0a 44 61 74 65 3a 20 54 75 65 2c 20 32 34 20 ... 76 more bytes>
+// }
+// 123
+// end
+```
+
+Node.js 的 `HTTPParser` 會噴 `Parse Error: Expected HTTP/, RTSP/ or ICE/`，原因是當 `HTTPParser` 讀完 3 bytes of data 之後，接下來就開始讀下一個 HTTP Request，而 HTTP Request 的 Start-Line 必須是 `HTTP/` 開頭，但我們傳送了 "4"，所以才會噴 `Parse Error`。至於 `RTSP/` 跟 `ICE/`，則是不同的協議，我目前還沒深入研究。
+
+### 設定 response.strictContentLength
+
+為了預防上述情境，可以設定 `response.strictContentLength`
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  res.strictContentLength = true;
+  res.setHeader("Content-Length", 3);
+  res.end("123G");
+});
+```
+
+用 `curl http://localhost:5000/` 測試，收到 `curl: (52) Empty reply from server`，並且 Node.js 的 log 顯示
+
+```
+Error: Response body's content-length of 4 byte(s) does not match the content-length of 3 byte(s) set in header
+```
+
+這是在 `OutgoingMessage.prototype.end` 拋出的錯誤，無法透過 `on("error")` 捕捉
+
+```ts
+function strictContentLength(msg) {
+  return (
+    msg.strictContentLength &&
+    msg._contentLength != null &&
+    msg._hasBody &&
+    !msg._removedContLen &&
+    !msg.chunkedEncoding &&
+    !msg.hasHeader("transfer-encoding")
+  );
+}
+
+OutgoingMessage.prototype.end = function end(chunk, encoding, callback) {
+  // other logic...
+
+  if (
+    strictContentLength(this) &&
+    this[kBytesWritten] !== this._contentLength
+  ) {
+    throw new ERR_HTTP_CONTENT_LENGTH_MISMATCH(
+      this[kBytesWritten],
+      this._contentLength,
+    );
+  }
+
+  // other logic...
+};
+```
+
+## 限制每個 TCP Socket 最多能處理的 HTTP Requests
 
 - [server.maxRequestsPerSocket](https://nodejs.org/api/http.html#servermaxrequestspersocket)
 - [server.on('droprequest')](https://nodejs.org/api/http.html#event-droprequest)
 
-<!-- todo-yus -->
+我看了這個 feature 的歷史原因，覺得蠻有趣的
+
+- [Issue: Max requests per socket](https://github.com/nodejs/node/issues/40071)
+- [PR: Limit requests per connection](https://github.com/nodejs/node/pull/40082)
+
+簡單來說，由於 HTTP/1.1 KeepAlive 的特性，會盡可能的使用已經建立好的 TCP Connection，導致舊的 K8S Pod 一直處於 High CPU Usage，而新的 K8S Pod 則沒辦法分散流量。限制 `maxRequestsPerSocket` 之後，就可以讓老舊的 TCP Connection 關閉，從而達到負載均衡。
+
+```mermaid
+flowchart LR
+  A[Request 1] --> B[舊的 K8S Pod]
+  C[Request 2] --> B
+  D[Request 3] --> B
+  E[Request 4] --> B
+  F[Request 5] --> G[新的 K8S Pod]
+```
+
+架個 http server 試試看
+
+```ts
+const httpServer = http.createServer();
+httpServer.maxRequestsPerSocket = 3;
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  res.end(req.url);
+});
+```
+
+用 [HTTP/1.1 pipeline](../http/http-1.1-pipelining-and-hol-blocking.md) 的概念，發送以下 raw HTTP Requests
+
+```ts
+GET /1 HTTP/1.1
+Host: 123
+Content-Length: 1
+
+1GET /2 HTTP/1.1
+Host: 123
+Content-Length: 1
+
+1GET /3 HTTP/1.1
+Host: 123
+Content-Length: 1
+
+1GET /4 HTTP/1.1
+Host: 123
+Content-Length: 1
+
+1
+```
+
+- 第 1,2 個 Response Header 有 `Keep-Alive: timeout=5, max=3`
+- 第 3 個 Response Header 則會有 `Connection: close`，但此時還不會真的關閉連線
+- 第 4 個 Response 開始，則一律回傳 `503 Service Unavailable`
+  ![max-requests-per-socket](../../static/img/max-requests-per-socket.jpg)
+
+:::info
+`Keep-Alive: timeout=5, max=3` 屬於 "歷史遺留的非標準擴充"，詳細請參考 [RFC 2068 Section 19.7.1.1](https://datatracker.ietf.org/doc/html/rfc2068#section-19.7.1.1)
+:::
+
+若 user program 想要在 `503 Service Unavailable` 之前加上一些監控的邏輯，可以使用 `server.on('droprequest')`
+
+```ts
+httpServer.on("dropRequest", (req, socket) => {
+  // 監控是否為惡意 User-Agent
+  console.log(req.headers["user-agent"]);
+  // ❌ 不建議使用 socket.write, socket.destroy, socket.end 等等會影響 socket 狀態機的操作
+  // 因爲 Node.js 會幫忙回 `503 Service Unavailable`
+});
+```
 
 ## 一般開發者很少用到的
+
+### request.on('information')
+
+https://nodejs.org/api/http.html#event-information
+
+會在 client 收到 1xx status code 的時候觸發（除了 101 Switching Protocols 會在 [on('upgrade')](#onupgrade) 的時候觸發 ），包含
+
+- [100 Continue](#100-continue)
+- [102 Processing (Deprecated)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/102)
+- [103 Early Hints](#103-early-hints)
 
 ### 100 Continue
 
@@ -1083,6 +1253,12 @@ httpServer.on("request", (req, res) => {
 - [response.writeContinue()](https://nodejs.org/api/http.html#responsewritecontinue)
 
 參考我寫過的 [Expect: 100-Continue](../http/expect-100-continue.md)
+
+### 103 Early Hints
+
+[response.writeEarlyHints(hints[, callback])](https://nodejs.org/api/http.html#responsewriteearlyhintshints-callback)
+
+<!-- todo-yus -->
 
 ### server.on('checkExpectation')
 
@@ -1114,22 +1290,39 @@ https://nodejs.org/api/http.html#event-connect_1
 
 參考我寫過的 [HTTP/1.1 為何只能 6 個連線?](../http/browser-max-tcp-connection-6-per-host.md)
 
-### server.on('upgrade')
+### on('upgrade')
 
-https://nodejs.org/api/http.html#event-upgrade_1
+Node.js 在 `ClienttRequest` 跟 `http.Server` 分別提供了 upgrade 事件
 
-Client 若送 Upgrade 請求，就會觸發這個事件
+- [server.on('upgrade')](https://nodejs.org/api/http.html#event-upgrade_1)
+- [request.on('upgrade')](https://nodejs.org/api/http.html#event-upgrade)
 
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("upgrade", (req, socket, head) => {
+  // ✅ Server 在此回傳 `101 Switching Protocols` 的話，Client 就會觸發 `request.on('upgrade')`
+  socket.write(
+    "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: Websocket\r\n\r\n",
+  );
+});
+
+// ✅ Client 若送 Upgrade 請求，就會觸發 `server.on('upgrade')`
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  headers: {
+    connection: "Upgrade",
+    upgrade: "Websocket",
+  },
+});
+clientRequest.end();
+clientRequest.on("upgrade", (response, socket, head) => {
+  // ✅ It's now your responsibility to handle TCP socket
+});
 ```
-GET / HTTP/1.1
-Host: localhost:5000
-Connection: Upgrade
-Upgrade: Whatever
 
-
-```
-
-99% 的使用情境是需要 Upgrade 到 WebSocket，Server 才必須監聽此事件，不過 [ws: a Node.js WebSocket library](https://github.com/websockets/ws) 已經處理好這個細節了。如果真的要學習的話，我會等到之後需要學習 WebSocket，再去翻 ws 的原始碼來讀。
+99% 的使用情境是需要 Upgrade 到 WebSocket，Server 才必須監聽此事件。不過 [ws: a Node.js WebSocket library](https://github.com/websockets/ws) 已經處理好這個細節了。如果真的要學習的話，我會等到之後需要學習 WebSocket，再去翻 ws 的原始碼來讀。
 
 ### validate header
 
@@ -1540,13 +1733,6 @@ Content-Length: 40
 
 {"host":"localhost:5000","test":"67890"}
 ```
-
-<!-- todo-yus -->
-
-<!-- ## IncomingMessage complete ?
-
-- [message.on('close')](https://nodejs.org/api/http.html#event-close_3)
-- [message.complete](https://nod`ejs.org/api/http.html#messagecomplete) -->
 
 ## IncomingMessage headers
 
