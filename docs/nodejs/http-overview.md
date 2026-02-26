@@ -1256,9 +1256,39 @@ https://nodejs.org/api/http.html#event-information
 
 ### 103 Early Hints
 
+Node.js http server 提供以下 method 來寫入 Early Hints
 [response.writeEarlyHints(hints[, callback])](https://nodejs.org/api/http.html#responsewriteearlyhintshints-callback)
 
+Early Hints 是啥？最常用的情境就是告訴瀏覽器 "Response Body 還在準備中，但你可以先載入這些 Link 的資源"
+
+```mermaid
+sequenceDiagram
+
+  participant B as Browser
+  participant S as Server
+
+  B ->> S: GET /index.html HTTP/1.1<br/>Host: example.com
+  S ->> B: HTTP/1.1 103 Early Hints<br/>Link: </style.css>#59; rel=preload#59; as=style
+
+  Note Over B: Starting to preload https://example.com/style.css
+
+  B ->> S: GET /style.css HTTP/1.1<br/>Host: example.com
+
+  Note Over B, S: The order of the following two responses is not important
+  S ->> B: HTTP/1.1 200 Ok<br/>Content-Type: text/css<br/>Content-Length: 999<br/><br/>CSS Content Here...
+  S ->> B: HTTP/1.1 200 Ok<br/>Content-Type: text/html<br/>Content-Length: 999<br/><br/>HTML Content Here...
+```
+
+我們先來看看 [RFC 9110 Section 15.2. Informational 1xx](https://datatracker.ietf.org/doc/html/rfc9110#section-15.2) 的介紹
+
+```
+A client MUST be able to parse one or more 1xx responses received prior to a final response, even if the client does not expect one. A user agent MAY ignore unexpected 1xx responses.
+```
+
+Early Hints
+
 <!-- todo-yus -->
+<!-- https://datatracker.ietf.org/doc/html/rfc8297 -->
 
 ### server.on('checkExpectation')
 
