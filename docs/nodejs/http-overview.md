@@ -942,30 +942,392 @@ sequenceDiagram
 - [request.host](https://nodejs.org/api/http.html#requesthost)
 - [request.protocol](https://nodejs.org/api/http.html#requestprotocol)
 
-## related to socket
+## ClientRequest 跟 net.Socket 連結的橋樑
+
+當你用 `http.request` 發起請求時，背後會優先從 [http.Agent](#httpagent) 的連線池（[freeSockets](https://nodejs.org/api/http.html#agentfreesockets)）挑選一個已連線的 `net.Socket` 關聯到這個 `ClientRequest`。若 `freeSockets` 為空，就會建立一個新的 TCP 連線。詳細的實作可以看 `lib/_http_agent.js` 的 `Agent.prototype.addRequest`
+
+我們寫個 PoC 來測試
+
+```ts
+const agent = new http.Agent({ keepAlive: true });
+// ✅ 剛開始沒有建立任何 TCP 連線
+assert(Object.keys(agent.freeSockets).length === 0);
+const clientRequest = http.request({ host: "localhost", port: 5000, agent });
+clientRequest.on("socket", (socket) => console.log(clientRequest.reusedSocket)); // ❌ false
+clientRequest.end();
+clientRequest.on("close", () =>
+  nextTick(() => {
+    // ✅ 使用 nextTick，確保 localhost:5000 的 TCP Socket 已經回收到 freeSockets
+    assert(Object.keys(agent.freeSockets).length === 1);
+    const clientRequest2 = http.request({
+      host: "localhost",
+      port: 5000,
+      agent,
+    });
+    clientRequest2.on("socket", (socket) =>
+      console.log(clientRequest2.reusedSocket),
+    ); // ✅ true
+    clientRequest2.end();
+  }),
+);
+```
+
+- [request.on('socket')](https://nodejs.org/api/http.html#event-socket): `ClientRequest` 跟 `net.Socket` 關聯的瞬間觸發
+- [request.reusedSocket](https://nodejs.org/api/http.html#requestreusedsocket): 該 `net.Socket` 是否關聯過其他 `ClientRequest`
+
+## 從 ClientRequest 設定 net.Socket 行為
+
+Node.js 提供以下 methods 來設定 `ClientRequest` 關聯到的 `net.Socket` 行為
+
+[request.setNoDelay([noDelay])](https://nodejs.org/api/http.html#requestsetnodelaynodelay)：Enable/disable the use of Nagle's algorithm.
+
+```js
+ClientRequest.prototype._deferToConnect = _deferToConnect;
+function _deferToConnect(method, arguments_) {
+  // This function is for calls that need to happen once the socket is
+  // assigned to this request and writable. It's an important promisy
+  // thing for all the socket calls that happen either now
+  // (when a socket is assigned) or in the future (when a socket gets
+  // assigned out of the pool and is eventually writable).
+
+  const callSocketMethod = () => {
+    if (method) ReflectApply(this.socket[method], this.socket, arguments_);
+  };
+
+  const onSocket = () => {
+    if (this.socket.writable) {
+      callSocketMethod();
+    } else {
+      this.socket.once("connect", callSocketMethod);
+    }
+  };
+
+  if (!this.socket) {
+    this.once("socket", onSocket);
+  } else {
+    onSocket();
+  }
+}
+
+ClientRequest.prototype.setNoDelay = function setNoDelay(noDelay) {
+  this._deferToConnect("setNoDelay", [noDelay]);
+};
+```
+
+[request.setSocketKeepAlive([enable][, initialDelay])](https://nodejs.org/api/http.html#requestsetsocketkeepaliveenable-initialdelay)：參考 [TCP Socket 也有 keepAlive ?!](./socket-overview.md#tcp-socket-也有-keepalive-)
+
+```js
+ClientRequest.prototype.setSocketKeepAlive = function setSocketKeepAlive(
+  enable,
+  initialDelay,
+) {
+  this._deferToConnect("setKeepAlive", [enable, initialDelay]);
+};
+```
+
+- [request.setTimeout(timeout[, callback])](https://nodejs.org/api/http.html#requestsettimeouttimeout-callback)：Sets the socket to timeout after timeout milliseconds of inactivity on the socket.
+- [request.on('timeout')](https://nodejs.org/api/http.html#event-timeout)
+
+```js
+ClientRequest.prototype.setTimeout = function setTimeout(msecs, callback) {
+  if (this._ended) {
+    return this;
+  }
+
+  listenSocketTimeout(this);
+  msecs = getTimerDuration(msecs, "msecs");
+  if (callback) this.once("timeout", callback);
+
+  if (this.socket) {
+    setSocketTimeout(this.socket, msecs);
+  } else {
+    this.once("socket", (sock) => setSocketTimeout(sock, msecs));
+  }
+
+  return this;
+};
+```
+
+為何會需要從 `ClientRequest` 設定 `net.Socket` 行為？其中一個原因是為了封裝，讓使用者不需要去理解 `net.Socket` 在 `ClientRequest` 的生命週期，也可以設定 `net.socket` 的行為
+
+## Client 跟 Server 的 timeout
+
+Node.js 的 Client 跟 Server 各自都可以設定 timeout，其背後也都是 `net.Socket.setTimeout` 的呼叫
+
+- `http.Server`
+  - [server.timeout](https://nodejs.org/api/http.html#servertimeout)
+  - `server.on("timeout")`：沒在官方文件列出，但實際上有這個 event
+- `ClientRequest`
+  - [request.setTimeout(timeout[, callback])](https://nodejs.org/api/http.html#requestsettimeouttimeout-callback)
+  - [request.on('timeout')](https://nodejs.org/api/http.html#event-timeout)
+- `ServerResponse`
+  - [response.setTimeout(msecs[, callback])](https://nodejs.org/api/http.html#responsesettimeoutmsecs-callback)
+  - `response.on("timeout")`：沒在官方文件列出，但實際上有這個 event
+- `IncomingMessage`
+  - [message.setTimeout(msecs[, callback])](https://nodejs.org/api/http.html#messagesettimeoutmsecs-callback)
+  - `message.on("timeout")`：沒在官方文件列出，但實際上有這個 event
+
+### 以 http server 的角度來看
+
+我們直接來看 Node.js 原始碼的實作
+
+```ts
+// IncomingMessage
+IncomingMessage.prototype.setTimeout = function setTimeout(msecs, callback) {
+  if (callback) this.on("timeout", callback);
+  this.socket.setTimeout(msecs);
+  return this;
+};
+
+// OutgoingMessage
+OutgoingMessage.prototype.setTimeout = function setTimeout(msecs, callback) {
+  if (callback) {
+    this.on("timeout", callback);
+  }
+
+  if (!this[kSocket]) {
+    this.once("socket", function socketSetTimeoutOnConnect(socket) {
+      socket.setTimeout(msecs);
+    });
+  } else {
+    this[kSocket].setTimeout(msecs);
+  }
+  return this;
+};
+
+// http.Server
+Server.prototype.setTimeout = function setTimeout(msecs, callback) {
+  this.timeout = msecs;
+  if (callback) this.on("timeout", callback);
+  return this;
+};
+```
+
+看起來都蠻正常的
+
+- 若 socket 已經被關聯，直接呼叫 `socket.setTimeout`
+- 若 socket 尚未被關聯，則監聽 `this.once("socket")`，然後呼叫 `socket.setTimeout`
+- 有 `callback` 就幫忙設定 `this.on("timeout")`，算是一個語法糖
+
+以 `http.Server` 為例子，理論上可以在這三個地方設定 `setTimeout`
+
+- `http.Server`
+- `IncomingMessage`
+- `ServerResponse`
+
+我們先在 `IncomingMessage` 設定看看：
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  req.setTimeout(1000, (socket) => console.log(socket instanceof net.Socket));
+});
+```
+
+用 `curl http://localhost:5000/ -v` 測試，發現 1 秒後連線中斷，並且 Node.js 沒印出任何 log！
+
+```
+* Request completely sent off
+* Empty reply from server
+* shutting down connection #0
+curl: (52) Empty reply from server
+```
+
+用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000
+![req-settimeout](../../static/img/req-settimeout.jpg)
+
+發現竟然是 Server 主動關閉的！我找了一下 [response.setTimeout(msecs[, callback])](https://nodejs.org/api/http.html#responsesettimeoutmsecs-callback) 的解釋
+
+```
+If no 'timeout' listener is added to the request, the response, or the server, then sockets are destroyed when they time out. If a handler is assigned to the request, the response, or the server's 'timeout' events, timed out sockets must be handled explicitly.
+```
+
+我們已有 handler，但底層的 socket 還是直接 destroy，原因藏在 Node.js `lib/_http_server.js` 原始碼裡面！
+
+```ts
+function socketOnTimeout() {
+  const req = this.parser?.incoming;
+  // ❌ 我們透過 curl 發的 GET 請求，幾乎是立即 complete，所以就不會 emit timeout
+  const reqTimeout = req && !req.complete && req.emit("timeout", this);
+  const res = this._httpMessage;
+  const resTimeout = res && res.emit("timeout", this);
+  const serverTimeout = this.server.emit("timeout", this);
+
+  // ✅ 因為也沒有 resTimeout 跟 serverTimeout，所以最後就走到 destroy
+  if (!reqTimeout && !resTimeout && !serverTimeout) this.destroy();
+}
+```
+
+改成 POST + 發送不完整的 body，應該就能觀察到 `IncomingMessage` 的 timeout 了
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  req.setTimeout(1000, (socket) => console.log(socket instanceof net.Socket)); // ✅ true
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  method: "POST",
+  headers: { "content-length": 3 },
+});
+clientRequest.end("12");
+```
+
+嘗試在 `ServerResponse` 也加上 timeout，預期兩者都會觸發
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  req.setTimeout(1000, (socket) =>
+    console.log("req", socket instanceof net.Socket),
+  );
+  res.setTimeout(1000, (socket) =>
+    console.log("res", socket instanceof net.Socket),
+  );
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  method: "POST",
+  headers: { "content-length": 3 },
+});
+clientRequest.end("12");
+
+// Prints
+// req true
+// res true
+```
+
+嘗試在 `http.Server` 也加上 timeout，預期三者都會觸發
+
+```ts
+const httpServer = http.createServer();
+httpServer.timeout = 1000;
+httpServer.on("timeout", (socket) =>
+  console.log("server", socket instanceof net.Socket),
+);
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  req.setTimeout(1000, (socket) =>
+    console.log("req", socket instanceof net.Socket),
+  );
+  res.setTimeout(1000, (socket) =>
+    console.log("res", socket instanceof net.Socket),
+  );
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  method: "POST",
+  headers: { "content-length": 3 },
+});
+clientRequest.end("12");
+
+// Prints
+// req true
+// res true
+// server true
+```
+
+若三者設定不同的 timeout，則後者的設定會覆蓋前者的設定
+
+```ts
+const httpServer = http.createServer();
+httpServer.timeout = 2000; // ✅ 第 1 個被設定
+httpServer.on("timeout", (socket) =>
+  console.log(performance.now(), "server", socket instanceof net.Socket),
+);
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  console.log(performance.now());
+  req.setTimeout(1000, (socket) =>
+    console.log(performance.now(), "req", socket instanceof net.Socket),
+  ); // ✅ 第 2 個被設定
+  res.setTimeout(1500, (socket) =>
+    console.log(performance.now(), "res", socket instanceof net.Socket),
+  ); // ✅ 第 3 個被設定
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  method: "POST",
+  headers: { "content-length": 3 },
+});
+clientRequest.end("12");
+
+// Prints
+// 1043.7383
+// 2553.8869 req true
+// 2554.4036 res true
+// 2554.5851 server true
+```
+
+### 以 http client 的角度來看
+
+我們直接來看 Node.js 原始碼的實作
+
+```ts
+ClientRequest.prototype.setTimeout = function setTimeout(msecs, callback) {
+  if (this._ended) {
+    return this;
+  }
+
+  listenSocketTimeout(this);
+  msecs = getTimerDuration(msecs, "msecs");
+  if (callback) this.once("timeout", callback);
+
+  if (this.socket) {
+    setSocketTimeout(this.socket, msecs);
+  } else {
+    this.once("socket", (sock) => setSocketTimeout(sock, msecs));
+  }
+
+  return this;
+};
+
+function listenSocketTimeout(req) {
+  if (req.timeoutCb) {
+    return;
+  }
+  // Set timeoutCb so it will get cleaned up on request end.
+  req.timeoutCb = emitRequestTimeout;
+  // Delegate socket timeout event.
+  if (req.socket) {
+    req.socket.once("timeout", emitRequestTimeout);
+  } else {
+    req.on("socket", (socket) => {
+      socket.once("timeout", emitRequestTimeout);
+    });
+  }
+}
+
+function setSocketTimeout(sock, msecs) {
+  if (sock.connecting) {
+    sock.once("connect", function () {
+      sock.setTimeout(msecs);
+    });
+  } else {
+    sock.setTimeout(msecs);
+  }
+}
+
+function emitRequestTimeout() {
+  const req = this._httpMessage;
+  if (req) {
+    req.emit("timeout");
+  }
+}
+```
 
 <!-- todo-yus -->
-
-ClientRequest
-
-- [request.on('socket')](https://nodejs.org/api/http.html#event-socket)
-- [request.setNoDelay([noDelay])](https://nodejs.org/api/http.html#requestsetnodelaynodelay)
-- [request.setSocketKeepAlive([enable][, initialDelay])](https://nodejs.org/api/http.html#requestsetsocketkeepaliveenable-initialdelay)
-- [request.setTimeout(timeout[, callback])](https://nodejs.org/api/http.html#requestsettimeouttimeout-callback)
-- [request.on('timeout')](https://nodejs.org/api/http.html#event-timeout)
-- [request.reusedSocket](https://nodejs.org/api/http.html#requestreusedsocket)
-
-http.Server
-
-- [server.timeout](https://nodejs.org/api/http.html#servertimeout)
-
-ServerResponse
-
-- [response.setTimeout(msecs[, callback])](https://nodejs.org/api/http.html#responsesettimeoutmsecs-callback)
-
-IncomingMessage
-
-- [message.setTimeout(msecs[, callback])](https://nodejs.org/api/http.html#messagesettimeoutmsecs-callback)
 
 ## 防止 Server 亂來: response.strictContentLength
 
@@ -1279,22 +1641,220 @@ sequenceDiagram
   S ->> B: HTTP/1.1 200 Ok<br/>Content-Type: text/html<br/>Content-Length: 999<br/><br/>HTML Content Here...
 ```
 
-我們先來看看 [RFC 9110 Section 15.2. Informational 1xx](https://datatracker.ietf.org/doc/html/rfc9110#section-15.2) 的介紹
+用 Node.js 寫個 PoC
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  if (req.url === "/") {
+    res.writeEarlyHints({ link: "</style.css>; rel=preload; as=style" });
+    setTimeout(
+      () => res.end(readFileSync(join(__dirname, "index.html"))),
+      1000,
+    );
+    return;
+  }
+  if (req.url === "/style.css") {
+    res.end("body { color: red; }");
+    return;
+  }
+  res.writeHead(404).end();
+});
+```
+
+index.html
+
+```html
+<html>
+  <head>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <h1>hello world</h1>
+  </body>
+</html>
+```
+
+瀏覽器打開 http://localhost:5000/ ，發現 103 Early Hints 沒正確被載入
+![http1.1-no-early-hints](../../static/img/http1.1-no-early-hints.jpg)
+
+看了一下 MDN 文件關於 103 Early Hints 的 [browser_compatibility](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/103#browser_compatibility)，發現主流瀏覽器都是在 HTTP/2 才有支援～
+
+但還是可以用 `curl -v http://localhost:5000/` 戳看看
+
+```
+< HTTP/1.1 103 Early Hints
+< Link: </style.css>; rel=preload; as=style
+<
+< HTTP/1.1 200 OK
+< Date: Fri, 27 Feb 2026 11:24:27 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< Content-Length: 134
+<
+<html>
+  <head>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <h1>hello world</h1>
+  </body>
+</html>
+```
+
+至於為何 HTTP/1.1 不建議使用呢？原因是ㄧ些老舊的 proxy 不支援 1xx Informational Response，如果把 103 Early Hints 當成正常 HTTP Response 的話
+
+```
+HTTP/1.1 103 Early Hints
+Link: </style.css>; rel=preload; as=style
+
+
+```
+
+就有可能把 Final Response 留在 TCP Socket，成 [Response Queue Poisoning](https://portswigger.net/web-security/request-smuggling/advanced/response-queue-poisoning)
+
+```
+HTTP/1.1 200 OK
+Date: Fri, 27 Feb 2026 11:24:27 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Content-Length: 134
+
+<html>
+  <head>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <h1>hello world</h1>
+  </body>
+</html>
+```
+
+通常 MDN 這種面對大眾的文件都會寫的比較隱晦
+
+```
+For compatibility and security reasons, it is recommended to only send HTTP 103 Early Hints responses over HTTP/2 or later unless the client is known to handle informational responses correctly.
+```
+
+我們接著看看 [RFC 9110 Section 15.2. Informational 1xx](https://datatracker.ietf.org/doc/html/rfc9110#section-15.2) 的介紹
 
 ```
 A client MUST be able to parse one or more 1xx responses received prior to a final response, even if the client does not expect one. A user agent MAY ignore unexpected 1xx responses.
 ```
 
-Early Hints
+調整 Node.js 程式碼，回傳兩個 Early Hints
 
-<!-- todo-yus -->
-<!-- https://datatracker.ietf.org/doc/html/rfc8297 -->
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  if (req.url === "/") {
+    res.writeEarlyHints({ link: "</style.css>; rel=preload; as=style" });
+    res.writeEarlyHints({ link: "</script.js>; rel=preload; as=script" });
+    res.end("hello world");
+    return;
+  }
+  res.writeHead(404).end();
+});
+```
+
+用 `curl -v http://localhost:5000/` 戳看看
+
+```
+< HTTP/1.1 103 Early Hints
+< Link: </style.css>; rel=preload; as=style
+<
+< HTTP/1.1 103 Early Hints
+< Link: </script.js>; rel=preload; as=script
+<
+< HTTP/1.1 200 OK
+< Date: Sat, 28 Feb 2026 03:17:31 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< Content-Length: 11
+<
+hello world
+```
+
+改用 Node.js 寫個 http client 戳看看
+
+```ts
+const clientRequest = http.request({ host: "localhost", port: 5000 });
+clientRequest.on("information", console.log);
+clientRequest.end();
+```
+
+印出以下資訊，Node.js 有正確處理多個 1xx Informational Responses
+
+```ts
+{
+  statusCode: 103,
+  statusMessage: 'Early Hints',
+  httpVersion: '1.1',
+  httpVersionMajor: 1,
+  httpVersionMinor: 1,
+  headers: { link: '</style.css>; rel=preload; as=style' },
+  rawHeaders: [ 'Link', '</style.css>; rel=preload; as=style' ]
+}
+{
+  statusCode: 103,
+  statusMessage: 'Early Hints',
+  httpVersion: '1.1',
+  httpVersionMajor: 1,
+  httpVersionMinor: 1,
+  headers: { link: '</script.js>; rel=preload; as=script' },
+  rawHeaders: [ 'Link', '</script.js>; rel=preload; as=script' ]
+}
+```
+
+不過很有趣的是，雖然 103 Early Hints 並不在 [RFC 9110: HTTP Semantics](https://datatracker.ietf.org/doc/html/rfc9110#section-15.2) 的規範內，而是定義在 [RFC8297: An HTTP Status Code for Indicating Hints](https://datatracker.ietf.org/doc/html/rfc8297)，雖然只是 "Proposed Standard"，但主流瀏覽器在 HTTP/2 以後都有實作
 
 ### server.on('checkExpectation')
 
-https://nodejs.org/api/http.html#event-checkexpectation
+Node.js http server 提供以下 event 來監聽 `Expect: 100-continue` 以外的 Expectation
+[server.on('checkExpectation')](https://nodejs.org/api/http.html#event-checkexpectation)
 
-<!-- todo-yus -->
+[RFC 9110 Section 10.1.1. Expect](https://datatracker.ietf.org/doc/html/rfc9110#section-10.1.1) 有提到
+
+```
+The only expectation defined by this specification is "100-continue" (with no defined parameters).
+```
+
+不過 `Expect` 在語意上是可以支援其他 "Expectation" 的，所以 Node.js 預留了一個空間
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("checkExpectation", (req, res) => {
+  res.writeHead(417);
+  res.end(`Sorry, ${req.headers.expect} is not supported`);
+});
+```
+
+用 `curl -H "Expect: 104-helloworld" -v http://localhost:5000/` 戳看看
+
+```
+< HTTP/1.1 417 Expectation Failed
+< Date: Sat, 28 Feb 2026 08:30:30 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< Transfer-Encoding: chunked
+<
+Sorry, 104-helloworld is not supported
+```
+
+若 user program 沒有監聽 `server.on('checkExpectation')`，則 Node.js 預設也會回 417 Expectation Failed
+
+```
+< HTTP/1.1 417 Expectation Failed
+< Date: Sat, 28 Feb 2026 08:32:16 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< Transfer-Encoding: chunked
+<
+
+```
 
 ### server.on('clientError')
 
