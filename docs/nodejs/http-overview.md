@@ -18,6 +18,10 @@ last_update:
 
 終於可以進到 Node.js http 模組了！
 
+:::info
+本文測試 & 引用的 Node.js 原始碼為 v24.x latest
+:::
+
 ## http.Agent
 
 ### Why http.Agent ?
@@ -1327,9 +1331,246 @@ function emitRequestTimeout() {
 }
 ```
 
-<!-- todo-yus -->
+大致上做了三件事情
 
-## 防止 Server 亂來: response.strictContentLength
+- `listenSocketTimeout` => 監聽 socket 的 timeout 事件，並且透過 `ClientRequest.emit("timeout")` 傳遞到上層
+- 如果 user program 有傳入 `callback`，則自動幫使用者掛上監聽 `ClientRequest.once("timeout", callback)`
+- `setSocketTimeout` => 呼叫 `ClientRequest.socket.setTimeout(msecs)`
+
+以 http client 為例子，理論上可以在這二個地方設定 `setTimeout`
+
+- `ClientRequest`
+- `IncomingMessage`
+
+我們先在 `IncomingMessage` 設定看看：
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  // ✅ 先送 headers，即可觸發 clientRequest.on('response')
+  res.flushHeaders();
+  // ✅ 2 秒後再送 body，理論上就會超過 client 設定的 timeout
+  setTimeout(
+    () => res.end(() => console.log(performance.now(), "res end")),
+    2000,
+  );
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+});
+clientRequest.end();
+clientRequest.on("close", () =>
+  console.log(performance.now(), "clientRequest close"),
+);
+clientRequest.on("response", (response) => {
+  console.log(performance.now());
+  // ✅ 加上 resume 來消耗 body
+  response.resume();
+  response.setTimeout(1000, () =>
+    console.log(performance.now(), "response timeout"),
+  );
+});
+
+// Prints
+// 798.488041
+// 1800.380708 response timeout
+// 2799.693291 res end
+// 2800.598041 clientRequest close
+```
+
+時間軸如下
+
+```mermaid
+flowchart TD
+  A["0s:<br/>Send HTTP Request via<br/>clientRequest.end()"] --> B["0s:<br/>Send Response Headers via<br/>res.flushHeaders()"]
+  B --> C["0s:<br/>clientRequest.on('response')"]
+  C --> D["1s:<br/>response.on('timeout')"]
+  D --> E["2s:<br/>Send Response Body via<br/>res.end()"]
+  E --> F["2s:<br/>clientRequest.on('close')"]
+```
+
+如果不用 `response.resume()` 的話，則 response body 會堆積在 Internal Buffer，導致 `response.socket` 無法立即被回收
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  // ✅ 先送 headers，即可觸發 clientRequest.on('response')
+  res.flushHeaders();
+  // ✅ 2 秒後再送 body，理論上就會超過 client 設定的 timeout
+  setTimeout(
+    () => res.end(() => console.log(performance.now(), "res end")),
+    2000,
+  );
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+});
+clientRequest.end();
+clientRequest.on("response", (response) => {
+  console.log(performance.now());
+  // ✅ 刻意不加 resume
+  response.setTimeout(1000, () =>
+    console.log(performance.now(), "response timeout"),
+  );
+  // ✅ 觀察 socket close 的時間點
+  response.socket.on("close", () =>
+    console.log(performance.now(), "socket close"),
+  );
+});
+
+// Prints
+// 755.399375
+// 1756.63875 response timeout
+// 2757.074 res end
+// 3759.140042 response timeout
+// 8759.595292 socket close
+```
+
+時間軸如下
+
+```mermaid
+flowchart TD
+  A["0s:<br/>Send HTTP Request via<br/>clientRequest.end()"] --> B["0s:<br/>Send Response Headers via<br/>res.flushHeaders()"]
+  B --> C["0s:<br/>clientRequest.on('response')"]
+  C --> D["1s:<br/>response.on('timeout')"]
+  D --> E["2s:<br/>Send Response Body via<br/>res.end()"]
+  E --> F["2s:<br/>IncomingMessage<br/>receive data,<br/>update timer"]
+  F --> G["3s:<br/>response.on('timeout')"]
+  G --> H["8s:<br/>net.Socket close"]
+```
+
+關於 update timer，實作在 `lib/internal/stream_base_commons.js`
+
+```js
+function onStreamRead(arrayBuffer) {
+  // ...以上忽略
+  stream[kUpdateTimer]();
+  // ...以下忽略
+}
+```
+
+至於 `net.Socket` 在 2s 有活躍事件，到了 8s 的時候 close，用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000。發現 Server 回傳 HTTP Response 的 6 秒後，Server 主動關閉連線
+![http-server-socket-close-after-6s](../../static/img/http-server-socket-close-after-6s.jpg)
+
+這 6 秒是以下兩個的預設值相加得來的
+
+- [server.keepAliveTimeout](https://nodejs.org/api/http.html#serverkeepalivetimeout)
+- [server.keepAliveTimeoutBuffer](https://nodejs.org/api/http.html#serverkeepalivetimeoutbuffer)
+
+嘗試在 `ClientRequest` 也加上 timeout，預期兩者都會觸發
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  // ✅ 先送 headers，即可觸發 clientRequest.on('response')
+  res.flushHeaders();
+  // ✅ 2 秒後再送 body，理論上就會超過 client 設定的 timeout
+  setTimeout(
+    () => res.end(() => console.log(performance.now(), "res end")),
+    2000,
+  );
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+});
+clientRequest.end();
+clientRequest.setTimeout(1000, () =>
+  console.log(performance.now(), "clientRequest timeout"),
+);
+clientRequest.on("response", (response) => {
+  console.log(performance.now());
+  response.resume();
+  response.setTimeout(1000, () =>
+    console.log(performance.now(), "response timeout"),
+  );
+});
+
+// Prints
+// 905.95575
+// 1908.304834 clientRequest timeout
+// 1908.62 response timeout
+// 2907.534584 res end
+```
+
+若設定不同的 timeout，則後者的設定 (1500ms) 會覆蓋前者的設定 (1000ms)
+
+```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  // ✅ 先送 headers，即可觸發 clientRequest.on('response')
+  res.flushHeaders();
+  // ✅ 2 秒後再送 body，理論上就會超過 client 設定的 timeout
+  setTimeout(
+    () => res.end(() => console.log(performance.now(), "res end")),
+    2000,
+  );
+});
+
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+});
+clientRequest.end();
+clientRequest.setTimeout(1000, () =>
+  console.log(performance.now(), "clientRequest timeout"),
+);
+clientRequest.on("response", (response) => {
+  console.log(performance.now());
+  response.resume();
+  response.setTimeout(1500, () =>
+    console.log(performance.now(), "response timeout"),
+  );
+});
+
+// Prints
+// 723.343375
+// 2225.251875 clientRequest timeout
+// 2225.709708 response timeout
+// 2715.775542 res end
+```
+
+嘗試在 `http.Agent` 設定全域的 timeout，並且 `ClientRequest` 跟 `IncomingMessage` 只監聽 `on("timeout")`
+
+```ts
+const agent = new http.Agent({
+  keepAlive: true,
+  timeout: 1000,
+});
+const clientRequest = http.request({
+  host: "localhost",
+  port: 5000,
+  agent,
+});
+clientRequest.end();
+clientRequest.on("timeout", () =>
+  console.log(performance.now(), "clientRequest timeout"),
+);
+clientRequest.on("response", (response) => {
+  console.log(performance.now());
+  response.resume();
+  response.on("timeout", () =>
+    console.log(performance.now(), "response timeout"),
+  );
+});
+
+// Prints
+// 697.856625
+// 1698.323708 clientRequest timeout
+// 1698.56525 response timeout
+// 2699.626083 res en
+```
+
+## 給 Server 加上防呆: response.strictContentLength
 
 [response.strictContentLength](https://nodejs.org/api/http.html#responsestrictcontentlength)
 
