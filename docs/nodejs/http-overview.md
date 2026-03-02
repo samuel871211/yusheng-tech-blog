@@ -76,15 +76,13 @@ http.Agent 為此而生，它幫使用者管理
 
 ### new http.Agent(options)
 
-https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
+[](https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions)
 
-<!-- todo-yus 測試 -->
-
-| option                      | description                                                                                                                                                                                                                              |
+| option                      | description -                                                                                                                                                                                                                            |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | keepAlive                   | Keep sockets around even when there are no outstanding requests,<br/>so they can be used for future requests without having to reestablish a TCP connection.                                                                             |
 | keepAliveMsecs              | 同 [net.createServer](https://nodejs.org/api/net.html#netcreateserveroptions-connectionlistener) 的 `keepAliveInitialDelay`                                                                                                              |
-| agentKeepAliveTimeoutBuffer | 假設 Server 設定 `keep-alive: timeout=3`<br/>Agent 設定 `agentKeepAliveTimeoutBuffer = 1000`<br/>那 Agent 會在 3 \* 1000 - 1000 = 2 秒後，將這個連線視為過期<br/>為了避免 Client 還想傳送資料，但 Server 已經要關閉這條連線              |
+| agentKeepAliveTimeoutBuffer | 假設 Server 設定 `keep-alive: timeout=3`<br/>Agent 設定 `agentKeepAliveTimeoutBuffer = 1000`<br/>那 Agent 會在 3000 - 1000 = 2 秒後，將這個連線視為過期<br/>為了避免 Client 還想傳送資料，但 Server 已經要關閉這條連線                   |
 | maxSockets                  | 每個 Origin 最多可以有幾個 concurrent TCP Socket<br/>參考 [options.maxSockets 圖解](#optionsmaxsockets-圖解)<br/>(Origin 是 [agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions) 的回傳值) |
 | maxTotalSockets             | 最多可以有幾個 concurrent TCP Socket                                                                                                                                                                                                     |
 | maxFreeSockets              | Only works when `keepAlive = true`                                                                                                                                                                                                       |
