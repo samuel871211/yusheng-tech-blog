@@ -76,19 +76,19 @@ http.Agent 為此而生，它幫使用者管理
 
 https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
 
-| option                      | description -                                                                                                                                                                                                                            |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| keepAlive                   | Keep sockets around even when there are no outstanding requests,<br/>so they can be used for future requests without having to reestablish a TCP connection.                                                                             |
-| keepAliveMsecs              | 同 [net.createServer](https://nodejs.org/api/net.html#netcreateserveroptions-connectionlistener) 的 `keepAliveInitialDelay`                                                                                                              |
-| agentKeepAliveTimeoutBuffer | 假設 Server 設定 `keep-alive: timeout=3`<br/>Agent 設定 `agentKeepAliveTimeoutBuffer = 1000`<br/>那 Agent 會在 3000 - 1000 = 2 秒後，將這個連線視為過期<br/>為了避免 Client 還想傳送資料，但 Server 已經要關閉這條連線                   |
-| maxSockets                  | 每個 Origin 最多可以有幾個 concurrent TCP Socket<br/>參考 [options.maxSockets 圖解](#optionsmaxsockets-圖解)<br/>(Origin 是 [agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions) 的回傳值) |
-| maxTotalSockets             | 最多可以有幾個 concurrent TCP Socket                                                                                                                                                                                                     |
-| maxFreeSockets              | Only works when `keepAlive = true`                                                                                                                                                                                                       |
-| scheduling                  | 要如何從 [freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets) 陣列中選擇<br/>- fifo (First In First Out)<br/>- lifo (Last In First Out)                                                                    |
-| timeout                     | 同 [socket.timeout](https://nodejs.org/api/net.html#sockettimeout)                                                                                                                                                                       |
-| proxyEnv                    | v24.5.0 加入的，目前還在 Stability: 1.1 - Active development，細節在 [Built-in Proxy Support (Forward proxy)](#built-in-proxy-support-forward-proxy) 介紹                                                                                |
-| defaultPort                 | Default port to use when the port is not specified in requests.                                                                                                                                                                          |
-| protocol                    | The protocol to use for the agent.                                                                                                                                                                                                       |
+| option                      | description -                                                                                                                                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| keepAlive                   | Keep sockets around even when there are no outstanding requests,<br/>so they can be used for future requests without having to reestablish a TCP connection.                                                                        |
+| keepAliveMsecs              | 同 [net.createServer](https://nodejs.org/api/net.html#netcreateserveroptions-connectionlistener) 的 `keepAliveInitialDelay`                                                                                                         |
+| agentKeepAliveTimeoutBuffer | 假設 Server 設定 `keep-alive: timeout=3`<br/>Agent 設定 `agentKeepAliveTimeoutBuffer = 1000`<br/>那 Agent 會在 3000 - 1000 = 2 秒後，將這個連線視為過期<br/>為了避免 Client 還想傳送資料，但 Server 已經要關閉這條連線              |
+| maxSockets                  | 每個 Origin 最多可以有幾個 concurrent TCP Socket<br/>參考 [options.maxSockets 圖解](#optionsmaxsockets)<br/>(Origin 是 [agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions) 的回傳值) |
+| maxTotalSockets             | 最多可以有幾個 concurrent TCP Socket                                                                                                                                                                                                |
+| maxFreeSockets              | Only works when `keepAlive = true`                                                                                                                                                                                                  |
+| scheduling                  | 要如何從 [freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets) 陣列中選擇<br/>- fifo (First In First Out)<br/>- lifo (Last In First Out)                                                               |
+| timeout                     | 同 [socket.timeout](https://nodejs.org/api/net.html#sockettimeout)                                                                                                                                                                  |
+| proxyEnv                    | v24.5.0 加入的，目前還在 Stability: 1.1 - Active development，細節在 [Built-in Proxy Support (Forward proxy)](./http_proxy.md) 介紹                                                                                                 |
+| defaultPort                 | Default port to use when the port is not specified in requests.                                                                                                                                                                     |
+| protocol                    | The protocol to use for the agent.                                                                                                                                                                                                  |
 
 ## methods
 
@@ -143,7 +143,7 @@ https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
 
 ## options.maxSockets
 
-Determines how many concurrent sockets the agent can have open per origin. Origin is the returned value of [agent.getName()](<[agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions)>).
+Determines how many concurrent sockets the agent can have open per origin. Origin is the returned value of [agent.getName()](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions).
 
 ```mermaid
 sequenceDiagram
@@ -171,7 +171,7 @@ sequenceDiagram
 
 ## ClientRequest 跟 net.Socket 連結的橋樑
 
-當你用 `http.request` 發起請求時，背後會優先從 [http.Agent](#httpagent) 的連線池（[freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets)）挑選一個已連線的 `net.Socket` 關聯到這個 `ClientRequest`。若 `freeSockets` 為空，就會建立一個新的 TCP 連線。詳細的實作可以看 `lib/_http_agent.js` 的 `Agent.prototype.addRequest`
+當你用 `http.request` 發起請求時，背後會優先從 `http.Agent` 的連線池（[freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets)）挑選一個已連線的 `net.Socket` 關聯到這個 `ClientRequest`。若 `freeSockets` 為空，就會建立一個新的 TCP 連線。詳細的實作可以看 `lib/_http_agent.js` 的 `Agent.prototype.addRequest`
 
 我們寫個 PoC 來測試
 
