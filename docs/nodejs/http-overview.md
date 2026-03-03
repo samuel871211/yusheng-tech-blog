@@ -118,12 +118,12 @@ http.Agent 為此而生，它幫使用者管理
 
 ```ts
 {
-  'example.com:80:': [Socket],
-  'www.google.com:80:': [Socket]
+  'example.com:80:': [Socket, Socket],
+  'www.google.com:80:': [Socket, Socket]
 }
 ```
 
-- [requests](https://nodejs.org/docs/latest-v24.x/api/http.html#agentrequests)：Pending Request Queue，參考 [options.maxSockets](#optionsmaxsockets)
+- [requests](https://nodejs.org/docs/latest-v24.x/api/http.html#agentrequests)：Pending Request Queue。超過 [options.maxSockets](#optionsmaxsockets) 或是 [options.maxTotalSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentmaxtotalsockets) 的 Request 就會被丟到這裡
 
 ```ts
 {
@@ -136,37 +136,39 @@ http.Agent 為此而生，它幫使用者管理
 
 ```ts
 {
-  'example.com:80:': [Socket],
-  'www.google.com:80:': [Socket]
+  'example.com:80:': [Socket, Socket],
+  'www.google.com:80:': [Socket, Socket]
 }
 ```
 
-這邊的 `example.com:80:` 跟 `www.google.com:80:` 就是 [getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions) 回傳的 group key
+這邊的 `example.com:80:` 跟 `www.google.com:80:` 就是 [agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions) 回傳的 group key
 
-### options.maxSockets 圖解
+### options.maxSockets
+
+Determines how many concurrent sockets the agent can have open per origin. Origin is the returned value of [agent.getName()](<[agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions)>).
 
 ```mermaid
 sequenceDiagram
-  participant A as http.Agent
-  participant P as Pending Request Queue (http.Agent)
-  participant S as example.com
+  participant A as user program<br/>(http client)
+  participant P as Pending Request Queue<br/>(agent.requests)
+  participant S as example.com<br/>(http server)
   Note Over A, P: new http.Agent({ maxSockets: 3 })
 
-  A ->> S: GET /whatever1 HTTP/1.1<br/>(TCP Socket 1)
-  A ->> S: GET /whatever2 HTTP/1.1<br/>(TCP Socket 2)
-  A ->> S: GET /whatever3 HTTP/1.1<br/>(TCP Socket 3)
+  A ->> S: GET /request1 HTTP/1.1<br/>(TCP Socket 1)
+  A ->> S: GET /request2 HTTP/1.1<br/>(TCP Socket 2)
+  A ->> S: GET /request3 HTTP/1.1<br/>(TCP Socket 3)
 
-  Note Over A, P: socketCountPerOrigin = 3
+  Note Over A, P: 超過 maxSockets,<br/>先丟到 Pending Request Queue
 
-  A ->> P: GET /whatever4 HTTP/1.1
+  A ->> P: GET /request4 HTTP/1.1
 
   S ->> A: HTTP/1.1 200 OK<br/>(TCP Socket 1)
 
-  Note Over A, P: socketCountPerOrigin = 2
+  Note Over A, P: TCP Socket 1 被釋放<br/>可以分配給 request 4
 
-  P ->> S: GET /whatever4 HTTP/1.1
+  P ->> S: GET /request4 HTTP/1.1
 
-  Note Over A, P: socketCountPerOrigin = 3
+  Note Over A, P: 目前剛好頂到 maxSockets
 ```
 
 ## Request, Response Classes 介紹
@@ -1335,7 +1337,7 @@ function emitRequestTimeout() {
 - 如果 user program 有傳入 `callback`，則自動幫使用者掛上監聽 `ClientRequest.once("timeout", callback)`
 - `setSocketTimeout` => 呼叫 `ClientRequest.socket.setTimeout(msecs)`
 
-以 http client 為例子，理論上可以在這二個地方設定 `setTimeout`
+以 http client 為例子，理論上可以在這二個地方設定 timeout 跟 listener
 
 - `ClientRequest`
 - `IncomingMessage`
