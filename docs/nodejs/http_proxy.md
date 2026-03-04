@@ -104,20 +104,45 @@ const clientRequest = http.request({ host: "localhost", port: 5000, agent });
 clientRequest.end();
 ```
 
-3. [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，查看 Raw HTTP Request / Response
+3. 用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，查看 Raw HTTP Request / Response
 
 ```mermaid
 sequenceDiagram
   participant C as Client<br/>(Node.js http.request)
   participant P as Forward Proxy<br/>(Burp Suite)
-  participant S as Servert<br/>(Node.js http.Server)
+  participant S as Server<br/>(Node.js http.Server)
 
-  C ->> P: GET http://localhost:5000/ HTTP/1.1<br/>Host: localhost:5000<br/>proxy-connection: keep-alive<br/>Connection: keep-alive<br/><br/>
+  C ->> P: GET http://localhost:5000/ HTTP/1.1<br/>Host: localhost:5000<br/>proxy-connection: keep-alive<br/>Connection: keep-alive
+  P ->> S: GET / HTTP/1.1<br/>Host: localhost:5000<br/>Connection: keep-alive
 
-  P ->> C: HTTP/1.1 200 OK<br/>Date: Wed, 04 Mar 2026 08:24:27 GMT<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 0<br/><br/>
+  S ->> P: HTTP/1.1 200 OK<br/>Date: Wed, 04 Mar 2026 08:24:27 GMT<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 0
+  P ->> C: HTTP/1.1 200 OK<br/>Date: Wed, 04 Mar 2026 08:24:27 GMT<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 0
 ```
 
-<!-- todo-yus -->
+觀察到幾個重點
+
+1. Client => Forward Proxy 的 request target 是 [absolute-form](#absolute-form)
+2. Forward Proxy => Server 的 request target 是 [origin-form](#origin-form)
+3. Client => Forward Proxy 加了 `proxy-connection: keep-alive`
+4. Forward Proxy => Server 把 `proxy-connection: keep-alive` 移除
+
+## absolute-form
+
+根據 [RFC 9112 Section 3.2.2. absolute-form](https://datatracker.ietf.org/doc/html/rfc9112#name-absolute-form) 的描述
+
+```
+When making a request to a proxy, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send the target URI in "absolute-form" as the request-target.
+```
+
+## origin-form
+
+根據 [RFC 9112 Section 3.2.2. origin-form](https://datatracker.ietf.org/doc/html/rfc9112#name-origin-form) 的描述
+
+```
+When making a request directly to an origin server, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send only the absolute path and query components of the target URI as the request-target.
+```
+
+## proxy-connection
 
 ## HTTPS_PROXY
 
