@@ -1,5 +1,5 @@
 ---
-title: Node.js TCP Socket Life Cycle
+title: TCP Socket Life Cycle
 description: 深入解說 Node.js TCP Socket 的生命週期
 last_update:
   date: "2026-02-04T08:00:00+08:00"

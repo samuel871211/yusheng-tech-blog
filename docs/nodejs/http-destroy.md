@@ -1,5 +1,5 @@
 ---
-title: Node.js destroy() method
+title: destroy() method
 description: "destroy() 背後到底做了什麼事情？"
 last_update:
   date: "2026-03-03T08:00:00+08:00"

@@ -1,5 +1,5 @@
 ---
-title: Node.js stream.Writable 生命週期
+title: stream.Writable 生命週期
 description: Node.js stream.Writable 生命週期
 last_update:
   date: "2026-02-04T08:00:00+08:00"

@@ -1,5 +1,5 @@
 ---
-title: Node.js http 的 setTimeout() method
+title: setTimeout() method
 description: "這個 setTimeout() 到底是什麼意思啦？"
 last_update:
   date: "2026-03-03T08:00:00+08:00"

@@ -1,6 +1,6 @@
 ---
-title: Node.js ServerResponse.strictContentLength
-description: "所以到底要限制誰？"
+title: ServerResponse.strictContentLength
+description: "所以到底要限制 Request 還是 Response 的 ContentLength？"
 last_update:
   date: "2026-03-03T08:00:00+08:00"
 ---

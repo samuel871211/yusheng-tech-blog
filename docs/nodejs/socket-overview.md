@@ -1,5 +1,5 @@
 ---
-title: Node.js TCP Socket overview
+title: TCP Socket overview
 description: 用 net 模組創建 TCP Server / Client，並且了解 Socket 的概念、用法
 last_update:
   date: "2026-02-04T08:00:00+08:00"

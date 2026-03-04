@@ -1,5 +1,5 @@
 ---
-title: Node.js maxRequestsPerSocket
+title: maxRequestsPerSocket
 description: "K8S 流量都無法分散到新的 Pod 嗎？你可能需要設定 maxRequestsPerSocket"
 last_update:
   date: "2026-03-03T08:00:00+08:00"

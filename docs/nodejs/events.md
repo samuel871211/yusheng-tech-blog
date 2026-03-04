@@ -1,5 +1,5 @@
 ---
-title: Node.js EventEmitter
+title: EventEmitter
 description: "帶你了解 Node.js Event-driven architecture 的核心: EventEmitter"
 last_update:
   date: "2026-01-25T08:00:00+08:00"

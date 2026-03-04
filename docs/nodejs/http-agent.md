@@ -1,5 +1,5 @@
 ---
-title: Node.js http 模組
+title: http.Agent
 description: "為什麼 Node.js http 模組的 API 設計這麼低階？帶你了解 Node.js http 模組的設計理念"
 last_update:
   date: "2026-02-22T08:00:00+08:00"

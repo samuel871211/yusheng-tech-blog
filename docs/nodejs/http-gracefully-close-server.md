@@ -1,5 +1,5 @@
 ---
-title: Node.js gracefully close http.Server
+title: Gracefully close http.Server
 description: "如何優雅的關閉 Node.js 的 http.Server"
 last_update:
   date: "2026-03-03T08:00:00+08:00"

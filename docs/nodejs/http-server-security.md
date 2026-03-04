@@ -1,6 +1,6 @@
 ---
-title: Node.js http uncommon features
-description: "100 Continue, 103 Early Hints, server.on('clientError'), server.on('connect'), server.on('connection'), on('upgrade')"
+title: http.Server security
+description: "headersTimeout, requestTimeout, maxHeaderSize, maxHeadersCount"
 last_update:
   date: "2026-03-03T08:00:00+08:00"
 ---

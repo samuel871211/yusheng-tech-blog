@@ -1,5 +1,5 @@
 ---
-title: Node.js http Request & Response Classes
+title: http Request & Response Classes
 description: "帶你了解 Node.js 的 http Request & Response 有哪些 Classes"
 last_update:
   date: "2026-03-03T08:00:00+08:00"

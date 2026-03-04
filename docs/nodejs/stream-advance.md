@@ -1,5 +1,5 @@
 ---
-title: Node.js stream 進階：objectMode, pipe
+title: stream 進階：objectMode, pipe
 description: Node.js stream 進階：objectMode, pipe
 last_update:
   date: "2026-01-29T08:00:00+08:00"
