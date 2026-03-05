@@ -190,7 +190,7 @@ sequenceDiagram
 根據 [RFC 9112 Section 3.2.2. origin-form](https://datatracker.ietf.org/doc/html/rfc9112#name-origin-form) 的描述
 
 ```
-When making a request directly to an origin server, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send only the absolute path and query components of the target URI as the r｀equest-target.
+When making a request directly to an origin server, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send only the absolute path and query components of the target URI as the request-target.
 ```
 
 :::info
@@ -198,6 +198,62 @@ When making a request directly to an origin server, other than a CONNECT or serv
 :::
 
 ## proxy-connection
+
+這是一個非標準的 HTTP Header，主要是為了解決 ancient HTTP/1.0 proxies 不支援 `Connection: keep-alive` 並且無腦轉發，造成 Proxy 到 Server 中間維持了閒置的 TCP 連線
+
+:::info
+以下為時序圖為考古推論，我沒有實際用 "ancient HTTP/1.0 proxy" 測試過（我也找不到這種古老架構測試了）
+:::
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant P as Forward Proxy
+  participant S as Server
+
+  C ->> P: GET http://example.com HTTP/1.1<br/>Connection: keep-alive<br/>Host: example.com
+  Note Over P: 我不認識 Connection: keep-alive<br/>但我還是會轉發<br/>然後我也沒有把 1.1 改成 1.0
+  P ->> S: GET / HTTP/1.1<br/>Connection: keep-alive<br/>Host: example.com
+  Note Over S: 沒問題，這條連線我會維持 N 秒
+  S ->> P: HTTP/1.1 200 OK<br/>Connection: keep-alive
+  Note Over P: 我不認識 Connection: keep-alive<br/>所以我沒有把這條連線留在連線池
+  Note Over P, S: Proxy 到 Server 中間<br/>維持了一條 idle TCP 連線
+  P ->> C: HTTP/1.1 200 OK<br/>Connection: keep-alive
+```
+
+如果 Client 改送 `Proxy-Connection: keep-alive`，即便 Proxy 無腦轉發，也可以避免 Proxy ~ Server 中間維持了閒置的 TCP 連線
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant P as Forward Proxy
+  participant S as Server
+
+  C ->> P: GET http://example.com HTTP/1.1<br/>Proxy-Connection: keep-alive<br/>Host: example.com
+  Note Over P: 我不認識 Proxy-Connection: keep-alive<br/>但我還是會轉發
+  P ->> S: GET / HTTP/1.0<br/>Proxy-Connection: keep-alive<br/>Host: example.com
+  Note Over S: 沒看到 Connection: keep-alive<br/>傳送完以後不保留連線
+  S ->> P: HTTP/1.0 200 OK
+  P ->> C: HTTP/1.0 200 OK
+```
+
+如果 Client 改送 `Proxy-Connection: keep-alive`，支援長連線的 Proxy 就會轉成 `Connection: keep-alive`
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant P as Forward Proxy
+  participant S as Server
+
+  Note Over C, S: Client 改送 "Proxy-Connection: keep-alive"<br/>並且 Proxy 有支援
+  C ->> P: GET http://example.com HTTP/1.1<br/>Proxy-Connection: keep-alive<br/>Host: example.com
+  Note Over P: 將 Proxy-Connection: keep-alive<br/>轉成 Connection: keep-alive
+  P ->> S: GET / HTTP/1.1<br/>Connection: keep-alive<br/>Host: example.com
+  S ->> P: HTTP/1.1 200 OK<br/>Connection: keep-alive
+  Note Over P, S: TCP 連線可以複用
+  P ->> C: HTTP/1.1 200 OK<br/>Connection: keep-alive
+  Note Over C, P: TCP 連線可以複用
+```
 
 ## HTTPS_PROXY
 
