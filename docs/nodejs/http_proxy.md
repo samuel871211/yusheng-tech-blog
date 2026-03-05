@@ -15,10 +15,10 @@ Forward Proxy
 
 ```mermaid
 flowchart LR
-  A["Client 1:<br/>GET https://example.com"] --> B[Forward Proxy]
+  A["Client 1:<br/>GET https://google.com"] --> B[Forward Proxy]
   C["Client 2:<br/>GET http://example.com"] --> B
-  B --> D["https://example.com"]
-  B --> E["http://example.com"]
+  B --> D["GET /<br/>Host: google.com"]
+  B --> E["GET /<br/>Host: example.com"]
 ```
 
 Reverse Proxy
@@ -27,8 +27,8 @@ Reverse Proxy
 flowchart LR
   A["Client 1:<br/>GET https://example.com"] --> B[Reverse Proxy]
   C["Client 2:<br/>GET https://example.com"] --> B
-  B --> D["http://localhost:8000"]
-  B --> E["http://localhost:8001"]
+  B --> D["Origin Server 1<br/>GET http://localhost:8000"]
+  B --> E["Origin Server 2<br/>http://localhost:8001"]
 ```
 
 |          | Forward Proxy                            | Reverse Proxy                           |
@@ -122,7 +122,7 @@ sequenceDiagram
 觀察到幾個重點
 
 1. Client => Forward Proxy 的 request target 是 [absolute-form](#absolute-form)
-2. Forward Proxy => Server 的 request target 是 [origin-form](#origin-form)
+2. Forward Proxy => Server 的 request target 卻轉成了 [origin-form](#origin-form)
 3. Client => Forward Proxy 加了 `proxy-connection: keep-alive`
 4. Forward Proxy => Server 把 `proxy-connection: keep-alive` 移除
 
@@ -134,13 +134,68 @@ sequenceDiagram
 When making a request to a proxy, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send the target URI in "absolute-form" as the request-target.
 ```
 
+至於為何要在 request-target 跟 Host Header 重複宣告同樣的資訊呢？
+
+```
+GET http://localhost:5000/ HTTP/1.1
+Host: localhost:5000
+```
+
+這部分我覺得 [RFC 9112 Section 3.2.2. absolute-form](https://datatracker.ietf.org/doc/html/rfc9112#name-absolute-form) 講得不夠明確
+
+```
+A client MUST send a Host header field in an HTTP/1.1 request even if the request-target is in the absolute-form, since this allows the Host information to be forwarded through ancient HTTP/1.0 proxies that might not have implemented Host.
+```
+
+不過 [RFC 9112 Section 3.2.2. absolute-form](https://datatracker.ietf.org/doc/html/rfc9112#name-absolute-form) 同時也有提到
+
+```
+A proxy that forwards such a request MUST generate a new Host field value based on the received request-target rather than forward the received Host field value.
+```
+
+再加上 [RFC 9112 Section 3.2. Request Target](https://datatracker.ietf.org/doc/html/rfc9112#name-request-target) 有說明
+
+```
+A server MUST respond with a 400 (Bad Request) status code to any HTTP/1.1 request message that lacks a Host header field
+```
+
+結合以上資訊，我 "推論" 出以下結論：
+
+```mermaid
+sequenceDiagram
+  participant C as HTTP/1.1 Client
+  participant P as HTTP/1.0 Forward Proxy
+  participant S as HTTP/1.1 Server
+
+  Note Over C, S: 假設 HTTP/1.1 Client 沒送 Host Header 的話
+  C ->> P: GET http://localhost:5000/ HTTP/1.1
+  Note Over P: 將 absolute-form 轉成 origin-form<br/>但沒有生成 Host Header
+  P ->> S: GET / HTTP/1.0
+
+  Note Over S: Host 資訊遺失<br/>雖然 HTTP/1.0 沒有強制要 Host Header<br/>但 Server 實作上還是<br/>根據 RFC 9112 Section 3.2. Request Target<br/>回應 400 Bad Request
+  S ->> P: HTTP/1.0 400 Bad Request
+  P ->> C: HTTP/1.0 400 Bad Request
+
+  Note Over C, S: 假設 HTTP/1.1 Client 有送 Host Header 的話
+  C ->> P: GET http://localhost:5000/ HTTP/1.1<br/>Host: localhost:5000
+  Note Over P: 將 absolute-form 轉成 origin-form<br/>Host Header 不認識，直接轉發
+  P ->> S: GET / HTTP/1.0<br/>Host: localhost:5000
+
+  S ->> P: HTTP/1.0 200 OK
+  P ->> C: HTTP/1.0 200 OK
+```
+
 ## origin-form
 
 根據 [RFC 9112 Section 3.2.2. origin-form](https://datatracker.ietf.org/doc/html/rfc9112#name-origin-form) 的描述
 
 ```
-When making a request directly to an origin server, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send only the absolute path and query components of the target URI as the request-target.
+When making a request directly to an origin server, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send only the absolute path and query components of the target URI as the r｀equest-target.
 ```
+
+:::info
+我們平常看到的 request-target，大部分都是落在這個格式
+:::
 
 ## proxy-connection
 
