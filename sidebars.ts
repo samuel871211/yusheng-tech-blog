@@ -72,7 +72,6 @@ const sidebars: SidebarsConfig = {
 
         // "http/service-worker-allowed",
         // "http/http-caching-4", // ing
-        // "http/request-target-and-host" // port swigger 延伸的
         // "http/cookie", // 必讀
         // "http/TE",
         // "http/http-message-integrity", // 必讀
