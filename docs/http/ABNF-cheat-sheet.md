@@ -2,7 +2,7 @@
 title: ABNF Cheat Sheet
 description: 想讀懂 HTTP 的 RFC 嗎？ABNF 跟 RFC 9110 是入場券
 last_update:
-  date: "2026-02-22T08:00:00+08:00"
+  date: "2026-03-06T08:00:00+08:00"
 ---
 
 ## 前言
@@ -51,6 +51,7 @@ expectation = token [ "=" ( token / quoted-string ) parameters ]
 | DIGIT     | %x30-39<br/>0-9                                            |
 | HEXDIG    | DIGIT / "A" / "B" / "C" / "D" / "E" / "F"                  |
 | DQUOTE    | %x22 (Double QUOTE)                                        |
+| VCHAR     | %x21-7E<br/>visible (printing) characters                  |
 
 ## Concatenation: Rule1 Rule2
 
@@ -82,3 +83,24 @@ interface Rule1 extends Rule2
 - Combine =/ %x63
 
 最終 Combine 這個 Rule 就等於 Foo / Bar / Hel
+
+## Variable Repetition: \*Rule
+
+[Variable Repetition: \*Rule](https://datatracker.ietf.org/doc/html/rfc5234#section-3.6)
+
+| Syntax       | a (min)     | b (max)     | Meaning      |
+| ------------ | ----------- | ----------- | ------------ |
+| `*element`   | 0 (default) | ∞ (default) | zero or more |
+| `1*element`  | 1           | ∞ (default) | one or more  |
+| `3*3element` | 3           | 3           | exactly 3    |
+| `1*2element` | 1           | 2           | one or two   |
+
+## RFC 9110 Tokens
+
+[token](https://datatracker.ietf.org/doc/html/rfc9110#name-tokens) 是組成 HTTP Header Field & Value 最重要的基本單位
+
+## RFC 9110 Quoted Strings
+
+[quoted-string](https://datatracker.ietf.org/doc/html/rfc9110#name-quoted-strings) 用雙引號包裹的字串
+[qdtext](https://datatracker.ietf.org/doc/html/rfc9110#name-quoted-strings)
+[quoted-pair](https://datatracker.ietf.org/doc/html/rfc9110#name-quoted-strings)
