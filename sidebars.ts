@@ -64,6 +64,7 @@ const sidebars: SidebarsConfig = {
         "http/http-version-negotiation",
         "http/m3u8",
         "http/ABNF-cheat-sheet",
+        "http/npm-http-chain-1",
         // "http/from-http-to-vite-preview",
         // "http/node-http-proxy",
         // "http/sentry",
