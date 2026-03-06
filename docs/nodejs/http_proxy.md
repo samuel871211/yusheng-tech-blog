@@ -2,7 +2,7 @@
 title: Built-in Proxy Support
 description: "帶你了解 Node.js 在 v24.5.0 加入的 Built-in Proxy Support"
 last_update:
-  date: "2026-03-04T08:00:00+08:00"
+  date: "2026-03-06T08:00:00+08:00"
 ---
 
 ## 前言
@@ -255,6 +255,32 @@ sequenceDiagram
   Note Over C, P: TCP 連線可以複用
 ```
 
-## HTTPS_PROXY
-
 ## NO_PROXY
+
+如果某些 domain, IP 不想經過 proxy，可以在 `NO_PROXY` 指定
+
+```ts
+const fakeProxy = http.createServer();
+fakeProxy.listen(5000);
+fakeProxy.on("request", function (req, res) {
+  console.log("fakeProxy receive request");
+  res.end();
+});
+
+const agent = new http.Agent({
+  proxyEnv: { http_proxy: "http://localhost:5000", no_proxy: "example.com" },
+  keepAlive: true,
+});
+const options = { host: "example.com", port: 80 };
+
+const clientRequest = http.request({ ...options, agent });
+clientRequest.end();
+```
+
+上述的範例，HTTP Request 就不會經過 `fakeProxy`，而是直接打到 `example.com`
+
+詳細的語法，可以參考 [NO_PROXY Format](https://nodejs.org/docs/latest-v24.x/api/http.html#no_proxy-format)
+
+## 小結
+
+HTTPS_PROXY 會在之後的文章提到
