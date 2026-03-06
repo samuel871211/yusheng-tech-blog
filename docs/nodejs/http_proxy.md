@@ -126,6 +126,18 @@ sequenceDiagram
 3. Client => Forward Proxy 加了 `proxy-connection: keep-alive`
 4. Forward Proxy => Server 把 `proxy-connection: keep-alive` 移除
 
+## origin-form
+
+根據 [RFC 9112 Section 3.2.2. origin-form](https://datatracker.ietf.org/doc/html/rfc9112#name-origin-form) 的描述
+
+```
+When making a request directly to an origin server, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send only the absolute path and query components of the target URI as the request-target.
+```
+
+:::info
+我們平常看到的 request-target，大部分都是落在這個格式
+:::
+
 ## absolute-form
 
 根據 [RFC 9112 Section 3.2.2. absolute-form](https://datatracker.ietf.org/doc/html/rfc9112#name-absolute-form) 的描述
@@ -185,17 +197,25 @@ sequenceDiagram
   P ->> C: HTTP/1.0 200 OK
 ```
 
-## origin-form
+## authority-form
 
-根據 [RFC 9112 Section 3.2.2. origin-form](https://datatracker.ietf.org/doc/html/rfc9112#name-origin-form) 的描述
+用在 [CONNECT](../http/http-request-methods-1.md#connect) 請求
+
+## asterisk-form
+
+實務上我沒看過這用法，格式如下
 
 ```
-When making a request directly to an origin server, other than a CONNECT or server-wide OPTIONS request (as detailed below), a client MUST send only the absolute path and query components of the target URI as the request-target.
+OPTIONS * HTTP/1.1
+Host: example.com
 ```
 
-:::info
-我們平常看到的 request-target，大部分都是落在這個格式
-:::
+但正常的 Cors-Preflight Request 都是針對特定的 resource
+
+```
+OPTIONS /users HTTP/1.1
+Host: example.com
+```
 
 ## proxy-connection
 

@@ -84,11 +84,11 @@ interface Rule1 extends Rule2
 
 最終 Combine 這個 Rule 就等於 Foo / Bar / Hel
 
-## Variable Repetition: \*Rule
+## `Variable Repetition: *Rule`
 
-[Variable Repetition: \*Rule](https://datatracker.ietf.org/doc/html/rfc5234#section-3.6)
+[`Variable Repetition: *Rule`](https://datatracker.ietf.org/doc/html/rfc5234#section-3.6)
 
-| Syntax       | a (min)     | b (max)     | Meaning      |
+| Rule         | a (min)     | b (max)     | Meaning      |
 | ------------ | ----------- | ----------- | ------------ |
 | `*element`   | 0 (default) | ∞ (default) | zero or more |
 | `1*element`  | 1           | ∞ (default) | one or more  |
@@ -104,3 +104,40 @@ interface Rule1 extends Rule2
 [quoted-string](https://datatracker.ietf.org/doc/html/rfc9110#name-quoted-strings) 用雙引號包裹的字串
 [qdtext](https://datatracker.ietf.org/doc/html/rfc9110#name-quoted-strings)
 [quoted-pair](https://datatracker.ietf.org/doc/html/rfc9110#name-quoted-strings)
+
+## RFC 3986 host
+
+[host](https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2) 是 URI 其中一個非常重要的 Component
+
+<!-- ```
+host          = IP-literal / IPv4address / reg-name
+IP-literal    = "[" ( IPv6address / IPvFuture  ) "]"
+IPv4address   = dec-octet "." dec-octet "." dec-octet "." dec-octet
+dec-octet     = DIGIT                 ; 0-9
+              / %x31-39 DIGIT         ; 10-99
+              / "1" 2DIGIT            ; 100-199
+              / "2" %x30-34 DIGIT     ; 200-249
+              / "25" %x30-35          ; 250-255
+``` -->
+
+```mermaid
+flowchart TD
+    host
+
+    host --> IP-literal
+    host --> IPv4address
+    host --> reg-name
+
+    IP-literal --> IPv6address
+    IP-literal --> IPvFuture
+
+    reg-name --> unreserved
+    reg-name --> pct-encoded
+    reg-name --> sub-delims
+```
+
+| Rule        | Description                                                       |
+| ----------- | ----------------------------------------------------------------- |
+| unreserved  | `ALPHA / DIGIT / "-" / "." / "_" / "~"`                           |
+| pct-encoded | `"%" HEXDIG HEXDIG`                                               |
+| sub-delims  | `"!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="` |
