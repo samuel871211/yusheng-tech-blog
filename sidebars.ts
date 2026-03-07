@@ -83,7 +83,7 @@ const sidebars: SidebarsConfig = {
         // "http/http-3", // 這個偏難
         // "http/beyond-cors-2", // 超難，想放後面
         // "http/integrity-policy", // 很新的技術
-        // "http/http-response-status-codes", // 感覺可拆，放最後，因為會跟很多主題重複
+        "http/http-response-status-codes", // 感覺可拆，放最後，因為會跟很多主題重複
       ],
     },
     {

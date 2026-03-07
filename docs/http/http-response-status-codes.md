@@ -2,7 +2,7 @@
 title: HTTP response status codes
 description: HTTP response status codes
 last_update:
-  date: "2025-11-27T08:00:00+08:00"
+  date: "2026-03-07T08:00:00+08:00"
 ---
 
 ## 前言
@@ -13,11 +13,70 @@ last_update:
 
 ## 100 Continue
 
+參考 [expect-100-continue](../http/expect-100-continue.md) 這篇
+
+## 103 Early Hints
+
+參考 [link](../http/link.md) 跟 [http-uncommon-features](../nodejs/http-uncommon-features.md#103-early-hints) 這兩篇
+
 ## 202 Accepted
 
 ## 203 Non-Authoritative Information
 
 ## 205 Reset Content
+
+第一次是在 express 的原始碼看到
+
+```js
+// alter headers for 205
+if (this.statusCode === 205) {
+  this.set("Content-Length", "0");
+  this.removeHeader("Transfer-Encoding");
+  chunk = "";
+}
+```
+
+用途：成功更新資料，請 Client（通常是瀏覽器）重整畫面
+
+之前看過的作法都是回 200，前端自行決定要重整畫面還是只刷新 UI 狀態
+
+我很好奇瀏覽器預設收到 205 的行為是什麼（我猜應該不會自動幫忙重整頁面吧），所以寫個 PoC 實測看看：
+
+index.ts
+
+```ts
+import { readFileSync } from "fs";
+import http from "http";
+import { join } from "path";
+
+const httpServer = http.createServer();
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  if (req.url === "/")
+    return res.end(readFileSync(join(__dirname, "index.html")));
+  if (req.url === "/users") {
+    res.statusCode = 205;
+    res.end();
+    return;
+  }
+  res.statusCode = 404;
+  res.end();
+});
+```
+
+index.html
+
+```html
+<script>
+  fetch("http://localhost:5000/users", {
+    method: "POST",
+    body: JSON.stringify({ users: [] }),
+  });
+</script>
+```
+
+結論用 `fetch` 的話，瀏覽器預設不會幫忙重整頁面
+![205-reset-content](../../static/img/205-reset-content.jpg)
 
 ## 207 Multi-Status
 
