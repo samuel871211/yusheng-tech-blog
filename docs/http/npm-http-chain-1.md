@@ -15,6 +15,9 @@ flowchart TD
     Node.js --> Connect
 
     Express --> finalhandler
+    Express --> merge-descriptors
+    Express --> body-parser
+    Express --> router
     finalhandler --> on-finished
     on-finished --> ee-first
 ```
@@ -231,6 +234,14 @@ targetServer.on("request", function (req, res) {
 });
 ```
 
+## finalhandler
+
+## router
+
+## merge-descriptors
+
+## body-parser
+
 ## 底層 utils
 
 - [statuses](https://www.npmjs.com/package/statuses)
@@ -239,3 +250,8 @@ targetServer.on("request", function (req, res) {
 - [ms](https://www.npmjs.com/package/ms)
 - [debug](https://www.npmjs.com/package/debug)
 - [parseurl](https://www.npmjs.com/package/parseurl)
+- [bytes](https://www.npmjs.com/package/bytes)
+- [content-type](https://www.npmjs.com/package/content-type)
+- [media-typer](https://www.npmjs.com/package/media-typer)
+- [mime-types](https://www.npmjs.com/package/mime-types)
+- [mime-db](https://www.npmjs.com/package/mime-db)
