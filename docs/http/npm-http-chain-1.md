@@ -238,6 +238,107 @@ targetServer.on("request", function (req, res) {
 
 ## router
 
+### 基本資訊
+
+- [Github Repo](https://github.com/pillarjs/router)
+
+### 核心概念
+
+```mermaid
+flowchart TD
+  A["router"] --> B["router.route('/user/:id')"]
+  A --> C["router.route('/shop/:id')"]
+  B --> D["checkIsUuidMiddleware"]
+  D --> E["authMiddleware"]
+  E --> F["route handler<br/>GET, POST, PUT, DELETE"]
+  C --> G["checkIsShopIdMiddleware"]
+  G --> H["ACLMiddleware"]
+  H --> I["route handler<br/>GET, PUT"]
+```
+
+### 核心概念
+
+- router: 通常一個 `http.Server` 會搭配一個 router
+- route: 一個 router 底下可定義多個 route（等同於 Restful API 的不同 Resources）
+- middleware: `checkIsUuidMiddleware`, `authMiddleware`
+- handler: `getUser`, `createUser`, `updateUser`, `deleteUser`
+
+### 基本用法
+
+```js
+import { Router } from "express";
+import http from "http";
+import finalhandler from "finalhandler";
+
+const router = Router();
+const userRoute = router.route("/user/:id");
+userRoute.all(
+  function checkIsUuidMiddleware(req, res, next) {
+    console.log(req.params.id);
+    next();
+  },
+  function authMiddleware(req, res, next) {
+    console.log(req.params.id);
+    next();
+  },
+);
+userRoute.get(function getUser(req, res, next) {
+  res.end(req.params.id);
+});
+userRoute.post(function createUser(req, res, next) {
+  res.end(req.params.id);
+});
+userRoute.put(function updateUser(req, res, next) {
+  res.end(req.params.id);
+});
+userRoute.delete(function deleteUser(req, res, next) {
+  res.end(req.params.id);
+});
+
+const httpServer = http.createServer();
+httpServer.listen(5000);
+// 如果 middleware + handler 都沒回應 HTTP Response
+// 為了避免 HTTP Request 被掛著
+// finalhandler 會幫忙回應 HTTP Response
+httpServer.on("request", (req, res) =>
+  router(req, res, finalhandler(req, res)),
+);
+```
+
+### `router.use` 不是 excat match，且會把 `req.url` strip 掉對應的部分
+
+`curl http://localhost:5000/api/v1`
+
+```ts
+router.use("/api", (req, res, next) => {
+  console.log(req.url); // "/v1"
+  next();
+});
+```
+
+### router.param(name, param_middleware)
+
+`curl http://localhost:5000/user/aaa`
+
+```ts
+router.param("id", function convertIdToUpperCase(req, res, next) {
+  req.params.id = String(req.params.id).toUpperCase();
+  next();
+});
+router.get("/user/:id", function getUser(req, res, next) {
+  res.end(req.params.id); // AAA
+});
+```
+
+### next
+
+<!-- todo-yus -->
+
+- `next()`
+- `next('route')`
+- `next('router')`
+- `next(new Error('error message'))`
+
 ## merge-descriptors
 
 ## body-parser
@@ -255,3 +356,4 @@ targetServer.on("request", function (req, res) {
 - [media-typer](https://www.npmjs.com/package/media-typer)
 - [mime-types](https://www.npmjs.com/package/mime-types)
 - [mime-db](https://www.npmjs.com/package/mime-db)
+- [path-to-regexp](https://www.npmjs.com/package/path-to-regexp)
