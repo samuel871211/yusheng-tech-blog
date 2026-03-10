@@ -18,6 +18,7 @@ flowchart TD
     Express --> merge-descriptors
     Express --> body-parser
     Express --> router
+    router --> path-to-regexp
     finalhandler --> on-finished
     on-finished --> ee-first
 ```
@@ -400,6 +401,23 @@ flowchart LR
   N --> errorHandleMiddleware
 ```
 
+## path-to-regexp
+
+### 基本資訊
+
+- [Github Repo](https://github.com/pillarjs/path-to-regexp)
+
+### 核心概念
+
+當我們在 express 定義一個 route
+
+```js
+const app = express();
+app.use("/users/:id");
+```
+
+背後就是用 `path-to-regexp` 來解析 `"/users/:id"`
+
 ## merge-descriptors
 
 ## body-parser
@@ -417,4 +435,4 @@ flowchart LR
 - [media-typer](https://www.npmjs.com/package/media-typer)
 - [mime-types](https://www.npmjs.com/package/mime-types)
 - [mime-db](https://www.npmjs.com/package/mime-db)
-- [path-to-regexp](https://www.npmjs.com/package/path-to-regexp)
+- [path-to-regexp](#path-to-regexp)
