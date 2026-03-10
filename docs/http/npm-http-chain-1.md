@@ -256,8 +256,6 @@ flowchart TD
   H --> I["route handler<br/>GET, PUT"]
 ```
 
-### 核心概念
-
 - router: 通常一個 `http.Server` 會搭配一個 router
 - route: 一個 router 底下可定義多個 route（等同於 Restful API 的不同 Resources）
 - middleware: `checkIsUuidMiddleware`, `authMiddleware`
@@ -305,7 +303,7 @@ httpServer.on("request", (req, res) =>
 );
 ```
 
-### `router.use` 不是 excat match，且會把 `req.url` strip 掉對應的部分
+### `router.use` 不是 exact match，且會把 `req.url` strip 掉對應的部分
 
 `curl http://localhost:5000/api/v1`
 
@@ -330,14 +328,77 @@ router.get("/user/:id", function getUser(req, res, next) {
 });
 ```
 
-### next
+### `next` overview
 
-<!-- todo-yus -->
+| Syntax         | Description                      |
+| -------------- | -------------------------------- |
+| next()         | 進到下一個 middleware 或 handler |
+| next('route')  | 跳離目前的 route                 |
+| next('router') | 跳離目前的 router                |
+| next(err)      | 進到 error handle middleware     |
 
-- `next()`
-- `next('route')`
-- `next('router')`
-- `next(new Error('error message'))`
+### `next('route')`
+
+```ts
+const router = Router();
+const internalUserRoute = router.route("/users/:id");
+internalUserRoute.get((req, res, next) => {
+  if (req.params.id.startsWith("external")) return next("route");
+  res.end("internalUserRoute");
+});
+const externalUserRoute = router.route("/users/:id");
+externalUserRoute.get((req, res, next) => {
+  res.end("externalUserRoute");
+});
+```
+
+```mermaid
+flowchart LR
+  A["GET /users/external"] --> I1["internalUserRoute"]
+  I1["internalUserRoute"] --> N["next('route')"]
+  N --> externalUserRoute
+  B["GET /users/123"] --> I2["internalUserRoute"]
+```
+
+### `next('router')`
+
+```ts
+const router = Router();
+router.use(function globalMiddleware(req, res, next) {
+  next("router");
+});
+const httpServer = http.createServer((req, res) => {
+  router(req, res, finalhandler(req, res));
+});
+httpServer.listen(5000);
+```
+
+```mermaid
+flowchart LR
+  A["GET /whatever"] --> globalMiddleware
+  globalMiddleware --> N["next('router')"]
+  N --> finalhandler
+```
+
+### `next(err)`
+
+```ts
+const router = Router();
+router.use(function globalMiddleware(req, res, next) {
+  next(new Error("oops"));
+});
+router.use(function errorHandleMiddleware(err, req, res, next) {
+  res.statusCode = 500;
+  res.end("oops...");
+} satisfies ErrorRequestHandler);
+```
+
+```mermaid
+flowchart LR
+  A["GET /whatever"] --> globalMiddleware
+  globalMiddleware --> N["next(new Error('oops'))"]
+  N --> errorHandleMiddleware
+```
 
 ## merge-descriptors
 
