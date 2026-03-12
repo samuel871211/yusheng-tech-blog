@@ -418,6 +418,22 @@ app.use("/users/:id");
 
 背後就是用 `path-to-regexp` 來解析 `"/users/:id"`
 
+### 基本 regex 語法
+
+| Syntax | Description |
+| `^` | startsWith |
+| `\s` | any whitespace |
+| `\S` | any non-whitespace |
+| `[^a]` | match 1 character not a |
+| `$` | endsWith |
+| `?` | match the previous token 0 ~ 1 time |
+| `(?:...)` | non-capturing group |
+| `(?=\/)` | positive lookahead<br/>previous token must continue with `/` |
+| `(...)` | capturing group |
+| `+` | 1 or more |
+| `/your-regex-here/` | to enclose the regex pattern |
+| `/your-regex-here/i` | case-insensitive |
+
 ## merge-descriptors
 
 ## body-parser
