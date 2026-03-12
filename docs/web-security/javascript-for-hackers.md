@@ -20,7 +20,7 @@ a(); // correctly calls the function
 𱍊 = 123; // unicode character "𱍊" is allowed as a variable
 ```
 
-## Octal
+## Octal (八進位)
 
 ```js
 "\141"; // a
