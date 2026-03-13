@@ -7,7 +7,7 @@ last_update:
 
 ## authority-form
 
-authority-form = [uri-host](../http/ABNF-cheat-sheet.md#rfc-3986-host) ":" port
+authority-form = [uri-host](../web-tech/ABNF-cheat-sheet.md#rfc-3986-host) ":" port
 
 用在 [CONNECT](../http/http-request-methods-1.md) Method，格式如下
 
