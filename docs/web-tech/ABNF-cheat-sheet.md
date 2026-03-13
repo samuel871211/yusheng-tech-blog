@@ -40,7 +40,7 @@ expectation = token [ "=" ( token / quoted-string ) parameters ]
 
 [Core Rules](https://datatracker.ietf.org/doc/html/rfc5234#appendix-B.1) = 定義基礎字符集
 
-| Core Rule | Description                                                |
+| Core Rule | ABNF Definition                                            |
 | --------- | ---------------------------------------------------------- |
 | ALPHA     | A-Z / a-z                                                  |
 | OCTET     | %x00-FF<br/>8 bits of data                                 |
@@ -57,11 +57,11 @@ expectation = token [ "=" ( token / quoted-string ) parameters ]
 
 [Concatenation](https://datatracker.ietf.org/doc/html/rfc5234#section-3.1) = 把多個 Rule 拼接
 
-| Rule    | Description       |
-| ------- | ----------------- |
-| Foo     | %x61 (a)          |
-| Bar     | %x62 (b)          |
-| Combine | Foo Bar Foo (aba) |
+| Rule    | Definition  | Actual Value |
+| ------- | ----------- | ------------ |
+| Foo     | %x61        | a            |
+| Bar     | %x62        | b            |
+| Combine | Foo Bar Foo | aba          |
 
 ## Incremental Alternatives: Rule1 =/ Rule2
 
@@ -136,8 +136,20 @@ flowchart TD
     reg-name --> sub-delims
 ```
 
-| Rule        | Description                                                       |
+| Rule        | ABNF Definition                                                   |
 | ----------- | ----------------------------------------------------------------- |
 | unreserved  | `ALPHA / DIGIT / "-" / "." / "_" / "~"`                           |
 | pct-encoded | `"%" HEXDIG HEXDIG`                                               |
 | sub-delims  | `"!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="` |
+
+## RFC 3629 section-4: Syntax of UTF-8 Byte Sequences
+
+| Rule        | ABNF Definition                   | Description                                                  |
+| ----------- | --------------------------------- | ------------------------------------------------------------ |
+| UTF8-octets | \*( UTF8-char )                   | 0 ~ ∞ ( UTF8-char )                                          |
+| UTF8-char   | UTF8-1 / UTF8-2 / UTF8-3 / UTF8-4 | enum                                                         |
+| UTF8-1      | %x00-7F                           | 0 ~ 127, as known as ASCII                                   |
+| UTF8-2      | %xC2-DF UTF8-tail                 | %xC0-DF = 11000000 ~ 11011111                                |
+| UTF8-3      |                                   | -                                                            |
+| UTF8-4      |                                   | -                                                            |
+| UTF8-tail   | %x80-BF                           | 10xxxxxx ~ 10111111,<br/>as known as UTF-8 continuation byte |
