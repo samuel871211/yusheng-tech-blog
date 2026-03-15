@@ -88,6 +88,8 @@ ASCII:
 
 ## UTF-8
 
+https://datatracker.ietf.org/doc/html/rfc3629#section-3
+
 - 每個 Code point 使用 1 ~ 4 bytes 來編碼
 - 向下兼容 ASCII
 
@@ -106,7 +108,100 @@ ASCII:
 - 若為 4 byte(s)，則開頭是 `11110`，後續的 byte(s) 開頭是 `10`
 - ASCII 的編號是 0 ~ 127，換算成 octet sequence 是 `00000000` ~ `01111111`，UTF-8 的 1 byte(s) 剛好可以兼容
 
-## RFC
+## Syntax of UTF-8 Byte Sequences
+
+https://datatracker.ietf.org/doc/html/rfc3629#section-4
+
+| Rule        | ABNF Definition                     | Description                                                  |
+| ----------- | ----------------------------------- | ------------------------------------------------------------ |
+| UTF8-octets | `*( UTF8-char )`                    | 0 ~ ∞ ( UTF8-char )                                          |
+| UTF8-char   | `UTF8-1 / UTF8-2 / UTF8-3 / UTF8-4` | enum                                                         |
+| UTF8-1      | `%x00-7F`                           | 0 ~ 127, as known as ASCII                                   |
+| UTF8-2      | `%xC2-DF UTF8-tail`                 | [Why UTF8-2 Disallow C0, C1](#why-utf8-2-disallow-c0-c1)     |
+| UTF8-3      | [UTF8-3](#utf8-3)                   | -                                                            |
+| UTF8-4      | [UTF8-4](#utf8-4)                   | -                                                            |
+| UTF8-tail   | `%x80-BF`                           | 10000000 ~ 10111111,<br/>as known as UTF-8 continuation byte |
+
+## Why UTF8-2 Disallow `%xC0` and `%xC1`
+
+UTF8-2 的 leading byte 是 `110xxxxx`，理論上的範圍是 `11000000 ~ 11011111`，也就是 `%xC0-DF`
+
+正常來說 UTF8-2 的 ABNF Definition 應該要是 `%xC2-DF UTF8-tail`，但為何少了 `%xC0` 跟 `%xC1` 呢？
+
+我們來逐步拆解
+
+| hex   | UTF8-2<br/>octet sequence | Parser                                   | ASCII Code<br/>(Decimal) | UTF8-1<br/>octet sequence |
+| ----- | ------------------------- | ---------------------------------------- | ------------------------ | ------------------------- |
+| C0 80 | 11000000 10000000         | 110(00000) 10(000000) => (00000)(000000) | 0                        | 00000000                  |
+| C0 81 | 11000000 10000001         | 110(00000) 10(000001) => (00000)(000001) | 1                        | 00000001                  |
+| C0 BF | 11000000 10111111         | 110(00000) 10(111111) => (00000)(111111) | 63                       | 00111111                  |
+| C1 80 | 11000001 10000000         | 110(00001) 10(000000) => (00001)(000000) | 64                       | 01000000                  |
+| C1 81 | 11000001 10000001         | 110(00001) 10(000001) => (00001)(000001) | 65                       | 01000001                  |
+| C1 BF | 11000001 10111111         | 110(00001) 10(111111) => (00001)(111111) | 127                      | 01111111                  |
+
+為了避免同一個 Code point 出現「一個合法、另一個非法 overlong」的多重表示，UTF-8 要求使用最短形式（shortest form）
+
+原因是 "overlong UTF-8 sequence" 有可能造成資安漏洞
+
+1. 若 parser 禁止 NULL Byte (00) 但卻容忍 C0 80 的話，可能造成 [Obfuscating file extensions](../port-swigger/file-upload-vulnerabilities.md#obfuscating-file-extensions)
+2. 若 parser 禁止 2F 2E 2E 2F ("/../") 但卻容忍 2F C0 AE 2E 2F 的話，可能造成 [Path Traversal](../port-swigger/path-traversal.md)
+
+## UTF8-3
+
+ABNF Definition: `%xE0 %xA0-BF UTF8-tail / %xE1-EC 2( UTF8-tail ) / %xED %x80-9F UTF8-tail / %xEE-EF 2( UTF8-tail )`
+
+我們先看 UTF8-3 的理論區間
+
+|                                        | Leading Byte        | First continuation byte | Second continuation byte |
+| -------------------------------------- | ------------------- | ----------------------- | ------------------------ |
+| octet sequence                         | 1110xxxx            | 10xxxxxx                | 10xxxxxx                 |
+| theoretical range<br/>(octet sequence) | 11100000 ~ 11101111 | 10000000 ~ 10111111     | 10000000 ~ 10111111      |
+| theoretical range<br/>(hex)            | E0 ~ EF             | 80 ~ BF                 | 80 ~ BF                  |
+
+再來把 ABNF Definition 展開看看
+
+| ABNF Definition                               | Leading Byte        | First continuation byte | Second continuation byte |
+| --------------------------------------------- | ------------------- | ----------------------- | ------------------------ |
+| `%xE0 %xA0-BF UTF8-tail`<br/>(octet sequence) | 11100000            | 10100000 ~ 10111111     | 10000000 ~ 10111111      |
+| `%xE0 %xA0-BF UTF8-tail`<br/>(hex)            | E0                  | A0 ~ BF                 | 80 ~ BF                  |
+| `%xE1-EC 2( UTF8-tail )`<br/>(octet sequence) | 11100001 ~ 11101100 | 10000000 ~ 10111111     | 10000000 ~ 10111111      |
+| `%xE1-EC 2( UTF8-tail )`<br/>(hex)            | E1 ~ EC             | 80 ~ BF                 | 80 ~ BF                  |
+| `%xED %x80-9F UTF8-tail`<br/>(octet sequence) | 11101101            | 10000000 ~ 10011111     | 10000000 ~ 10111111      |
+| `%xED %x80-9F UTF8-tail`<br/>(hex)            | ED                  | 80 ~ 9F                 | 80 ~ BF                  |
+| `%xEE-EF 2( UTF8-tail )`<br/>(octet sequence) | 11101110 ~ 11101111 | 10000000 ~ 10111111     | 10000000 ~ 10111111      |
+| `%xEE-EF 2( UTF8-tail )`<br/>(hex)            | EE ~ EF             | 80 ~ BF                 | 80 ~ BF                  |
+
+將這四組 ABNF Definition 與理論值互相比對，可以得出以下結論
+
+|                       | `%xE0 %xA0-BF UTF8-tail` | `%xE1-EC 2( UTF8-tail )`  | `%xED %x80-9F UTF8-tail` | `%xEE-EF 2( UTF8-tail )`  |
+| --------------------- | ------------------------ | ------------------------- | ------------------------ | ------------------------- |
+| ABNF <br/>(hex)       | E0, A0 ~ BF, 80 ~ BF     | E1 ~ EC, 80 ~ BF, 80 ~ BF | ED, 80 ~ 9F, 80 ~ BF     | EE ~ EF, 80 ~ BF, 80 ~ BF |
+| theoretical<br/>(hex) | E0, 80 ~ BF, 80 ~ BF     | E1 ~ EC, 80 ~ BF, 80 ~ BF | ED, 80 ~ BF, 80 ~ BF     | EE ~ EF, 80 ~ BF, 80 ~ BF |
+| Same                  | No                       | Yes                       | No                       | Yes                       |
+
+### Why `%xE0 %xA0-BF UTF8-tail` instead of `%xE0 %x80-BF UTF8-tail`
+
+回憶一下這張表
+
+| hexadecimal     | UTF-8 octet sequence       |
+| --------------- | -------------------------- |
+| 0x0800 ~ 0xFFFF | 1110xxxx 10xxxxxx 10xxxxxx |
+
+將 `0x0800` 進行轉換
+
+| hexadecimal | octet sequence    | UTF-8 octet sequence       | UTF-8 hex |
+| ----------- | ----------------- | -------------------------- | --------- |
+| 0x0800      | 00001000 00000000 | 11100000 10100000 10000000 | E0 A0 80  |
+
+得出 Code point `0x0800` 對應的 UTF-8 hex 為 `E0 A0 80`，故 First continuation byte 必須 >= A0，才不會造成 "overlong UTF-8 sequence"
+
+### Why `%xED %x80-9F UTF8-tail` instead of `%xED %x80-BF UTF8-tail`
+
+<!-- todo-yus long surrogate -->
+
+## UTF8-4
+
+ABNF Definition: `%xF0 %x90-BF 2( UTF8-tail ) / %xF1-F3 3( UTF8-tail ) / %xF4 %x80-8F 2( UTF8-tail )`
 
 ## UTF-16
 
@@ -125,4 +220,4 @@ ASCII:
 
 - https://developer.mozilla.org/en-US/docs/Glossary/Unicode
 - https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/
-- https://datatracker.ietf.org/doc/html/rfc3629#section-3
+- https://datatracker.ietf.org/doc/html/rfc3629

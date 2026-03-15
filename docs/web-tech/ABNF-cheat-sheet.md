@@ -141,15 +141,3 @@ flowchart TD
 | unreserved  | `ALPHA / DIGIT / "-" / "." / "_" / "~"`                           |
 | pct-encoded | `"%" HEXDIG HEXDIG`                                               |
 | sub-delims  | `"!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="` |
-
-## RFC 3629 section-4: Syntax of UTF-8 Byte Sequences
-
-| Rule        | ABNF Definition                   | Description                                                  |
-| ----------- | --------------------------------- | ------------------------------------------------------------ |
-| UTF8-octets | \*( UTF8-char )                   | 0 ~ ∞ ( UTF8-char )                                          |
-| UTF8-char   | UTF8-1 / UTF8-2 / UTF8-3 / UTF8-4 | enum                                                         |
-| UTF8-1      | %x00-7F                           | 0 ~ 127, as known as ASCII                                   |
-| UTF8-2      | %xC2-DF UTF8-tail                 | %xC0-DF = 11000000 ~ 11011111                                |
-| UTF8-3      |                                   | -                                                            |
-| UTF8-4      |                                   | -                                                            |
-| UTF8-tail   | %x80-BF                           | 10xxxxxx ~ 10111111,<br/>as known as UTF-8 continuation byte |
