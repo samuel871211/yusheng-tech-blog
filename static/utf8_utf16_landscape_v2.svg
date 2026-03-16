@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="825" viewBox="0 0 1600 825">
+  <defs>
+    <style>
+      .title { font: 700 36px "Arial", "Noto Sans", sans-serif; fill: #1f2937; }
+      .label { font: 600 28px "Arial", "Noto Sans", sans-serif; fill: #111827; }
+      .small { font: 500 18px "Arial", "Noto Sans", sans-serif; fill: #374151; }
+      .tick { stroke: #111827; stroke-width: 3; }
+      .axis { stroke: #111827; stroke-width: 4; }
+      .utf8 { stroke: #2563eb; stroke-width: 4; fill: none; }
+      .utf16 { stroke: #7c3aed; stroke-width: 4; fill: none; }
+      .high { stroke: #dc2626; stroke-width: 4; fill: none; }
+      .low { stroke: #059669; stroke-width: 4; fill: none; }
+      .note { font: 500 20px "Arial", "Noto Sans", sans-serif; fill: #4b5563; }
+      .rangebox { fill: #f9fafb; stroke: #e5e7eb; stroke-width: 1; rx: 12; }
+    </style>
+  </defs>
+
+  <rect width="100%" height="100%" fill="white"/>
+  <text x="800" y="70" text-anchor="middle" class="title">UTF-8 / UTF-16 範圍示意圖</text>
+
+  <!-- axis -->
+  <line x1="120" y1="420" x2="1480" y2="420" class="axis"/>
+
+  <!-- ticks -->
+  <g>
+    <line x1="120" y1="390" x2="120" y2="450" class="tick"/>
+    <line x1="280" y1="400" x2="280" y2="440" class="tick"/>
+    <line x1="460" y1="400" x2="460" y2="440" class="tick"/>
+    <line x1="720" y1="390" x2="720" y2="450" class="tick"/>
+    <line x1="810" y1="400" x2="810" y2="440" class="tick"/>
+    <line x1="900" y1="400" x2="900" y2="440" class="tick"/>
+    <line x1="980" y1="400" x2="980" y2="440" class="tick"/>
+    <line x1="1060" y1="390" x2="1060" y2="450" class="tick"/>
+    <line x1="1480" y1="390" x2="1480" y2="450" class="tick"/>
+  </g>
+
+  <!-- code point labels -->
+  <g class="small">
+    <text x="120" y="485" text-anchor="middle">U+0000</text>
+    <text x="280" y="485" text-anchor="middle">U+007F</text>
+    <text x="460" y="485" text-anchor="middle">U+07FF</text>
+    <text x="720" y="485" text-anchor="middle">U+D7FF</text>
+    <text x="810" y="485" text-anchor="middle">U+D800</text>
+    <text x="900" y="485" text-anchor="middle">U+DBFF</text>
+    <text x="980" y="485" text-anchor="middle">U+DFFF</text>
+    <text x="1060" y="485" text-anchor="middle">U+FFFF</text>
+    <text x="1480" y="485" text-anchor="middle">U+10FFFF</text>
+  </g>
+
+  <!-- surrogate intervals -->
+  <path d="M810,340 Q855,300 900,340" class="high"/>
+  <text x="855" y="310" text-anchor="middle" class="small" fill="#dc2626">high surrogate</text>
+
+  <path d="M900,500 Q940,548 980,500" class="low"/>
+  <text x="940" y="540" text-anchor="middle" class="small" fill="#059669">low surrogate</text>
+
+  <!-- UTF-8 arcs -->
+  <path d="M120,340 Q200,260 280,340" class="utf8"/>
+  <text x="200" y="245" text-anchor="middle" class="label">UTF8-1</text>
+
+  <path d="M280,340 Q370,250 460,340" class="utf8"/>
+  <text x="370" y="235" text-anchor="middle" class="label">UTF8-2</text>
+
+  <path d="M460,340 Q740,130 1060,340" class="utf8"/>
+  <rect x="580" y="110" width="360" height="64" class="rangebox"/>
+  <text x="760" y="145" text-anchor="middle" class="label">UTF8-3</text>
+  <text x="760" y="168" text-anchor="middle" class="note">(Not Include Surrogate)</text>
+
+  <path d="M1060,340 Q1270,200 1480,340" class="utf8"/>
+  <text x="1270" y="195" text-anchor="middle" class="label">UTF8-4</text>
+
+  <!-- UTF-16 arcs -->
+  <path d="M120,520 Q590,740 1060,520" class="utf16"/>
+  <rect x="450" y="720" width="330" height="64" class="rangebox"/>
+  <text x="615" y="755" text-anchor="middle" class="label">UTF16-1</text>
+  <text x="615" y="778" text-anchor="middle" class="note">(Not Include Surrogate)</text>
+
+  <path d="M1060,520 Q1270,700 1480,520" class="utf16"/>
+  <text x="1270" y="735" text-anchor="middle" class="label">UTF16-2</text>
+</svg>

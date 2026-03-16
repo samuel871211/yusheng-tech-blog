@@ -106,11 +106,9 @@ https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G31699
 | 0xE000 ~ 0xFFFF     | 0xE000 ~ 0xFFFF                                |
 | 0x010000 ~ 0x10FFFF | high-surrogate low-surrogate                   |
 
-與 UTF-8 使用 `11110`, `1110`, `110`, `10` 當作前綴不同的地方是，UTF-16 使用 "high-surrogate" + "low-surrogate" 來表示 `0x010000 ~ 0x10FFFF`
-
 ## surrogate pairs
 
-[unicode.org](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G1654) 針對 "Surrogate pair" 的解釋是
+[unicode.org](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G1654) 針對 "surrogate pair" 的解釋是
 
 ```
 A representation for a single abstract character that consists of a sequence of two 16-bit code units, where the first value of the pair is a high-surrogate code unit and the second value is a low-surrogate code unit.
@@ -331,7 +329,9 @@ ABNF Definition
 | 0xD7FF      | 11010111 11111111 | 11101101 10011111 10111111 | ED 9F BF  | ABNF maximum        |
 | 0xDFFF      | 11011111 11111111 | 11101101 10111111 10111111 | ED BF BF  | theoretical maximum |
 
-✅ 可以發現 ABNF maximum (不含) ~ theoretical maximum (含)，剛好就是 "high-surrogate" + "low-surrogate" 的區間
+可以發現 ABNF maximum (不含) ~ theoretical maximum (含)，剛好就是 "high-surrogate" 跟 "low-surrogate" 的區間
+
+✅ 故 "真實的區間"（`%xED %x80-9F UTF8-tail`）是為了避開 high-surrogate 跟 low-surrogate
 
 ## UTF8-4
 
@@ -390,6 +390,12 @@ ABNF Definition
 ## Unicode 一些你可能不知道的特性
 
 - ZWSP = Zero Width SPace = `U+200B`
+
+## 小結
+
+![utf8_utf16_landscape_v2](../../static/utf8_utf16_landscape_v2.svg)
+
+<!-- todo-yus 慢慢補 -->
 
 <!-- ## basic multilingual plane (BMP) -->
 
