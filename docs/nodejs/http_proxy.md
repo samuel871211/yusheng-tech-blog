@@ -73,7 +73,7 @@ flowchart LR
 Node.js Built-in Proxy Support 的角色定位是：
 
 1. 幫 Client 重新構造 HTTP Request，詳細解說在 [HTTP_PROXY](#http_proxy)
-2. 幫 Client 重新構造 HTTPS Request，詳細解說在 [HTTPS_PROXY](#https_proxy)
+2. 幫 Client 重新構造 HTTPS Request，詳細解說在 [HTTPS_PROXY](./https_proxy.md)
 3. 根據 Client 設定的 [NO_PROXY](#no_proxy) 來決定要不要把請求發給 Forward Proxy，還是直接發到 Target Server
 
 ## HTTP_PROXY
