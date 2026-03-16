@@ -7,7 +7,7 @@ last_update:
 
 ## Unicode
 
-https://developer.mozilla.org/en-US/docs/Glossary/Unicode
+先看看 [MDN](https://developer.mozilla.org/en-US/docs/Glossary/Unicode) 的原文解說
 
 ```
 Unicode is a standard character set that numbers and defines characters from the world's different languages, writing systems, and symbols.
@@ -25,6 +25,8 @@ By assigning each character a number, programmers can create character encodings
 "\u0041"; // 'A'
 "\u{1F600}"; // '😀'
 ```
+
+大致上有這些名詞需要記得
 
 | Terminology | Description                                                      |
 | ----------- | ---------------------------------------------------------------- |
@@ -215,15 +217,15 @@ https://datatracker.ietf.org/doc/html/rfc3629#section-3
 
 https://datatracker.ietf.org/doc/html/rfc3629#section-4
 
-| Rule        | ABNF Definition                     | Description                                                  |
-| ----------- | ----------------------------------- | ------------------------------------------------------------ |
-| UTF8-octets | `*( UTF8-char )`                    | 0 ~ ∞ ( UTF8-char )                                          |
-| UTF8-char   | `UTF8-1 / UTF8-2 / UTF8-3 / UTF8-4` | enum                                                         |
-| UTF8-1      | `%x00-7F`                           | 0 ~ 127, as known as ASCII                                   |
-| UTF8-2      | `%xC2-DF UTF8-tail`                 | [Why UTF8-2 Disallow C0, C1](#why-utf8-2-disallow-c0-c1)     |
-| UTF8-3      | [UTF8-3](#utf8-3)                   | -                                                            |
-| UTF8-4      | [UTF8-4](#utf8-4)                   | -                                                            |
-| UTF8-tail   | `%x80-BF`                           | 10000000 ~ 10111111,<br/>as known as UTF-8 continuation byte |
+| Rule        | ABNF Definition                     | Description                                                    |
+| ----------- | ----------------------------------- | -------------------------------------------------------------- |
+| UTF8-octets | `*( UTF8-char )`                    | 0 ~ ∞ ( UTF8-char )                                            |
+| UTF8-char   | `UTF8-1 / UTF8-2 / UTF8-3 / UTF8-4` | enum                                                           |
+| UTF8-1      | `%x00-7F`                           | 0 ~ 127, as known as ASCII                                     |
+| UTF8-2      | `%xC2-DF UTF8-tail`                 | [Why UTF8-2 Disallow C0, C1](#why-utf8-2-disallow-xc0-and-xc1) |
+| UTF8-3      | [UTF8-3](#utf8-3)                   | -                                                              |
+| UTF8-4      | [UTF8-4](#utf8-4)                   | -                                                              |
+| UTF8-tail   | `%x80-BF`                           | 10000000 ~ 10111111,<br/>as known as UTF-8 continuation byte   |
 
 ## Why UTF8-2 Disallow `%xC0` and `%xC1`
 
@@ -383,7 +385,7 @@ ABNF Definition
 
 得出 code point `0x10FFFF` 對應的 UTF-8 hex 為 `F4 8F BF BF`
 
-✅ 故 First continuation byte 必須 <= 8F，才不會造成 "out of Unicode range"
+✅ 故 First continuation byte 必須 &lt;= 8F，才不會造成 "out of Unicode range"
 
 ## Unicode 一些你可能不知道的特性
 
