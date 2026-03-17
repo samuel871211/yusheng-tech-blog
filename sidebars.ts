@@ -214,6 +214,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-destroy",
         "nodejs/http_proxy",
         "nodejs/http-uncommon-features",
+        "nodejs/undici",
       ],
     },
     {
