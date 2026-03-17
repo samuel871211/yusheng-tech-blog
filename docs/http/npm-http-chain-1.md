@@ -407,7 +407,7 @@ flowchart LR
 
 - [Github Repo](https://github.com/pillarjs/path-to-regexp)
 
-### 核心概念
+### 解決什麼問題？
 
 當我們在 express 定義一個 route
 
@@ -417,6 +417,130 @@ app.use("/users/:id");
 ```
 
 背後就是用 `path-to-regexp` 來解析 `"/users/:id"`
+
+### 核心概念
+
+主要就這 5 個 method
+
+```js
+import { pathToRegexp, match, compile, parse, stringify } from "path-to-regexp";
+```
+
+加上這三個 TokenType
+
+| TokenType  | Syntax                | Example                                  |
+| ---------- | --------------------- | ---------------------------------------- |
+| Parameters | `/users/:id`          | `/users/yusheng`                         |
+| Wildcard   | `/*splat`             | `/hello`, `/hello/world`                 |
+| Optional   | `/users{/:id}/delete` | `/users/delete`, `/users/yusheng/delete` |
+
+### pathToRegexp 用法介紹
+
+顧名思義，把 path 轉成 regexp
+
+```js
+const { regexp, keys } = pathToRegexp("/users/:id", {
+  trailing: false,
+  sensitive: true,
+});
+console.log({ regexp, keys });
+// 1. 從字串開頭開始，match 字面上的 `/users/`
+// 2. 接著捕獲一段長度 >= 1、且每個字元都不是 `/` 的字串
+// 3. 然後字串立刻結尾
+// {
+//   regexp: /^(?:\/users\/([^\/]+))$/,
+//   keys: [ { type: 'param', name: 'id' } ]
+// }
+```
+
+### match 用法介紹
+
+[router](#router) 原始碼就是用 `match` 來把開發者實際註冊的
+
+```js
+app.use("/users/:id");
+```
+
+轉換成 `matcher`，後續的 Request URL 就可以用 `matcher` 來解析
+
+值得注意的是，預設會 `decodeURIComponent`
+
+```js
+const matcher = match("/user/:id", { decode: decodeURIComponent }); // default behavior
+console.log(matcher("/user/123%2f"));
+// {
+//   path: '/user/123%2f',
+//   params: { id: '123/' }
+// }
+```
+
+傳入 `decode: false` 可以禁用此邏輯
+
+```js
+const matcher = match("/user/:id", { decode: false });
+console.log(matcher("/user/123%2f"));
+// {
+//   path: '/user/123%2f',
+//   params: { id: '123%2f' }
+// }
+```
+
+### compile 用法介紹
+
+return a function for transforming parameters into a valid path
+
+```js
+const toPath = compile("/user/:id");
+console.log(toPath({})); // TypeError: Missing parameters: id
+console.log(toPath({ id: "123" })); // /user/123
+console.log(toPath({ id: "123", hello: "456" })); // /user/123
+```
+
+值得注意的是，預設會 `encodeURIComponent`
+
+```js
+const toPath = compile("/user/:id");
+console.log(toPath({ id: "@" })); // /user/%40
+console.log(toPath({ id: "\uD800" })); // URIError: URI malformed (lone surrogate => 0xD800 - 0xDFFF 單獨出現)
+```
+
+關於 "lone surrogate"，請參考我寫過的 [Unicode, UTF-8 跟 UTF-16 一篇搞懂](../web-tech/unicode-utf8-utf16.md#lone-surrogate)
+
+傳入 `encode: false` 可以禁用此邏輯，不過套件本身就不會幫你把 `{ id: "evil/" }` 進行 `encodeURIComponent`，需自行確保傳入的參數有 encode
+
+```js
+const toPath1 = compile("/*splat");
+console.log(toPath1({})); // TypeError: Missing parameters: splat
+console.log(toPath1({ splat: "123" })); // TypeError: Expected "splat" to be a non-empty array
+console.log(toPath1({ splat: ["/user/123"] })); // /123
+console.log(toPath1({ splat: ["123", "456"] })); // /123/456
+
+// When disabling `encode`, you need to make sure inputs are encoded correctly. No arrays are accepted.
+const toPath2 = compile("/*splat", { encode: false });
+console.log(toPath2({})); // TypeError: Missing parameters: splat
+console.log(toPath2({ splat: "123" })); // /123
+console.log(toPath2({ splat: ["/user/123"] })); // TypeError: Expected "splat" to be a string
+console.log(toPath2({ splat: "123/456" })); // /123/456
+```
+
+### parse, stringify 用法介紹
+
+```js
+const tokenData3 = parse("{:user}");
+console.log(tokenData3);
+// TokenData {
+//   tokens: [ { type: 'group', tokens: [ { type: 'text', value: 'user' } ] } ],
+//   originalPath: '{user}'
+// }
+const toPath = compile(tokenData3);
+console.log(toPath({ user: "123" })); // 123
+
+const func = match(tokenData3);
+console.log(func("123")); // { path: '123', params: { user: '123' } }
+
+const path = stringify(tokenData3);
+console.log(path); // {:user}
+```
 
 ### 基本 regex 語法
 
