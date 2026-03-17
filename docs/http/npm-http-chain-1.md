@@ -2,7 +2,7 @@
 title: 拆解 npm HTTP 俄羅斯套娃：從 ee-first 到 Express 的依賴地獄
 description: weekly download 幾千萬的套件，核心可能只有 30 行。帶你從最底層的 EventEmitter 工具到 Express，系統性拆解 npm HTTP 生態系的每一層。
 last_update:
-  date: "2026-03-06T08:00:00+08:00"
+  date: "2026-03-17T08:00:00+08:00"
 ---
 
 ## 架構
@@ -236,6 +236,11 @@ targetServer.on("request", function (req, res) {
 ```
 
 ## finalhandler
+
+### 基本資訊
+
+- [Github Repo](https://github.com/pillarjs/finalhandler)
+- 通常搭配 [router](#router) 一起使用
 
 ## router
 
