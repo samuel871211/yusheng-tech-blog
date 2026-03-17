@@ -18,9 +18,36 @@ flowchart TD
     Express --> merge-descriptors
     Express --> body-parser
     Express --> router
+    Express --> body-parser
+    Express --> fresh
+    Express --> content-type
+    Express --> content-disposition
+    Express --> cookie
+    Express --> cookie-signature
+    Express --> etag
+    Express --> mime-types
+    Express --> proxy-addr
+    Express --> range-parser
+    Express --> send
+    Express --> serve-static
+    Express --> type-is
+    Express --> vary
+
     router --> path-to-regexp
     finalhandler --> on-finished
     on-finished --> ee-first
+
+    send --> mime-types
+    send --> range-parser
+    send --> etag
+
+    type-is --> content-type
+    type-is --> mime-types
+    type-is --> media-typer
+
+    serve-static --> send
+
+    body-parser --> raw-body
 ```
 
 ## ee-first
@@ -567,6 +594,34 @@ console.log(path); // {:user}
 
 ## body-parser
 
+## raw-body
+
+## fresh
+
+## cookie
+
+## cookie-signature
+
+## content-type
+
+## content-disposition
+
+## mime-types
+
+## media-typer
+
+## etag
+
+## proxy-addr
+
+## range-parser
+
+## send
+
+## serve-static
+
+## vary
+
 ## 底層 utils
 
 - [statuses](https://www.npmjs.com/package/statuses)
@@ -576,8 +631,10 @@ console.log(path); // {:user}
 - [debug](https://www.npmjs.com/package/debug)
 - [parseurl](https://www.npmjs.com/package/parseurl)
 - [bytes](https://www.npmjs.com/package/bytes)
-- [content-type](https://www.npmjs.com/package/content-type)
-- [media-typer](https://www.npmjs.com/package/media-typer)
-- [mime-types](https://www.npmjs.com/package/mime-types)
+  <!-- - [content-type](#content-type) -->
+  <!-- - [content-disposition](#content-disposition) -->
+- [media-typer](#media-typer)
+<!-- - [mime-types](#mime-types) -->
 - [mime-db](https://www.npmjs.com/package/mime-db)
-- [path-to-regexp](#path-to-regexp)
+<!-- - [path-to-regexp](#path-to-regexp) -->
+- [bytes](https://www.npmjs.com/package/bytes)
