@@ -2,7 +2,7 @@
 title: "undici 跟 node:http - 為何要有兩套 HTTP/1.1 client？"
 description: "undici: An HTTP/1.1 client, written from scratch for Node.js"
 last_update:
-  date: "2026-03-17T08:00:00+08:00"
+  date: "2026-03-19T08:00:00+08:00"
 ---
 
 ## 簡介
@@ -291,53 +291,6 @@ Client {
 }
 ```
 
-## Client
-
-Client 代表的是一個 TCP/TLS 連線的封裝
-
-### new Client(url, ClientOptions)
-
-我必須吐槽 [ClientOptions](https://undici.nodejs.org/#/docs/api/Client?id=new-clienturl-options) 的設計，雖然支援 HTTP/1.1 跟 HTTP/2，但所有設定都攤平，對一般開發者來說，增加了許多理解成本
-
-因此，我在這邊會整理成
-
-1. HTTP/1.1 only options
-2. HTTP/2 only options
-3. General options
-
-HTTP/1.1 only options：
-
-| Option     | Description |
-| ---------- | ----------- |
-| pipelining |             |
-
-HTTP/2 only options：
-
-| Option               | Description |
-| -------------------- | ----------- |
-| allowH2              |             |
-| useH2c               |             |
-| maxConcurrentStreams |             |
-| initialWindowSize    |             |
-| connectionWindowSize |             |
-| pingInterval         |             |
-
-General options：
-
-| Option                         | Description |
-| ------------------------------ | ----------- |
-| bodyTimeout                    |             |
-| headersTimeout                 |             |
-| keepAliveMaxTimeout            |             |
-| keepAliveTimeout               |             |
-| keepAliveTimeoutThreshold      |             |
-| maxHeaderSize                  |             |
-| maxResponseSize                |             |
-| connect                        |             |
-| strictContentLength            |             |
-| autoSelectFamily               |             |
-| autoSelectFamilyAttemptTimeout |             |
-
 ## Dispatcher, Client, Pool, BalancedPool, Agent
 
 ```mermaid
@@ -426,10 +379,15 @@ flowchart TD
 
 ## 最終比較
 
+僅列出差異：
+
 | Feature                    | node:http                  | undici                            |
 | -------------------------- | -------------------------- | --------------------------------- |
 | Expect                     | Y                          | N                                 |
 | HTTP/1.1 pipelining        | N                          | Y                                 |
 | HTTP/2 support             | N (use node:http2 instead) | Y (but not full support)          |
+| maxHeaderSize              | 431 and destroy the socket | destroy the socket                |
+| maxResponseSize            | N                          | Y                                 |
+| requestTimeout             | Y (http.Server)            | N                                 |
 | Connection pool management | http.Agent                 | Client, Pool, BalancedPool, Agent |
 | API Design                 | Lower                      | Higher                            |

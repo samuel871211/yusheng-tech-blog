@@ -215,6 +215,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/http_proxy",
         "nodejs/http-uncommon-features",
         "nodejs/undici",
+        "nodejs/undici-client",
       ],
     },
     {
