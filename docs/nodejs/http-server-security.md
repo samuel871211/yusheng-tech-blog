@@ -42,7 +42,10 @@ httpServer.on("request", (req, res) => {
 // http client (use net.Socket to control raw bytes)
 const socket = net.createConnection({ host: "localhost", port: 5000 });
 socket.write(
-  "POST /user HTTP/1.1\r\nHost: example.com\r\nContent-Length: 23\r\nContent-Type: application/json\r\n\r\n",
+  "POST /user HTTP/1.1\r\n" +
+    "Host: example.com\r\n" +
+    "Content-Length: 23\r\n" +
+    "Content-Type: application/json\r\n\r\n",
 );
 
 // Prints
@@ -86,6 +89,28 @@ socket.on("data", (chunk) => {
 ```
 
 粗略的計算 "client 送出 data" 到 "client 收到 408 Request Timeout" 的時間差，剛好 3 秒 => 符合預期
+
+並且，`headersTimeout` 是從 connection 建立後就直接掛上 timer，即便 client 不送任何資料，還是會觸發
+
+```js
+// http server
+// ✅ 調低 connectionsCheckingInterval，比較好觀察 headersTimeout 的秒數
+const httpServer = http.createServer({ connectionsCheckingInterval: 0 });
+httpServer.headersTimeout = 3000;
+httpServer.listen(5000);
+
+// http client (use net.Socket to control raw bytes)
+const socket = net.createConnection({ host: "localhost", port: 5000 });
+socket.setEncoding("latin1");
+socket.on("connect", () => console.log(performance.now(), "connect"));
+socket.on("data", (data) => console.log(performance.now(), { data }));
+socket.on("close", () => console.log(performance.now(), "close"));
+
+// Prints
+// 280.698083 connect
+// 3286.0515 { data: 'HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n' }
+// 3288.512458 close
+```
 
 再來測試 [server.requestTimeout](https://nodejs.org/docs/latest-v24.x/api/http.html#serverrequesttimeout)
 
@@ -145,6 +170,10 @@ httpServer.on("clientError", (err, socket) => {
   if (!socket.destroyed) socket.destroy();
 });
 ```
+
+## headersTimeout & requestTimeout 圖解
+
+![headers-timeout-vs-request-timeout](../../static/headers-timeout-vs-request-timeout.svg)
 
 ## 限制 headers 大小
 
