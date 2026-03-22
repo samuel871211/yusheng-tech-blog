@@ -2,7 +2,7 @@
 title: "undici Class Client"
 description: "undici Class Client"
 last_update:
-  date: "2026-03-19T08:00:00+08:00"
+  date: "2026-03-22T08:00:00+08:00"
 ---
 
 Client 代表的是一個 TCP/TLS 連線的封裝
@@ -42,23 +42,23 @@ HTTP/2 only options：
 
 General options：
 
-| Option                                         | Description |
-| ---------------------------------------------- | ----------- |
-| [bodyTimeout](#clientoptionsbodytimeout)       |             |
-| [headersTimeout](#clientoptionsheaderstimeout) |             |
-| keepAliveMaxTimeout                            |             |
-| keepAliveTimeout                               |             |
-| keepAliveTimeoutThreshold                      |             |
-| [maxHeaderSize](#maxheadersize)                |             |
-| [maxResponseSize](#maxresponsesize)            |             |
-| connect                                        |             |
-| strictContentLength                            |             |
-| autoSelectFamily                               |             |
-| autoSelectFamilyAttemptTimeout                 |             |
+| Option                                                   | Description |
+| -------------------------------------------------------- | ----------- |
+| [bodyTimeout](#clientoptionsbodytimeout)                 |             |
+| [headersTimeout](#clientoptionsheaderstimeout)           |             |
+| [keepAliveMaxTimeout](#keepalive-related-settings)       |             |
+| [keepAliveTimeout](#keepalive-related-settings)          |             |
+| [keepAliveTimeoutThreshold](#keepalive-related-settings) |             |
+| [maxHeaderSize](#maxheadersize)                          |             |
+| [maxResponseSize](#maxresponsesize)                      |             |
+| connect                                                  |             |
+| [strictContentLength](#clientoptionsstrictcontentlength) |             |
+| autoSelectFamily                                         |             |
+| autoSelectFamilyAttemptTimeout                           |             |
 
 ## ClientOptions.headersTimeout
 
-概念類似 `node:http` 的 [server.headersTimeout](./http-server-security.md)，實測看看
+概念同 `node:http` 的 [server.headersTimeout](./http-server-security.md)，實測看看
 
 ```js
 const server = http.createServer((req, res) => {
@@ -284,14 +284,18 @@ class FastTimer {
 
 ![headers-timeout-vs-body-timeout](../../static/headers-timeout-vs-body-timeout.svg)
 
-## maxHeaderSize
+## ClientOptions.maxHeaderSize
 
-概念類似 `node:http` 的 [http.maxHeaderSize](./http-server-security.md)
+概念同 `node:http` 的 [http.maxHeaderSize](./http-server-security.md)
 
-追了一下 [原始碼](https://github.com/nodejs/undici/blob/main/lib/dispatcher/client-h1.js)，應該是 "只算 header value 的長度"，超過就直接關閉連線
+追了一下 [原始碼](https://github.com/nodejs/undici/blob/main/lib/dispatcher/client-h1.js)，計算的是 "header field + header value 的長度"，超過就直接關閉連線
 
 ```js
 class Parser {
+  onHeaderField(buf) {
+    // ...省略
+    this.trackHeader(buf.length);
+  }
   onHeaderValue(buf) {
     // ...省略
     this.trackHeader(buf.length);
@@ -306,10 +310,223 @@ class Parser {
 }
 ```
 
-測試看看
+用 `net.Socket` 寫入 raw HTTP Response 測試看看
 
 ```js
+const server = net.createServer();
+server.listen(5000);
+server.on("connection", (socket) => {
+  socket.on("data", () => {
+    socket.write(
+      "HTTP/1.1 200 OK\r\n" +
+        `ninebytes: ${Array(http.maxHeaderSize - 9 - 1)
+          .fill(0)
+          .join("")}\r\n` +
+        "\r\n",
+    );
+  });
+});
 
+const client = new Client("http://localhost:5000");
+const response = await client.request({ path: "/", method: "GET" });
+console.log(Buffer.byteLength(String(response.headers["ninebytes"]))); // 16384 (16KB) - 9 - 1 = 16374
 ```
 
-## maxResponseSize
+剛好頂到 `http.maxHeaderSize` 就會噴錯
+
+```js
+const server = net.createServer();
+server.listen(5000);
+server.on("connection", (socket) => {
+  socket.on("data", () => {
+    socket.write(
+      "HTTP/1.1 200 OK\r\n" +
+        `ninebytes: ${Array(http.maxHeaderSize - 9)
+          .fill(0)
+          .join("")}\r\n` +
+        "\r\n",
+    );
+  });
+});
+
+const client = new Client("http://localhost:5000");
+client.request({ path: "/", method: "GET" }).catch(console.error);
+
+// Prints
+// HeadersOverflowError: Headers Overflow Error
+//     at Parser.trackHeader (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:466:33)
+//     at Parser.onHeaderValue (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:455:10)
+//     at wasm_on_header_value (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:142:30)
+//     at wasm://wasm/00034eea:wasm-function[49]:0x994b
+//     at wasm://wasm/00034eea:wasm-function[20]:0x7edc
+//     at Parser.execute (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:337:22)
+//     at Parser.readMore (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:301:12)
+//     at Socket.onHttpSocketReadable (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:883:18)
+//     at Socket.emit (node:events:508:28)
+//     at emitReadable_ (node:internal/streams/readable:836:12) {
+//   code: 'UND_ERR_HEADERS_OVERFLOW'
+// }
+```
+
+## ClientOptions.maxResponseSize
+
+Client 設定 `maxResponseSize: 100` 之後，我把我測過的交乘情境都整理在這張表上
+
+| Server declare      | Server actual send | Client Behavior                                                      |
+| ------------------- | ------------------ | -------------------------------------------------------------------- |
+| Content-Length: 100 | 101 bytes          | Receive 100 bytes as body and close the TCP Connection               |
+| Content-Length: 100 | 100 bytes          | Receive 100 bytes as body                                            |
+| Content-Length: 100 | 0 ~ 99 bytes       | Wait for 100 bytes until someone close the TCP Connection            |
+| Content-Length: 101 | 101 bytes          | Throws [ResponseExceededMaxSizeError](#responseexceededmaxsizeerror) |
+
+| Server declare             | Server actual send                 | Client Behavior                                                      |
+| -------------------------- | ---------------------------------- | -------------------------------------------------------------------- |
+| Transfer-Encoding: chunked | 101 bytes                          | Throws [ResponseExceededMaxSizeError](#responseexceededmaxsizeerror) |
+| Transfer-Encoding: chunked | 100 bytes                          | Receive 100 bytes as body                                            |
+| Transfer-Encoding: chunked | 0 ~ 99 bytes                       | Receive 0 ~ 99 bytes as body                                         |
+| Transfer-Encoding: chunked | 0 ~ 99 bytes (without `0\r\n\r\n`) | Wait for 100 bytes until someone close the TCP Connection            |
+
+:::info
+`0\r\n\r\n` 是 `Transfer-Encoding: chunked` 的 end signal，其語意是 "body 到這邊結束"
+:::
+
+### ResponseExceededMaxSizeError
+
+```js
+ResponseExceededMaxSizeError: Response content exceeded max size
+    at Parser.onBody (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:653:28)
+    at wasm_on_body (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:164:30)
+    at wasm://wasm/00034eea:wasm-function[50]:0x998a
+    at wasm://wasm/00034eea:wasm-function[20]:0x87ae
+    at Parser.execute (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:337:22)
+    at Parser.readMore (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:301:12)
+    at Socket.onHttpSocketReadable (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:883:18)
+    at Socket.emit (node:events:508:28)
+    at emitReadable_ (node:internal/streams/readable:836:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  code: 'UND_ERR_RES_EXCEEDED_MAX_SIZE'
+}
+```
+
+Trace 原始碼的實作
+
+```js
+class Parser {
+  onBody(buf) {
+    // ...省略
+
+    if (maxResponseSize > -1 && this.bytesRead + buf.length > maxResponseSize) {
+      util.destroy(socket, new ResponseExceededMaxSizeError());
+      return -1;
+    }
+
+    this.bytesRead += buf.length;
+
+    // ...省略
+  }
+}
+```
+
+## ClientOptions.strictContentLength
+
+概念同 `node:http` 的 [ServerResponse.strictContentLength](./http-strictContentLength.md)
+
+- `ClientOptions.strictContentLength`：檢查 request header 的 `Content-Length` 跟 request body 實際送出的 bytes 一樣，否則拋錯
+- `ServerResponse.strictContentLength`：檢查 response header 的 `Content-Length` 跟 response body 實際送出的 bytes 一樣，否則拋錯
+
+用 `Readable.from` 來製造一個 Content-Length mismatch 的情境：
+
+```js
+const server = net.createServer();
+server.listen(5000);
+
+const client = new Client("http://localhost:5000");
+
+await client
+  .request({
+    path: "/",
+    method: "GET",
+    headers: { "content-length": "1" },
+    body: Readable.from(["12"]),
+  })
+  .catch(console.log);
+// RequestContentLengthMismatchError: Request body length does not match content-length header
+//     at AsyncWriter.write (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:1497:15)
+//     at Readable.onData (\undici@7.22.0\node_modules\undici\lib\dispatcher\client-h1.js:1199:19)
+//     at Readable.emit (node:events:508:28)
+//     at Readable.read (node:internal/streams/readable:784:10)
+//     at flow (node:internal/streams/readable:1290:53)
+//     at emitReadable_ (node:internal/streams/readable:849:3)
+//     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+//   code: 'UND_ERR_REQ_CONTENT_LENGTH_MISMATCH'
+// }
+```
+
+## keepAlive related settings
+
+- `keepAliveTimeoutThreshold`: 概念同 http.Agent 的 [agentKeepAliveTimeoutBuffer](./http-agent.md#new-httpagentoptions)
+- `keepAliveTimeout`
+- `keepAliveMaxTimeout`
+
+概念如下
+
+```mermaid
+sequenceDiagram
+  participant c as Client
+  participant s as Server
+
+  Note Over c: Set keepAliveTimeout = 4000, keepAliveMaxTimeout = 600000
+  c ->> s: GET / HTTP/1.1<br/>Connection: keep-alive
+  s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>keep-alive: timeout=5
+  Note Over c: Override keepAliveTimeout to server declared 5000ms
+
+  c ->> s: GET / HTTP/1.1<br/>Connection: keep-alive
+  s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>keep-alive: timeout=10000000
+  Note Over c: Override keepAliveTimeout to 600000<br/>because 10000000 exceeds keepAliveMaxTimeout
+```
+
+<!-- 設定以下
+- `keepAliveTimeout = 4000`
+- `keepAliveMaxTimeout = 5000`
+- `keepAliveTimeoutThreshold = 2000` -->
+
+PoC 如下
+
+```js
+const server = http.createServer((req, res) => {
+  res.end();
+});
+server.keepAliveTimeout = 1000; // ✅ 動態調整這行
+server.listen(5000);
+const client = new Client("http://localhost:5000", {
+  keepAliveTimeout: 4000,
+  keepAliveMaxTimeout: 5000,
+  keepAliveTimeoutThreshold: 2000,
+});
+const response = await client.request({ path: "/", method: "GET" });
+console.log(response.headers);
+```
+
+測試方式：用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察 Client 發送 FIN 封包的時間點
+
+測過的交乘情境都整理在這張表：
+
+| Server declared keep-alive | Actual behavior                                                     |
+| -------------------------- | ------------------------------------------------------------------- |
+| timeout=10                 | Client close the TCP Connection after 5000 ms (keepAliveMaxTimeout) |
+| timeout=7                  | Client close the TCP Connection after 5000 ms (7000 - 2000)         |
+| timeout=5                  | Client close the TCP Connection after 3000 ms (5000 - 2000)         |
+| timeout=4                  | Client close the TCP Connection after 2000 ms (4000 - 2000)         |
+| timeout=2                  | Client close the TCP Connection immediately (2000 - 2000)           |
+| timeout=1                  | Client close the TCP Connection immediately                         |
+
+看看原始碼的實作，測試出的行為確實符合預期
+
+```js
+// lib/dispatcher/client-h1.js
+
+const timeout = Math.min(
+  keepAliveTimeout - client[kKeepAliveTimeoutThreshold],
+  client[kKeepAliveMaxTimeout],
+);
+```
