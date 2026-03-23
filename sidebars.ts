@@ -64,6 +64,7 @@ const sidebars: SidebarsConfig = {
         "http/http-version-negotiation",
         "http/m3u8",
         "http/npm-http-chain-1",
+        "http/response-misbinding",
         // "http/from-http-to-vite-preview",
         // "http/node-http-proxy",
         // "http/sentry",
