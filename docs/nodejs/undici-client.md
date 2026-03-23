@@ -492,6 +492,8 @@ sequenceDiagram
 
 PoC 如下
 
+1. `node:http.Server` 固定會回傳 `keep-alive: timeout=x` 這個 response header
+
 ```js
 const server = http.createServer((req, res) => {
   res.end();
@@ -504,7 +506,26 @@ const client = new Client("http://localhost:5000", {
   keepAliveTimeoutThreshold: 2000,
 });
 const response = await client.request({ path: "/", method: "GET" });
-console.log(response.headers);
+console.log(response.headers); // { connection: 'keep-alive', 'keep-alive': 'timeout=1', ... }
+```
+
+2. 若要把 `keep-alive` 這個 response header 拿掉，建議改用 `node:net` 來架 server
+
+```js
+const server = net.createServer();
+server.on("connection", (socket) => {
+  socket.on("data", () =>
+    socket.write(
+      "HTTP/1.1 200 OK\r\n" +
+        "Connection: keep-alive\r\n" +
+        "Content-Length: 0\r\n" +
+        "\r\n",
+    ),
+  );
+});
+server.listen(5000);
+
+// ... client code 不變
 ```
 
 測試方式：用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察 Client 發送 FIN 封包的時間點
@@ -519,14 +540,18 @@ console.log(response.headers);
 | timeout=4                  | Client close the TCP Connection after 2000 ms (4000 - 2000)         |
 | timeout=2                  | Client close the TCP Connection immediately (2000 - 2000)           |
 | timeout=1                  | Client close the TCP Connection immediately                         |
+| undefined                  | Client close the TCP Connection after 4000 ms                       |
 
 看看原始碼的實作，測試出的行為確實符合預期
 
 ```js
 // lib/dispatcher/client-h1.js
 
-const timeout = Math.min(
-  keepAliveTimeout - client[kKeepAliveTimeoutThreshold],
-  client[kKeepAliveMaxTimeout],
-);
+if (keepAliveTimeout != null) {
+  const timeout = Math.min(
+    keepAliveTimeout - client[kKeepAliveTimeoutThreshold],
+    client[kKeepAliveMaxTimeout],
+  );
+  // ...省略
+}
 ```
