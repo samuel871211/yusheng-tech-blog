@@ -2,7 +2,7 @@
 title: "undici Class Client"
 description: "undici Class Client"
 last_update:
-  date: "2026-03-22T08:00:00+08:00"
+  date: "2026-03-23T08:00:00+08:00"
 ---
 
 Client 代表的是一個 TCP/TLS 連線的封裝
@@ -25,9 +25,9 @@ const client = new Client(url[, ClientOptions]);
 
 HTTP/1.1 only options：
 
-| Option     | Description |
-| ---------- | ----------- |
-| pipelining |             |
+| Option                                               |
+| ---------------------------------------------------- |
+| [pipelining](./undici.md#supports-http11-pipelining) |
 
 HTTP/2 only options：
 
@@ -40,21 +40,23 @@ HTTP/2 only options：
 | connectionWindowSize |             |
 | pingInterval         |             |
 
+<!-- todo-yus 等 http/2 文章搞定再來 -->
+
 General options：
 
-| Option                                                   | Description |
-| -------------------------------------------------------- | ----------- |
-| [bodyTimeout](#clientoptionsbodytimeout)                 |             |
-| [headersTimeout](#clientoptionsheaderstimeout)           |             |
-| [keepAliveMaxTimeout](#keepalive-related-settings)       |             |
-| [keepAliveTimeout](#keepalive-related-settings)          |             |
-| [keepAliveTimeoutThreshold](#keepalive-related-settings) |             |
-| [maxHeaderSize](#maxheadersize)                          |             |
-| [maxResponseSize](#maxresponsesize)                      |             |
-| connect                                                  |             |
-| [strictContentLength](#clientoptionsstrictcontentlength) |             |
-| autoSelectFamily                                         |             |
-| autoSelectFamilyAttemptTimeout                           |             |
+| Option                                                                |
+| --------------------------------------------------------------------- |
+| [bodyTimeout](#clientoptionsbodytimeout)                              |
+| [headersTimeout](#clientoptionsheaderstimeout)                        |
+| [keepAliveMaxTimeout](#keepalive-related-settings)                    |
+| [keepAliveTimeout](#keepalive-related-settings)                       |
+| [keepAliveTimeoutThreshold](#keepalive-related-settings)              |
+| [maxHeaderSize](#maxheadersize)                                       |
+| [maxResponseSize](#maxresponsesize)                                   |
+| [connect](#clientoptionsconnect)                                      |
+| [strictContentLength](#clientoptionsstrictcontentlength)              |
+| [autoSelectFamily](#autoselectfamily-releated-settings)               |
+| [autoSelectFamilyAttemptTimeout](#autoselectfamily-releated-settings) |
 
 ## ClientOptions.headersTimeout
 
@@ -555,3 +557,24 @@ if (keepAliveTimeout != null) {
   // ...省略
 }
 ```
+
+## autoSelectFamily releated settings
+
+- `autoSelectFamily`: [net.connect](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的參數
+- `autoSelectFamilyAttemptTimeout`: [net.connect](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的參數
+
+詳細我在 [TCP "Client" Socket 生命週期 2: connect](./socket-life-cycle.md#tcp-client-socket-生命週期-2-connect) 有介紹過，這邊就不贅述
+
+## ClientOptions.connect
+
+概念類似 [agent.createConnection](https://nodejs.org/docs/latest-v24.x/api/http.html#agentcreateconnectionoptions-callback)，自己控制較為細緻的 TCP / TLS 連線流程
+
+<!-- todo-yus 先讀完 Dispatcher -->
+<!-- ## Instance Methods -->
+<!-- ## Instance Properties -->
+<!-- ## Instance Events -->
+<!-- ## Events -->
+
+## 參考資料
+
+- https://undici.nodejs.org/#/docs/api/Client.md

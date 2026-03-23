@@ -157,7 +157,7 @@ class Parser {
 }
 ```
 
-## 支援 HTTP/1.1 pipelining
+## Supports HTTP/1.1 pipelining
 
 `node:http` 不支援 HTTP/1.1 pipelining，其設計哲學是：
 
