@@ -68,6 +68,7 @@ const sidebars: SidebarsConfig = {
         // "http/node-http-proxy",
         // "http/sentry",
         // "http/webdav",
+        // "http/expect-based-desync-attacks"
         "http/http-2", // 可拆 ing
 
         // "http/service-worker-allowed",
@@ -120,6 +121,7 @@ const sidebars: SidebarsConfig = {
         "port-swigger/graphql",
         "port-swigger/race-conditions",
         "port-swigger/http-request-smuggling",
+        "port-swigger/mystery-lab-challenge",
       ],
     },
     {
@@ -137,6 +139,9 @@ const sidebars: SidebarsConfig = {
         // "web-security/nmap-mysql-scripts",
         // "web-security/CVE-2024-4577",
         // "web-security/pkcs7",
+        // "web-security/gopher",
+        // "web-security/hacker-mindset",
+        // "web-security/sqlmap",
         "web-security/word-press",
         "web-security/word-press-xml-rpc",
         "web-security/cases-you-should-use-burp-suite",
@@ -158,6 +163,8 @@ const sidebars: SidebarsConfig = {
         // "web-tech/tracking-user-activation",
         // "web-tech/jwt",
         // "web-tech/oauth",
+        // "web-tech/ip",
+        // "web-tech/uri",
         "web-tech/javascript",
         "web-tech/unicode-utf8-utf16",
         "web-tech/ABNF-cheat-sheet",
@@ -213,6 +220,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-timeout",
         "nodejs/http-destroy",
         "nodejs/http_proxy",
+        // "nodejs/https_proxy",
         "nodejs/http-uncommon-features",
         "nodejs/undici",
         "nodejs/undici-client",
