@@ -225,6 +225,8 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-uncommon-features",
         "nodejs/undici",
         "nodejs/undici-client",
+        "nodejs/undici-dispatcher",
+        "nodejs/undici-client-lifecycle",
       ],
     },
     {
