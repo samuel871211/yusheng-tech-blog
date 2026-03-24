@@ -227,6 +227,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/undici-client",
         "nodejs/undici-dispatcher",
         "nodejs/undici-client-lifecycle",
+        "nodejs/destroy-socket-after-head",
       ],
     },
     {

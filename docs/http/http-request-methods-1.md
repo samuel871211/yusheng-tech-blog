@@ -364,7 +364,9 @@ httpServer.on(
 
 P.S. 若對 Raw HTTP Request 跟 Response 不熟悉的朋友，可參考 [anatomy-of-an-http-message](../http/anatomy-of-an-http-message.md) 這篇文章～
 
-我把整個 Round Trip 畫成循序圖，方便大家了解
+### Round Trip 時序圖
+
+我把整個 Round Trip 畫成時序圖，方便大家了解
 
 ```mermaid
 sequenceDiagram
