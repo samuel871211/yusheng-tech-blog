@@ -1,8 +1,8 @@
 ---
-title: "為何 undici 跟 node:http 都選擇在 HEAD 請求之後關閉連線？"
-description: "為何 undici 跟 node:http 都選擇在 HEAD 請求之後關閉連線？"
+title: "為何 undici 選擇在 HEAD 請求之後關閉連線？"
+description: "比較 undici 跟 node:http 處理 HEAD 請求的差異"
 last_update:
-  date: "2026-03-24T08:00:00+08:00"
+  date: "2026-03-25T08:00:00+08:00"
 ---
 
 ## 前言
@@ -290,4 +290,14 @@ If a client receives data on a connection that doesn't have outstanding requests
 1. 下一個 HTTP Response
 2. 其實是 response body
 
-所以 undici 選擇直接關閉連線，這是較為安全的做法
+**所以 undici 選擇直接關閉連線，這是較為安全的做法**
+
+## 小結
+
+當收到 HEAD 請求的 HTTP Response 時，我把 undici 跟 node:http 根據不同情境的處理方式，整理成下表：
+
+|                                                                                                               | undici                   | node:http                     |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------- |
+| HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 0<br/><br/>          | Close the TCP Connection | Keep the TCP Connection alive |
+| HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Transfer-Encoding: chunked<br/><br/> | Close the TCP Connection | Keep the TCP Connection alive |
+| HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/><br/>                                | Close the TCP Connection | Keep the TCP Connection alive |
