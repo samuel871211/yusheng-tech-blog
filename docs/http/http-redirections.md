@@ -23,9 +23,9 @@ The server's response payload usually contains a short hypertext note with a hyp
 
 ### 301 Moved Permanently
 
-- 轉導的 HTTP Request 統一用 GET METHOD 來做導轉，若有 Body 會被捨棄
+**轉導的 HTTP Request 統一用 GET Method 來做導轉，若有 body 會被捨棄**
 
-我們使用 NodeJS HTTP Server 實作（但我們不按照 RFC7231 的建議）
+我們使用 Node.js `http.Server` 實作
 
 ```ts
 import httpServer from "../httpServer";
@@ -55,6 +55,7 @@ httpServer.on("request", function requestListener(req, res) {
   if (req.url === "/301") {
     res.statusCode = 301;
     res.setHeader("location", "http://localhost:5000");
+    // 我們不按照 RFC7231 的建議，直接回傳空的 body
     res.end();
     return;
   }
@@ -62,10 +63,10 @@ httpServer.on("request", function requestListener(req, res) {
 });
 ```
 
-先用瀏覽器打開 http://localhost:5000/301 做個簡單的 GET 請求
+先用瀏覽器打開 http://localhost:5000/301 做個簡單的 GET 請求，導轉後確實是 GET + 空的 body
 ![301-get](../../static/img/301-get.jpg)
 
-再來用 fetch 做個 Post + Body 的請求
+再來用 fetch 做個 POST + body 的請求
 
 ```js
 fetch("http://localhost:5000/301", {
@@ -78,15 +79,15 @@ fetch("http://localhost:5000/301", {
   .then((body) => console.log(body));
 ```
 
-轉導的 HTTP Request 確實變成 GET，且 Body 被捨棄
+轉導的 HTTP Request 確實變成 GET，且 body 被捨棄
 ![301-post](../../static/img/301-post.jpg)
 
 ### 308 Permanent Redirect
 
-- 轉導的 HTTP Request Method 跟 Body 不變
-- 使用古老 `<form method="POST" action="http://localhost:5000/308">` 技術的網站，若網站網址更動，就會需要用到 308，而不是 301，也算是為了向後兼容（backward compatibility）
+- 轉導的 HTTP Request Method 跟 body 不變
+- 使用古老 `<form method="POST" action="http://localhost:5000/308">` 技術的網站，若網站網址更動，就會需要用到 308，而不是 301，也算是為了向後兼容（backward compatibility），否則 body 會在轉導過程遺失
 
-新增以下 NodeJS 程式碼
+新增以下 Node.js 程式碼
 
 ```ts
 if (req.url === "/308") {
@@ -97,7 +98,7 @@ if (req.url === "/308") {
 }
 ```
 
-再來用 fetch 做個 Post + Body 的請求
+再來用 fetch 做個 POST + body 的請求
 
 ```js
 fetch("http://localhost:5000/308", {
@@ -110,7 +111,7 @@ fetch("http://localhost:5000/308", {
   .then((body) => console.log(body));
 ```
 
-轉導的 HTTP Request Method 跟 Body 確實不變
+轉導的 HTTP Request Method 跟 body 確實不變
 ![308-post](../../static/img/308-post.jpg)
 
 ## Temporary redirections
@@ -155,7 +156,7 @@ A request-body-header name is a header name that is a byte-case-insensitive matc
 
 - 我的建議，根據不同情況使用 [303](#303-see-other) 跟 [307](#307-temporary-redirect)
 
-新增以下 NodeJS 程式碼
+新增以下 Node.js 程式碼
 
 ```ts
 if (req.url === "/302") {
@@ -169,7 +170,7 @@ if (req.url === "/302") {
 先用瀏覽器打開 http://localhost:5000/302 做個簡單的 GET 請求，確認 GET 請求維持不變
 ![302-get](../../static/img/302-get.jpg)
 
-再來用 fetch 做個 Post + Body 的請求
+再來用 fetch 做個 POST + body 的請求
 
 ```js
 fetch("http://localhost:5000/302", {
@@ -182,10 +183,10 @@ fetch("http://localhost:5000/302", {
   .then((body) => console.log(body));
 ```
 
-確實轉為 GET + 清空 Body 了
+確實轉為 GET + 清空 body 了
 ![302-post](../../static/img/302-post.jpg)
 
-繼續試試看用 fetch 做個 PUT + Body 的請求
+繼續試試看用 fetch 做個 PUT + body 的請求
 
 ```js
 fetch("http://localhost:5000/302", {
@@ -198,15 +199,15 @@ fetch("http://localhost:5000/302", {
   .then((body) => console.log(body));
 ```
 
-保持原本的 Request Method + Body
+保持原本的 Request Method + body
 ![302-put302-put](../../static/img/302-put.jpg)
 
 ### 303 See Other
 
-- 轉導的 HTTP Request 統一用 GET METHOD 來做導轉，若有 Body 會被捨棄，同 [301](#301-moved-permanently) 的行為
+- 轉導的 HTTP Request 統一用 GET Method 來做導轉，若有 body 會被捨棄，同 [301](#301-moved-permanently) 的行為
 - 使用情境： 用戶訂閱電子報 `<form method="POST" action="http://localhost:5000/subscribeEDM">` 後，使用 303 將用戶導到其他頁面（好像蠻合理的，但實務上我沒看過有網站這樣做）
 
-新增以下 NodeJS 程式碼
+新增以下 Node.js 程式碼
 
 ```ts
 if (req.url === "/303") {
@@ -217,7 +218,7 @@ if (req.url === "/303") {
 }
 ```
 
-再來用 fetch 做個 Post + Body 的請求
+再來用 fetch 做個 POST + body 的請求
 
 ```js
 fetch("http://localhost:5000/303", {
@@ -230,14 +231,14 @@ fetch("http://localhost:5000/303", {
   .then((body) => console.log(body));
 ```
 
-轉導的 HTTP Request 確實變成 GET，且 Body 被捨棄
+轉導的 HTTP Request 確實變成 GET，且 body 被捨棄
 ![303-post.jpg](../../static/img/303-post.jpg)
 
 ### 307 Temporary Redirect
 
-- 轉導的 HTTP Request Method 跟 Body 不變，，同 [308](#308-permanent-redirect) 的行為
+**轉導的 HTTP Request Method 跟 body 不變，，同 [308](#308-permanent-redirect) 的行為**
 
-新增以下 NodeJS 程式碼
+新增以下 Node.js 程式碼
 
 ```ts
 if (req.url === "/307") {
@@ -248,7 +249,7 @@ if (req.url === "/307") {
 }
 ```
 
-再來用 fetch 做個 Post + Body 的請求
+再來用 fetch 做個 POST + body 的請求
 
 ```js
 fetch("http://localhost:5000/307", {
@@ -261,14 +262,14 @@ fetch("http://localhost:5000/307", {
   .then((body) => console.log(body));
 ```
 
-轉導的 HTTP Request 確實變成 GET，且 Body 被捨棄
+轉導的 HTTP Request 確實變成 GET，且 body 被捨棄
 ![307-post.jpg](../../static/img/307-post.jpg)
 
 ## 3xx with no Location
 
 如果回傳 3xx，但沒有 Location Header，會發生什麼事情呢？
 
-新增以下 NodeJS 程式碼
+新增以下 Node.js 程式碼
 
 ```ts
 if (req.url === "/301-with-no-location") {
@@ -285,7 +286,7 @@ if (req.url === "/301-with-no-location") {
 
 如果回傳 200 + Location Header，會發生什麼事情呢？
 
-新增以下 NodeJS 程式碼
+新增以下 Node.js 程式碼
 
 ```ts
 if (req.url === "/200-with-location") {
@@ -305,7 +306,7 @@ if (req.url === "/200-with-location") {
 Status responses including a Location header: 201, 301, 302, 303, 307, 308.
 ```
 
-使用 201 看看，新增以下 NodeJS 程式碼
+使用 201 看看，新增以下 Node.js 程式碼
 
 ```ts
 if (req.url === "/201") {
@@ -319,7 +320,7 @@ if (req.url === "/201") {
 用瀏覽器打開 http://localhost:5000/201 做個簡單的 GET 請求，沒有成功轉導QQ
 ![201-get](../../static/img/201-get.jpg)
 
-由於 201 Created 通常用在 POST 請求新增資源，所以我們換成 POST + Null Body 試試看：
+由於 201 Created 通常用在 POST 請求新增資源，所以我們換成 POST + 空的 body 試試看：
 
 ```js
 fetch("http://localhost:5000/201", {
@@ -333,7 +334,7 @@ fetch("http://localhost:5000/201", {
 還是沒有轉導
 ![201-post-null-body](../../static/img/201-post-null-body.jpg)
 
-加個 Body 試試看：
+加個 body 試試看：
 
 ```js
 fetch("http://localhost:5000/201", {
@@ -363,7 +364,7 @@ This word, or the adjective "OPTIONAL", mean that an item is
 truly optional.
 ```
 
-結論：RFC 沒有明確禁止 HTTP Client 在 201 的時候使用 Location Header 轉導，但也沒有說 `MAY use the Location field value for automatic redirection`，實務上我沒看過 201 會轉導的，在 Response Body 回傳新建立的資源是比較常見的做法
+結論：RFC 沒有明確禁止 HTTP Client 在 201 的時候使用 Location Header 轉導，但也沒有說 `MAY use the Location field value for automatic redirection`，實務上我沒看過 201 會轉導的，在 Response body 回傳新建立的資源是比較常見的做法
 
 ## 小結
 
