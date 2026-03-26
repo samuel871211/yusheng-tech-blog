@@ -312,7 +312,12 @@ const response = await client.request({ method: "GET", path: "/" });
 - `Client` 若遇到 cross-origin redirects，會把 cross-origin 轉成 same-origin，並且保留 pathname 跟 query
 - `Agent` 可以用在 cross-origin redirects
 - `Agent` 若用在 cross-origin redirects，會把 `authorization`, `cookie`, `proxy-authorization` 移除（資安考量）
+- 支援 redirect 的 status codes = 300, 301, 302, 303, 307, 308
 - 有 follow [fetch.spec](https://fetch.spec.whatwg.org/#http-redirect-fetch)，301 or 302 with POST 會轉成 GET
+- 承上，303 且 HEAD 以外，會轉成 GET
+- 會把每一跳都記錄下來，如果偵測到 Redirect loop 就會拋錯，避免迴圈
+- 除了以上 "轉成 GET" 的情況會把 body 捨棄，其餘情況，皆會維持原本的 Method 跟 body
+- 承上，但如果是 `Transfer-Encoding: chunked` 則會直接跳出 redirect，並且回傳
 
 <!-- http server，所有路徑都回傳 300 + http://example.com
 
