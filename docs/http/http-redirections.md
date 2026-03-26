@@ -2,7 +2,7 @@
 title: HTTP 3xx status code & redirections
 description: 深入理解 3xx status code 的含意，以及 HTTP redirections
 last_update:
-  date: "2025-06-29T08:00:00+08:00"
+  date: "2026-03-26T08:00:00+08:00"
 ---
 
 ## 前言
@@ -15,10 +15,10 @@ last_update:
 - 例如，網站搬家，從 old.example.com 搬到 new.example.com
 - 搜尋引擎爬蟲收到 Permanent redirections 之後，，會將轉導的 URL 記錄下來（原網站的 SEO 會指到新網站）
 - 預設會被快取
-- 根據 [RFC7231](https://datatracker.ietf.org/doc/html/rfc7231#section-6.4.2) 的建議
+- 根據 [RFC9110](https://datatracker.ietf.org/doc/html/rfc9110#section-15.4.2) 的建議
 
 ```
-The server's response payload usually contains a short hypertext note with a hyperlink to the new URI(s).
+The server's response content usually contains a short hypertext note with a hyperlink to the new URI(s).
 ```
 
 ### 301 Moved Permanently
@@ -55,7 +55,7 @@ httpServer.on("request", function requestListener(req, res) {
   if (req.url === "/301") {
     res.statusCode = 301;
     res.setHeader("location", "http://localhost:5000");
-    // 我們不按照 RFC7231 的建議，直接回傳空的 body
+    // 我們不按照 RFC9110 的建議，直接回傳空的 body
     res.end();
     return;
   }
@@ -373,7 +373,6 @@ truly optional.
 ## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
-- https://datatracker.ietf.org/doc/html/rfc7231
 - https://www.rfc-editor.org/rfc/rfc9110
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/201
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/301
