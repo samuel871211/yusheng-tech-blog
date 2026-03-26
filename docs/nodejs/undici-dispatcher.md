@@ -293,6 +293,96 @@ const upggradeData = await client
 
 ## Pre-built interceptors
 
+### redirect
+
+語法很簡單，如下
+
+```js
+import { Client, interceptors } from "undici";
+
+const client = new Client("http://localhost:5000").compose(
+  interceptors.redirect({ maxRedirections: 3 }),
+);
+const response = await client.request({ method: "GET", path: "/" });
+```
+
+由於實測的交乘情境很多，程式碼全放的話會很長，所以我把一些觀察到的重點列出來：
+
+- `Client` 只能用在 same-origin redirects
+- `Client` 若遇到 cross-origin redirects，會把 cross-origin 轉成 same-origin，並且保留 pathname 跟 query
+- `Agent` 可以用在 cross-origin redirects
+- `Agent` 若用在 cross-origin redirects，會把 `authorization`, `cookie`, `proxy-authorization` 移除（資安考量）
+- 有 follow [fetch.spec](https://fetch.spec.whatwg.org/#http-redirect-fetch)，301 or 302 with POST 會轉成 GET
+
+<!-- http server，所有路徑都回傳 300 + http://example.com
+
+```js
+const server = http.createServer();
+server.listen(5000);
+server.on("request", (req, res) => {
+  console.log(req.url);
+  res.statusCode = 300;
+  res.setHeader("Location", "http://example.com");
+  res.end();
+  return;
+});
+```
+
+在第三次的時候，噴了以下錯誤
+
+```js
+/
+/
+InvalidArgumentError: Redirect loop detected. Cannot redirect to http://example.com. This typically happens when using a Client or Pool with cross-origin redirects. Use an Agent for cross-origin redirects.
+    at RedirectHandler.onResponseStart (/undici@7.24.5/node_modules/undici/lib/handler/redirect-handler.js:142:15)
+    at UnwrapHandler.onHeaders (/undici@7.24.5/node_modules/undici/lib/handler/unwrap-handler.js:80:36)
+    at Request.onHeaders (/undici@7.24.5/node_modules/undici/lib/core/request.js:269:29)
+    at Parser.onHeadersComplete (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:608:27)
+    at wasm_on_headers_complete (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:153:30)
+    at wasm://wasm/00034eea:wasm-function[10]:0x571
+    at wasm://wasm/00034eea:wasm-function[20]:0x845f
+    at Parser.execute (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:337:22)
+    at Parser.readMore (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:301:12)
+    at Socket.onHttpSocketReadable (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:884:18) {
+  code: 'UND_ERR_INVALID_ARG'
+}
+```
+
+調整 `http.Server`，只有 `/300` 路徑才回傳 300 + http://example.com/test
+
+```js
+const server = http.createServer();
+server.listen(5000);
+server.on("request", (req, res) => {
+  console.log(req.url);
+  if (req.url === "/300") {
+    res.statusCode = 300;
+    res.setHeader("Location", "http://example.com/test");
+    res.end();
+    return;
+  }
+  if (!res.writableEnded) return res.end("fallback");
+});
+```
+
+同時讓 http client 去戳 `/300`
+
+```js
+const client = new Client("http://localhost:5000").compose(
+  interceptors.redirect({ maxRedirections: 3 }),
+);
+const response = await client.request({ method: "GET", path: "/300" });
+console.log(await response.body.text());
+```
+
+實測結果，因為 `Client` 只能連到 `http://localhost:5000` 這個 origin，所以 `http://example.com/test` 會被改成 `http://localhost:5000/test`
+
+```js
+/300
+/test
+fallback
+``` -->
+
 ## 參考資料
 
 - https://undici.nodejs.org/#/docs/api/Dispatcher.md
