@@ -306,18 +306,141 @@ const client = new Client("http://localhost:5000").compose(
 const response = await client.request({ method: "GET", path: "/" });
 ```
 
-由於實測的交乘情境很多，程式碼全放的話會很長，所以我把一些觀察到的重點列出來：
+我把一些觀察到的重點列出來：
 
-- `Client` 只能用在 same-origin redirects
-- `Client` 若遇到 cross-origin redirects，會把 cross-origin 轉成 same-origin，並且保留 pathname 跟 query
-- `Agent` 可以用在 cross-origin redirects
-- `Agent` 若用在 cross-origin redirects，會把 `authorization`, `cookie`, `proxy-authorization` 移除（資安考量）
-- 支援 redirect 的 status codes = 300, 301, 302, 303, 307, 308
-- 有 follow [fetch.spec](https://fetch.spec.whatwg.org/#http-redirect-fetch)，301 or 302 with POST 會轉成 GET
-- 承上，303 且 HEAD 以外，會轉成 GET
+1. `Client` 只能用在 same-origin redirects
+
+```js
+// lib/dispatcher/client.js
+class Client extends DispatcherBase {
+  constructor (url, {
+    ...
+  }) {
+    this[kUrl] = util.parseOrigin(url)
+  }
+  [kDispatch] (opts, handler) {
+    // Client 發送請求時，會強制把 origin 覆寫
+    const request = new Request(this[kUrl].origin, opts, handler)
+  }
+}
+```
+
+2. `Client` 若遇到 cross-origin redirects，會把 cross-origin 轉成 same-origin，並且保留 pathname 跟 query
+3. `Agent` 可以用在 cross-origin redirects
+4. `Agent` 若用在 cross-origin redirects，會把 `authorization`, `cookie`, `proxy-authorization` 移除（資安考量）
+
+```js
+// lib/handler/redirect-handler.js
+
+function shouldRemoveHeader(header, removeContent, unknownOrigin) {
+  if (
+    unknownOrigin &&
+    (header.length === 13 || header.length === 6 || header.length === 19)
+  ) {
+    const name = util.headerNameToString(header);
+    return (
+      name === "authorization" ||
+      name === "cookie" ||
+      name === "proxy-authorization"
+    );
+  }
+  return false;
+}
+```
+
+5. 支援 redirect 的 status codes = 300, 301, 302, 303, 307, 308
+
+```js
+// lib/handler/redirect-handler.js
+
+const redirectableStatusCodes = [300, 301, 302, 303, 307, 308];
+```
+
+6. 有 follow [fetch.spec](https://fetch.spec.whatwg.org/#http-redirect-fetch)，301 or 302 with POST 會轉成 GET
+
+```js
+// lib/handler/redirect-handler.js
+
+class RedirectHandler {
+  onResponseStart(controller, statusCode, headers, statusMessage) {
+    if (
+      (statusCode === 301 || statusCode === 302) &&
+      this.opts.method === "POST"
+    ) {
+      this.opts.method = "GET";
+      if (util.isStream(this.opts.body)) {
+        util.destroy(this.opts.body.on("error", noop));
+      }
+      this.opts.body = null;
+    }
+  }
+}
+```
+
+- 承上，303 且 HEAD 以外，會轉成 GET，並且把 `Content-*` headers 移除
+
+```js
+// lib/handler/redirect-handler.js
+
+class RedirectHandler {
+  onResponseStart(controller, statusCode, headers, statusMessage) {
+    if (statusCode === 303 && this.opts.method !== "HEAD") {
+      this.opts.method = "GET";
+      if (util.isStream(this.opts.body)) {
+        util.destroy(this.opts.body.on("error", noop));
+      }
+      this.opts.body = null;
+    }
+
+    // Remove headers referring to the original URL.
+    // By default it is Host only, unless it's a 303 (see below), which removes also all Content-* headers.
+    // https://tools.ietf.org/html/rfc7231#section-6.4
+    this.opts.headers = cleanRequestHeaders(
+      this.opts.headers,
+      statusCode === 303,
+      this.opts.origin !== origin,
+    );
+  }
+}
+
+function shouldRemoveHeader(header, removeContent, unknownOrigin) {
+  if (removeContent && util.headerNameToString(header).startsWith("content-")) {
+    return true;
+  }
+}
+```
+
 - 會把每一跳都記錄下來，如果偵測到 Redirect loop 就會拋錯，避免迴圈
+
+```js
+class RedirectHandler {
+  onResponseStart(controller, statusCode, headers, statusMessage) {
+    const { origin, pathname, search } = util.parseURL(
+      new URL(
+        this.location,
+        this.opts.origin && new URL(this.opts.path, this.opts.origin),
+      ),
+    );
+    const path = search ? `${pathname}${search}` : pathname;
+
+    // Check for redirect loops by seeing if we've already visited this URL in our history
+    // This catches the case where Client/Pool try to handle cross-origin redirects but fail
+    // and keep redirecting to the same URL in an infinite loop
+    const redirectUrlString = `${origin}${path}`;
+    for (const historyUrl of this.history) {
+      if (historyUrl.toString() === redirectUrlString) {
+        throw new InvalidArgumentError(
+          `Redirect loop detected. Cannot redirect to ${origin}. This typically happens when using a Client or Pool with cross-origin redirects. Use an Agent for cross-origin redirects.`,
+        );
+      }
+    }
+  }
+}
+```
+
 - 除了以上 "轉成 GET" 的情況會把 body 捨棄，其餘情況，皆會維持原本的 Method 跟 body
 - 承上，但如果是 `Transfer-Encoding: chunked` 則會直接跳出 redirect，並且回傳
+<!-- todo-yus -->
 
 <!-- http server，所有路徑都回傳 300 + http://example.com
 
