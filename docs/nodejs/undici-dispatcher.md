@@ -309,6 +309,7 @@ const response = await client.request({ method: "GET", path: "/" });
 我把一些觀察到的重點列出來：
 
 1. `Client` 只能用在 same-origin redirects
+2. `Client` 若遇到 cross-origin redirects，會把 cross-origin 轉成 same-origin，並且保留 pathname 跟 query
 
 ```js
 // lib/dispatcher/client.js
@@ -325,7 +326,6 @@ class Client extends DispatcherBase {
 }
 ```
 
-2. `Client` 若遇到 cross-origin redirects，會把 cross-origin 轉成 same-origin，並且保留 pathname 跟 query
 3. `Agent` 可以用在 cross-origin redirects
 4. `Agent` 若用在 cross-origin redirects，會把 `authorization`, `cookie`, `proxy-authorization` 移除（資安考量）
 
@@ -377,7 +377,7 @@ class RedirectHandler {
 }
 ```
 
-- 承上，303 且 HEAD 以外，會轉成 GET，並且把 `Content-*` headers 移除
+7. 承上，303 且 HEAD 以外，會轉成 GET，並且把 `Content-*` headers 移除
 
 ```js
 // lib/handler/redirect-handler.js
@@ -410,7 +410,7 @@ function shouldRemoveHeader(header, removeContent, unknownOrigin) {
 }
 ```
 
-- 會把每一跳都記錄下來，如果偵測到 Redirect loop 就會拋錯，避免迴圈
+8. 會把每一跳都記錄下來，如果偵測到 Redirect loop 就會拋錯，避免迴圈
 
 ```js
 class RedirectHandler {
@@ -438,8 +438,70 @@ class RedirectHandler {
 }
 ```
 
-- 除了以上 "轉成 GET" 的情況會把 body 捨棄，其餘情況，皆會維持原本的 Method 跟 body
-- 承上，但如果是 `Transfer-Encoding: chunked` 則會直接跳出 redirect，並且回傳
+9. `throwOnMaxRedirect` 在[官方文件](https://undici.nodejs.org/#/docs/api/Dispatcher?id=redirect)有出現，但實際上沒有傳入 `RedirectHandler`，算是一個 undici 的技術債，到目前都還沒修正
+
+- [feat: implement throwOnMaxRedirect option for RedirectHandler](https://github.com/nodejs/undici/pull/2563)
+- [fix: update redirect handler options handling, docs, tests](https://github.com/nodejs/undici/pull/4377)
+
+10. 除了以上 "轉成 GET" 的情況會把 body 捨棄，其餘情況，皆會維持原本的 Method 跟 body
+11. 承上，但如果是 `Transfer-Encoding: chunked` 則會直接跳出 redirect，並且回傳
+
+```js
+// http server
+const server = http.createServer();
+server.listen(5000);
+server.on("request", (req, res) => {
+  console.log("server receives", req.method, req.url, req.headers);
+  req.setEncoding("latin1");
+  req.on("data", console.log);
+  if (req.url === "/301") {
+    res.statusCode = 301;
+    res.setHeader("Location", "http://localhost:5000/302");
+    res.end("301");
+    return;
+  }
+});
+
+// http client
+const client = new Agent().compose(
+  interceptors.redirect({ maxRedirections: 3 }),
+);
+const response = await client.request({
+  // PUT + body + 301 => 理論上要維持原本的 Method 跟 body
+  method: "PUT",
+  path: "/301",
+  origin: "http://localhost:5000",
+  body: Readable.from(["12"]),
+  headers: { authorization: "123", test: "456" },
+});
+console.log(
+  "client receives",
+  response.statusCode,
+  response.headers,
+  await response.body.text(),
+);
+```
+
+最終沒有轉導，而是直接把 301 response 回給使用者
+
+```js
+server receives PUT /301 {
+  host: 'localhost:5000',
+  connection: 'keep-alive',
+  authorization: '123',
+  test: '456',
+  'transfer-encoding': 'chunked'
+}
+12
+client receives 301 {
+  location: 'http://localhost:5000/302',
+  date: 'Sat, 28 Mar 2026 00:34:31 GMT',
+  connection: 'keep-alive',
+  'keep-alive': 'timeout=5',
+  'content-length': '3'
+} 301
+```
+
 <!-- todo-yus -->
 
 <!-- http server，所有路徑都回傳 300 + http://example.com
