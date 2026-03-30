@@ -471,6 +471,7 @@ const response = await client.request({
   method: "PUT",
   path: "/301",
   origin: "http://localhost:5000",
+  // 但因為我們使用 `Readable.from`，所以會使用 transfer-encoding: chunked 來傳輸
   body: Readable.from(["12"]),
   headers: { authorization: "123", test: "456" },
 });
@@ -501,77 +502,6 @@ client receives 301 {
   'content-length': '3'
 } 301
 ```
-
-<!-- todo-yus -->
-
-<!-- http server，所有路徑都回傳 300 + http://example.com
-
-```js
-const server = http.createServer();
-server.listen(5000);
-server.on("request", (req, res) => {
-  console.log(req.url);
-  res.statusCode = 300;
-  res.setHeader("Location", "http://example.com");
-  res.end();
-  return;
-});
-```
-
-在第三次的時候，噴了以下錯誤
-
-```js
-/
-/
-InvalidArgumentError: Redirect loop detected. Cannot redirect to http://example.com. This typically happens when using a Client or Pool with cross-origin redirects. Use an Agent for cross-origin redirects.
-    at RedirectHandler.onResponseStart (/undici@7.24.5/node_modules/undici/lib/handler/redirect-handler.js:142:15)
-    at UnwrapHandler.onHeaders (/undici@7.24.5/node_modules/undici/lib/handler/unwrap-handler.js:80:36)
-    at Request.onHeaders (/undici@7.24.5/node_modules/undici/lib/core/request.js:269:29)
-    at Parser.onHeadersComplete (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:608:27)
-    at wasm_on_headers_complete (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:153:30)
-    at wasm://wasm/00034eea:wasm-function[10]:0x571
-    at wasm://wasm/00034eea:wasm-function[20]:0x845f
-    at Parser.execute (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:337:22)
-    at Parser.readMore (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:301:12)
-    at Socket.onHttpSocketReadable (/undici@7.24.5/node_modules/undici/lib/dispatcher/client-h1.js:884:18) {
-  code: 'UND_ERR_INVALID_ARG'
-}
-```
-
-調整 `http.Server`，只有 `/300` 路徑才回傳 300 + http://example.com/test
-
-```js
-const server = http.createServer();
-server.listen(5000);
-server.on("request", (req, res) => {
-  console.log(req.url);
-  if (req.url === "/300") {
-    res.statusCode = 300;
-    res.setHeader("Location", "http://example.com/test");
-    res.end();
-    return;
-  }
-  if (!res.writableEnded) return res.end("fallback");
-});
-```
-
-同時讓 http client 去戳 `/300`
-
-```js
-const client = new Client("http://localhost:5000").compose(
-  interceptors.redirect({ maxRedirections: 3 }),
-);
-const response = await client.request({ method: "GET", path: "/300" });
-console.log(await response.body.text());
-```
-
-實測結果，因為 `Client` 只能連到 `http://localhost:5000` 這個 origin，所以 `http://example.com/test` 會被改成 `http://localhost:5000/test`
-
-```js
-/300
-/test
-fallback
-``` -->
 
 ## 參考資料
 
