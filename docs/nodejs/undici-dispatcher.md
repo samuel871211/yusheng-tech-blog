@@ -295,6 +295,8 @@ const upggradeData = await client
 
 ### redirect
 
+https://undici.nodejs.org/#/docs/api/Dispatcher?id=redirect
+
 語法很簡單，如下
 
 ```js
@@ -502,6 +504,22 @@ client receives 301 {
   'content-length': '3'
 } 301
 ```
+
+### follow-redirects vs redirect
+
+[axios](https://github.com/axios/axios) 在 Node.js 環境預設啟用 [follow-redirects](https://github.com/follow-redirects/follow-redirects)
+
+|                                        | follow-redirects | undici.interceptors.redirect |
+| -------------------------------------- | ---------------- | ---------------------------- |
+| version                                | 1.15.11          | 7.24.6                       |
+| redirect status codes                  | 3xx              | 300, 301, 302, 303, 307, 308 |
+| connection reuse                       | No               | Yes                          |
+| keep `Transfer-Encoding: chunked` body | Yes              | No                           |
+| maxBodyLength setting                  | Yes              | No                           |
+
+## retry
+
+https://undici.nodejs.org/#/docs/api/Dispatcher?id=retry
 
 ## 參考資料
 
