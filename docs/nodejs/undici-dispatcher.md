@@ -303,7 +303,7 @@ https://undici.nodejs.org/#/docs/api/Dispatcher?id=redirect
 import { Client, interceptors } from "undici";
 
 const client = new Client("http://localhost:5000").compose(
-  interceptors.redirect({ maxRedirections: 3 }),
+  interceptors.redirect(),
 );
 const response = await client.request({ method: "GET", path: "/" });
 ```
@@ -445,8 +445,8 @@ class RedirectHandler {
 - [feat: implement throwOnMaxRedirect option for RedirectHandler](https://github.com/nodejs/undici/pull/2563)
 - [fix: update redirect handler options handling, docs, tests](https://github.com/nodejs/undici/pull/4377)
 
-10. 除了以上 "轉成 GET" 的情況會把 body 捨棄，其餘情況，皆會維持原本的 Method 跟 body
-11. 承上，但如果是 `Transfer-Encoding: chunked` 則會直接跳出 redirect，並且回傳
+10. 除了以上 "轉成 GET" 的情況會把 request body 捨棄，其餘情況，皆會維持原本的 Method 跟 body
+11. 承上，但如果 request body 是用 `Transfer-Encoding: chunked` 傳輸（ undici 目前尚未實作這種 [Stream.Readable](./stream-readable.md) 的重試機制）則會直接跳出 redirect，並且把 HTTP Response 原封不動回傳給 user program
 
 ```js
 // http server
@@ -509,17 +509,206 @@ client receives 301 {
 
 [axios](https://github.com/axios/axios) 在 Node.js 環境預設啟用 [follow-redirects](https://github.com/follow-redirects/follow-redirects)
 
-|                                        | follow-redirects | undici.interceptors.redirect |
-| -------------------------------------- | ---------------- | ---------------------------- |
-| version                                | 1.15.11          | 7.24.6                       |
-| redirect status codes                  | 3xx              | 300, 301, 302, 303, 307, 308 |
-| connection reuse                       | No               | Yes                          |
-| keep `Transfer-Encoding: chunked` body | Yes              | No                           |
-| maxBodyLength setting                  | Yes              | No                           |
+|                                             | follow-redirects | undici.interceptors.redirect |
+| ------------------------------------------- | ---------------- | ---------------------------- |
+| version                                     | 1.15.11          | 7.24.6                       |
+| redirect status codes                       | 3xx              | 300, 301, 302, 303, 307, 308 |
+| connection reuse                            | No               | Yes                          |
+| keep body with `Transfer-Encoding: chunked` | Yes              | No                           |
+| maxBodyLength setting                       | Yes              | No                           |
 
 ## retry
 
 https://undici.nodejs.org/#/docs/api/Dispatcher?id=retry
+
+語法很簡單，如下
+
+```js
+import { Client, interceptors } from "undici";
+
+const client = new Client("http://localhost:5000").compose(
+  interceptors.retry(),
+);
+const response = await client.request({ method: "GET", path: "/" });
+```
+
+我把一些觀察到的重點列出來：
+
+1. 如果 request body 是用 `Transfer-Encoding: chunked` 傳輸，則會直接跳出 retry
+
+```js
+const server = http.createServer();
+server.listen(5000);
+server.on("request", (req, res) => {
+  res.statusCode = 429;
+  res.end();
+});
+const client = new Client("http://localhost:5000").compose(
+  interceptors.retry(),
+);
+client.request({
+  method: "PUT",
+  path: "/",
+  // 因為我們使用 `Readable.from`，所以會使用 transfer-encoding: chunked 來傳輸
+  body: Readable.from(["1"]),
+});
+```
+
+會印出以下錯誤訊息
+
+```js
+RequestRetryError: Request failed
+    at RetryHandler.onResponseStart (/undici@7.24.6/node_modules/undici/lib/handler/retry-handler.js:189:19)
+    at UnwrapHandler.onHeaders (/undici@7.24.6/node_modules/undici/lib/handler/unwrap-handler.js:80:36)
+    at Request.onHeaders (/undici@7.24.6/node_modules/undici/lib/core/request.js:269:29)
+    at Parser.onHeadersComplete (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:608:27)
+    at wasm_on_headers_complete (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:153:30)
+    at wasm://wasm/00034eea:wasm-function[10]:0x571
+    at wasm://wasm/00034eea:wasm-function[20]:0x845f
+    at Parser.execute (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:337:22)
+    at Parser.readMore (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:301:12)
+    at Socket.onHttpSocketReadable (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:884:18) {
+  code: 'UND_ERR_REQ_RETRY',
+  statusCode: 429,
+  data: { count: 1 },
+  headers: {
+    date: 'Thu, 02 Apr 2026 00:17:04 GMT',
+    connection: 'keep-alive',
+    'keep-alive': 'timeout=5',
+    'content-length': '0'
+  }
+}
+```
+
+2. server 有指定 `retry-after` 的情境，client 會遵守
+
+lib/handler/retry-handler.js
+
+```js
+let retryAfterHeader = headers?.["retry-after"];
+if (retryAfterHeader) {
+  retryAfterHeader = Number(retryAfterHeader);
+  retryAfterHeader = Number.isNaN(retryAfterHeader)
+    ? calculateRetryAfterHeader(headers["retry-after"])
+    : retryAfterHeader * 1e3; // Retry-After is in seconds
+}
+
+const retryTimeout =
+  retryAfterHeader > 0
+    ? // 還是會受到 `maxTimeout` 的限制
+      Math.min(retryAfterHeader, maxTimeout)
+    : // `timeoutFactor` 只有在 `retryAfterHeader` 無效的時候發揮作用
+      Math.min(minTimeout * timeoutFactor ** (counter - 1), maxTimeout);
+
+setTimeout(() => cb(null), retryTimeout);
+```
+
+寫個 PoC 驗證
+
+```js
+let count = 0;
+const server = http.createServer();
+server.listen(5000);
+server.on("request", (req, res) => {
+  count++;
+  console.log(count, performance.now(), req.url, req.method, req.headers);
+  res.statusCode = 500;
+  res.setHeader("retry-after", "3");
+  res.end();
+});
+const client = new Client("http://localhost:5000").compose(
+  interceptors.retry({ timeoutFactor: 2, maxTimeout: 2000 }),
+);
+client.request({ method: "GET", path: "/" });
+```
+
+最終每隔 2 秒會 retry，最多 retry 2 次
+
+```js
+1 147.553916 / GET { host: 'localhost:5000', connection: 'keep-alive' }
+2 2153.365708 / GET { host: 'localhost:5000', connection: 'keep-alive' }
+3 4156.797958 / GET { host: 'localhost:5000', connection: 'keep-alive' }
+```
+
+3. response body 傳到一半斷線，retry 的時候用 range request，從中斷點開始重試
+
+round trip 如下
+
+```mermaid
+sequenceDiagram
+  participant c as client
+  participant s as server
+  c ->> s: GET /users/1 HTTP/1.1
+  s ->> c: HTTP/1.1 200 OK<br/>Content-Length: 5<br/><br/>123
+  Note over c,s: client, server 斷線
+
+  c ->> s: GET /users/1 HTTP/1.1<br/>range: bytes=3-4
+  s ->> c: HTTP/1.1 200 OK<br/>Content-Length: 2<br/>Content-Range: bytes 3-4/5<br/><br/>r1
+```
+
+PoC 驗證
+
+```js
+let count = 0;
+const server = http.createServer();
+server.listen(5000);
+server.on("request", (req, res) => {
+  count++;
+  console.log(count, req.url, req.method, req.headers);
+  if (req.url === "/users/1") {
+    // 模擬傳送到一半斷線
+    if (count === 1) {
+      res.setHeader("x-user-id", "1");
+      res.setHeader("Content-Length", 5);
+      res.write("use", () => res.socket?.resetAndDestroy());
+      return;
+    }
+    // 第二次 server 重新傳送 range response
+    assert(req.headers.range === "bytes=3-4");
+    res.statusCode = 206;
+    res.setHeader("Content-Range", "bytes 3-4/5");
+    res.end("r1");
+    return;
+  }
+});
+const client = new Client("http://localhost:5000").compose(
+  interceptors.retry(),
+);
+const responseOfUser1 = await client.request({
+  method: "GET",
+  path: "/users/1",
+});
+const { body: user1, ...responseOfUser1WithoutBody } = responseOfUser1;
+console.log({ responseOfUser1WithoutBody, body: await user1.text() });
+```
+
+最終會印出
+
+```js
+1 /users/1 GET { host: 'localhost:5000', connection: 'keep-alive' }
+2 /users/1 GET {
+  host: 'localhost:5000',
+  connection: 'keep-alive',
+  range: 'bytes=3-4'
+}
+{
+  responseOfUser1WithoutBody: {
+    statusCode: 200,
+    statusText: 'OK',
+    headers: {
+      'x-user-id': '1',
+      'content-length': '5',
+      date: 'Thu, 02 Apr 2026 06:48:07 GMT',
+      connection: 'keep-alive',
+      'keep-alive': 'timeout=5'
+    },
+    trailers: {},
+    opaque: null,
+    context: undefined
+  },
+  body: 'user1'
+}
+```
 
 ## 參考資料
 
