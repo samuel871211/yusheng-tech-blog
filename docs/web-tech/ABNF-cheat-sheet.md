@@ -95,11 +95,62 @@ interface Rule1 extends Rule2
 | `3*3element` | 3           | 3           | exactly 3    |
 | `1*2element` | 1           | 2           | one or two   |
 
-## RFC 9110 Tokens
+## RFC 9110
+
+| Rule                      | ABNF Definition                    |
+| ------------------------- | ---------------------------------- |
+| OWS (Optional WhiteSpace) | `*( SP / HTAB )`                   |
+| RWS (Required WhiteSpace) | `1*( SP / HTAB )`                  |
+| 1#element                 | `element *( OWS "," OWS element )` |
+
+### Range
+
+https://datatracker.ietf.org/doc/html/rfc9110#name-range
+
+範例：
+
+- The first 500 bytes: `bytes=0-499`
+- The second 500 bytes: `bytes=500-999`
+- The final 500 bytes: `bytes=-500` or `bytes=9500-`
+- The first, middle, and last 1000 bytes: ` bytes= 0-999, 4500-5499, -1000`
+
+| Rule             | ABNF Definition                        |
+| ---------------- | -------------------------------------- |
+| Range            | ranges-specifier                       |
+| ranges-specifier | range-unit "=" range-set               |
+| range-unit       | token                                  |
+| range-set        | 1#range-spec                           |
+| range-spec       | int-range / suffix-range / other-range |
+| int-range        | `first-pos "-" [ last-pos ]`           |
+| first-pos        | `1*DIGIT`                              |
+| last-pos         | `1*DIGIT`                              |
+| suffix-range     | `"-" suffix-length`                    |
+| suffix-length    | `1*DIGIT`                              |
+| other-range      | `1*(VCHAR excluding comma)`            |
+
+### Content-Range
+
+https://datatracker.ietf.org/doc/html/rfc9110#name-content-range
+
+範例：
+
+- Normal case: `bytes 42-1233/1234`
+- The complete length is unknown: `bytes 42-1233/*`
+- unsatisfied-range (use in 416 response): `bytes */1234`
+
+| Rule              | ABNF Definition                                  |
+| ----------------- | ------------------------------------------------ |
+| Content-Range     | range-unit SP ( range-resp / unsatisfied-range ) |
+| range-resp        | `incl-range "/" ( complete-length / "*" )`       |
+| incl-range        | first-pos "-" last-pos                           |
+| unsatisfied-range | `"*/" complete-length`                           |
+| complete-length   | `1*DIGIT`                                        |
+
+### Tokens
 
 [token](https://datatracker.ietf.org/doc/html/rfc9110#name-tokens) 是組成 HTTP Header Field & Value 最重要的基本單位
 
-## RFC 9110 Quoted Strings
+### Quoted Strings
 
 [quoted-string](https://datatracker.ietf.org/doc/html/rfc9110#name-quoted-strings) 用雙引號包裹的字串
 [qdtext](https://datatracker.ietf.org/doc/html/rfc9110#name-quoted-strings)
