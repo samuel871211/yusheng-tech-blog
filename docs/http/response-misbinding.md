@@ -276,6 +276,6 @@ If a client receives data on a connection that doesn't have outstanding requests
 
 不過實務上，違反規範 "不等於" 資安漏洞，所以我後來也沒有再針對這題去跟 chrome 還有 firefox 去回覆
 
-## Action Item
+<!-- ## Action Item -->
 
 <!-- todo-yus Why HTTP/2 Solves this problem -->
