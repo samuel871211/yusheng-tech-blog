@@ -517,7 +517,7 @@ client receives 301 {
 | keep body with `Transfer-Encoding: chunked` | Yes              | No                           |
 | maxBodyLength setting                       | Yes              | No                           |
 
-## retry
+### retry
 
 https://undici.nodejs.org/#/docs/api/Dispatcher?id=retry
 
@@ -632,14 +632,12 @@ client.request({ method: "GET", path: "/" });
 
 3. response body 傳到一半斷線，retry 的時候用 range request，從中斷點開始重試
 
-round trip 如下
-
 ```mermaid
 sequenceDiagram
   participant c as client
   participant s as server
   c ->> s: GET /users/1 HTTP/1.1
-  s ->> c: HTTP/1.1 200 OK<br/>Content-Length: 5<br/><br/>123
+  s ->> c: HTTP/1.1 200 OK<br/>Content-Length: 5<br/><br/>use
   Note over c,s: client, server 斷線
 
   c ->> s: GET /users/1 HTTP/1.1<br/>range: bytes=3-4
@@ -708,6 +706,91 @@ console.log({ responseOfUser1WithoutBody, body: await user1.text() });
   },
   body: 'user1'
 }
+```
+
+4.  承上述情境，有支援 `Etag` + `If-Match`
+
+```mermaid
+sequenceDiagram
+  participant c as client
+  participant s as server
+  c ->> s: GET /users/1 HTTP/1.1
+  s ->> c: HTTP/1.1 200 OK<br/>Content-Length: 5<br/>ETag: 123<br/><br/>use
+  Note over c,s: client, server 斷線
+
+  c ->> s: GET /users/1 HTTP/1.1<br/>range: bytes=3-4<br/>If-Match: 123
+  s ->> c: HTTP/1.1 200 OK<br/>Content-Length: 2<br/>Content-Range: bytes 3-4/5<br/>ETag: 123<br/><br/>r1
+```
+
+PoC 驗證
+
+```js
+let count = 0;
+const server = http.createServer();
+server.listen(5000);
+server.on("request", (req, res) => {
+  count++;
+  console.log(count, req.url, req.method, req.headers);
+  if (req.url === "/users/1") {
+    // 模擬傳送到一半斷線
+    if (count === 1) {
+      res.setHeader("etag", "123");
+      res.setHeader("Content-Length", 5);
+      res.write("use", () => res.destroy());
+      return;
+    }
+    // 第二次 server 有回傳 etag
+    assert(req.headers.range === "bytes=3-4");
+    assert(req.headers["if-match"] === "123");
+    res.statusCode = 206;
+    res.setHeader("ETag", "123");
+    res.setHeader("Content-Range", "bytes 3-4/5");
+    res.end("r1");
+    return;
+  }
+});
+const client = new Client("http://localhost:5000").compose(
+  interceptors.retry(),
+);
+const responseOfUser1 = await client.request({
+  method: "GET",
+  path: "/users/1",
+});
+const { body, ...responseOfUser1WithoutBody } = responseOfUser1;
+console.log({ responseOfUser1WithoutBody });
+for await (const chunk of body) {
+  console.log(chunk.toString("utf8"));
+}
+```
+
+最終會印出
+
+```js
+1 /users/1 GET { host: 'localhost:5000', connection: 'keep-alive' }
+{
+  responseOfUser1WithoutBody: {
+    statusCode: 200,
+    statusText: 'OK',
+    headers: {
+      etag: '123',
+      'content-length': '5',
+      date: 'Thu, 02 Apr 2026 11:35:41 GMT',
+      connection: 'keep-alive',
+      'keep-alive': 'timeout=5'
+    },
+    trailers: {},
+    opaque: null,
+    context: undefined
+  }
+}
+use
+2 /users/1 GET {
+  host: 'localhost:5000',
+  connection: 'keep-alive',
+  range: 'bytes=3-4',
+  'if-match': '123'
+}
+r1
 ```
 
 ## 參考資料
