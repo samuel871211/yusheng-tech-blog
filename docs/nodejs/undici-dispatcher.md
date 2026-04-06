@@ -2,7 +2,7 @@
 title: undici Class Dispatcher
 description: undici Class Dispatcher
 last_update:
-  date: "2026-03-23T08:00:00+08:00"
+  date: "2026-04-06T08:00:00+08:00"
 ---
 
 - Dispatcher 是 undici 最底層、最核心的 Class，用來 "發起各式各樣的 HTTP Request"
@@ -791,6 +791,117 @@ use
   'if-match': '123'
 }
 r1
+```
+
+5. [Content-Range 跟 Content-Length 不一致的 BUG](./undici-content-length-and-content-range-mismatch.md)
+
+### `response.body.dump()`
+
+- **這不是 Pre-built interceptors，但因為跟 [dump](#dump) 概念類似，所以放在這裡一起討論**
+- **當你不需要 response body，但你又不想自己 consume 時，就可以用 dump**
+
+✅ 正確做法（使用 `response.body.dump()`）
+
+```js
+const client = new Client("http://localhost:5000");
+const response = await client.request({ method: "GET", path: "/" });
+// 超過 1024 bytes 就把 TCP 連線殺掉，不會噴錯
+console.log(await response.body.dump({ limit: 1024 }));
+```
+
+❌ 錯誤作法（沒有 consume `response.body`）
+
+```js
+const client = new Client("http://localhost:5000");
+const response = await client.request({ method: "GET", path: "/" });
+console.log(response.headers);
+```
+
+### dump
+
+https://undici.nodejs.org/#/docs/api/Dispatcher?id=dump
+
+概念類似 [`response.body.dump()`](#responsebodydump)
+
+1. response body 超過 `maxSize` 會噴錯(需自行捕捉) + 關閉連線
+
+```js
+const server = http.createServer((req, res) => res.end("0".repeat(101)));
+server.listen(5000);
+const client = new Client("http://localhost:5000").compose(
+  interceptors.dump({ maxSize: 100 }),
+);
+client.request({ method: "GET", path: "/" }).catch(console.error);
+// RequestAbortedError [AbortError]: Response size (101) larger than maxSize (100)
+//     at DumpHandler.onResponseStart (\undici@8.0.2\node_modules\undici\lib\interceptor\dump.js:41:13)
+//     at Request.onResponseStart (\undici@8.0.2\node_modules\undici\lib\core\request.js:330:39)
+//     at Parser.onHeadersComplete (\undici@8.0.2\node_modules\undici\lib\dispatcher\client-h1.js:608:27)
+//     at wasm_on_headers_complete (\undici@8.0.2\node_modules\undici\lib\dispatcher\client-h1.js:153:30)
+//     at wasm://wasm/00034eea:wasm-function[10]:0x571
+//     at wasm://wasm/00034eea:wasm-function[20]:0x845f
+//     at Parser.execute (\undici@8.0.2\node_modules\undici\lib\dispatcher\client-h1.js:337:22)
+//     at Parser.readMore (\undici@8.0.2\node_modules\undici\lib\dispatcher\client-h1.js:301:12)
+//     at Socket.onHttpSocketReadable (\undici@8.0.2\node_modules\undici\lib\dispatcher\client-h1.js:884:18)
+//     at Socket.emit (node:events:508:28) {
+//   code: 'UND_ERR_ABORTED'
+// }
+```
+
+2. `response.body` 已被 dump，故無法再次 consume
+
+```js
+const server = http.createServer((req, res) => res.end("0".repeat(100)));
+server.listen(5000);
+const client = new Client("http://localhost:5000").compose(
+  interceptors.dump({ maxSize: 100 }),
+);
+const response = await client.request({ method: "GET", path: "/" });
+console.log({ body: await response.body.text() }); // { body: '' }
+```
+
+3. 如果 response 是 `Transfer-Encoding: chunked`，特殊情境下，可以超過 `maxSize`，但不噴錯 + 不主動關閉連線
+
+```js
+const server = http.createServer((req, res) => {
+  // 第一包刻意塞 maxSize - 1，最後一包塞很大
+  res.write("0".repeat(99), () =>
+    setTimeout(() => res.end("0".repeat(200)), 1000),
+  );
+});
+server.listen(5000);
+const client = new Client("http://localhost:5000").compose(
+  interceptors.dump({ maxSize: 100 }),
+);
+const response = await client.request({ method: "GET", path: "/" });
+console.log({ body: await response.body.text() }); // { body: '' }
+```
+
+查看 undici@8.0.2 的原始碼，發現剛好沒觸發 `onResponseError`
+
+```js
+onResponseData (controller, chunk) {
+  this.#size = this.#size + chunk.length
+
+  if (this.#size >= this.#maxSize) {
+    this.#dumped = true
+
+    if (this.aborted === true) {
+      super.onResponseError(controller, this.reason)
+    } else {
+      // 進到這個 case
+      super.onResponseEnd(controller, {})
+    }
+  }
+
+  return true
+}
+
+onResponseEnd (controller, trailers) {
+  // 直接 early return
+  if (this.#dumped) {
+    return
+  }
+}
 ```
 
 ## 參考資料
