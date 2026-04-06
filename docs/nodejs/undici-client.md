@@ -51,8 +51,8 @@ General options：
 | [keepAliveMaxTimeout](#keepalive-related-settings)                    |
 | [keepAliveTimeout](#keepalive-related-settings)                       |
 | [keepAliveTimeoutThreshold](#keepalive-related-settings)              |
-| [maxHeaderSize](#maxheadersize)                                       |
-| [maxResponseSize](#maxresponsesize)                                   |
+| [maxHeaderSize](#clientoptionsmaxheadersize)                          |
+| [maxResponseSize](#clientoptionsmaxresponsesize)                      |
 | [connect](#clientoptionsconnect)                                      |
 | [strictContentLength](#clientoptionsstrictcontentlength)              |
 | [autoSelectFamily](#autoselectfamily-releated-settings)               |
