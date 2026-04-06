@@ -227,6 +227,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/undici-client",
         "nodejs/undici-dispatcher",
         "nodejs/undici-client-lifecycle",
+        "nodejs/undici-content-length-and-content-range-mismatch",
         "nodejs/destroy-socket-after-head",
       ],
     },
