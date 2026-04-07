@@ -2,7 +2,7 @@
 title: undici Class Dispatcher
 description: undici Class Dispatcher
 last_update:
-  date: "2026-04-06T08:00:00+08:00"
+  date: "2026-04-07T08:00:00+08:00"
 ---
 
 - Dispatcher 是 undici 最底層、最核心的 Class，用來 "發起各式各樣的 HTTP Request"
@@ -903,6 +903,144 @@ onResponseEnd (controller, trailers) {
   }
 }
 ```
+
+4. request-level 可以設定 `maxDumpSize`，優先順序高於 `maxSize`
+
+```js
+const server = http.createServer((req, res) => res.end("0".repeat(200)));
+server.listen(5000);
+const client = new Client("http://localhost:5000").compose(interceptors.dump());
+client.request({ method: "GET", path: "/", dumpMaxSize: 200 });
+// RequestAbortedError [AbortError]: Response size (201) larger than maxSize (200)
+//     at DumpHandler.onResponseStart (/undici@7.24.6/node_modules/undici/lib/interceptor/dump.js:41:13)
+//     at UnwrapHandler.onHeaders (/undici@7.24.6/node_modules/undici/lib/handler/unwrap-handler.js:80:36)
+//     at Request.onHeaders (/undici@7.24.6/node_modules/undici/lib/core/request.js:269:29)
+//     at Parser.onHeadersComplete (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:608:27)
+//     at wasm_on_headers_complete (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:153:30)
+//     at wasm://wasm/00034eea:wasm-function[10]:0x571
+//     at wasm://wasm/00034eea:wasm-function[20]:0x845f
+//     at Parser.execute (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:337:22)
+//     at Parser.readMore (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:301:12)
+//     at Socket.onHttpSocketReadable (/undici@7.24.6/node_modules/undici/lib/dispatcher/client-h1.js:884:18) {
+//   code: 'UND_ERR_ABORTED'
+// }
+```
+
+### dns
+
+<!-- todo-yus 暫時不研究 -->
+
+### responseError
+
+https://undici.nodejs.org/#/docs/api/Dispatcher?id=responseerror
+
+**status code >= 400，自動拋錯**
+
+1. 拋錯的情境，會幫使用者 consume response body
+
+```js
+const server = http.createServer((req, res) => {
+  res.statusCode = 400;
+  res.setHeader("Content-Type", "text/plain");
+  res.end("123");
+});
+server.listen(5000);
+const client = new Client("http://localhost:5000").compose(
+  interceptors.responseError(),
+);
+client.request({ method: "GET", path: "/" });
+```
+
+會拋出以下錯誤
+
+```js
+[ResponseError: Response Error] {
+  code: 'UND_ERR_RESPONSE',
+  statusCode: 400,
+  body: '123',
+  headers: {
+    'content-type': 'text/plain',
+    date: 'Tue, 07 Apr 2026 05:42:22 GMT',
+    connection: 'keep-alive',
+    'keep-alive': 'timeout=5',
+    'content-length': '3'
+  }
+}
+```
+
+2. 特定 `content-type`，才會把 `body` decode 成 utf8
+
+undici@8.0.2：lib/interceptor/response-error.js
+
+```js
+  #checkContentType (contentType) {
+    return (this.#contentType ?? '').indexOf(contentType) === 0
+  }
+  onResponseStart (controller, statusCode, headers, statusMessage) {
+    // ...省略
+
+    if (this.#checkContentType('application/json') || this.#checkContentType('text/plain')) {
+      this.#decoder = new TextDecoder('utf-8')
+    }
+  }
+  onResponseData (controller, chunk) {
+    // ...省略
+
+    this.#body += this.#decoder?.decode(chunk, { stream: true }) ?? ''
+  }
+```
+
+### cache
+
+https://undici.nodejs.org/#/docs/api/Dispatcher?id=cache-interceptor
+
+<!-- todo-yus -->
+
+### deduplicate
+
+https://undici.nodejs.org/#/docs/api/Dispatcher?id=deduplicate-interceptor
+
+1. `client.request` 沒傳入 `origin`，就無法正確 deduplicate（應該算是 BUG）
+
+```js
+const server = http.createServer((req, res) =>
+  setTimeout(() => res.end("123"), 1000),
+);
+server.listen(5000);
+const client = new Client("http://localhost:5000", { pipelining: 3 }).compose(
+  interceptors.deduplicate(),
+);
+const [res1, res2, res3] = await Promise.all([
+  client.request({ method: "GET", path: "/" }),
+  client.request({ method: "GET", path: "/" }),
+  client.request({ method: "GET", path: "/" }),
+]);
+console.log(JSON.stringify(res1.headers) === JSON.stringify(res2.headers)); // false
+console.log(JSON.stringify(res2.headers) === JSON.stringify(res3.headers)); // false
+```
+
+2. 承上，要傳入 `origin` 才可以正確 deduplicate
+
+```js
+const server = http.createServer((req, res) =>
+  setTimeout(() => res.end("123"), 1000),
+);
+server.listen(5000);
+const client = new Client("http://localhost:5000", { pipelining: 3 }).compose(
+  interceptors.deduplicate(),
+);
+const pendingRequestsChannel = channel("undici:request:pending-requests");
+pendingRequestsChannel.subscribe(console.log);
+const [res1, res2, res3] = await Promise.all([
+  client.request({ method: "GET", path: "/", origin: "http://localhost:5000" }),
+  client.request({ method: "GET", path: "/", origin: "http://localhost:5000" }),
+  client.request({ method: "GET", path: "/", origin: "http://localhost:5000" }),
+]);
+console.log(JSON.stringify(res1.headers) === JSON.stringify(res2.headers)); // true
+console.log(JSON.stringify(res2.headers) === JSON.stringify(res3.headers)); // true
+```
+
+<!-- todo-yus 其餘情境暫時懶得測 -->
 
 ## 參考資料
 
