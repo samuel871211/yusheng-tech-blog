@@ -48,6 +48,11 @@ flowchart TD
     serve-static --> send
 
     body-parser --> raw-body
+
+    raw-body --> bytes
+    raw-body --> iconv-lite
+    raw-body --> http-errors
+    raw-body --> unpipe
 ```
 
 ## ee-first
@@ -596,6 +601,63 @@ console.log(path); // {:user}
 
 ## raw-body
 
+### 基本資訊
+
+- [Github Repo](https://github.com/stream-utils/raw-body)
+
+### 解決什麼問題？
+
+在 Node.js http.Server 要自行收集 request body（包含長度驗證、encode/decode）很麻煩
+
+```js
+import http from "http";
+
+const server = http.createServer((req, res) => {
+  // 長度驗證
+  req.headers["content-length"];
+  // encode/decode
+  req.headers["content-encoding"];
+  // 自行收集 request body
+  req.on("data", (chunk) => {});
+  req.on("end", () => {});
+});
+server.listen(5000);
+```
+
+### 用法介紹
+
+1. 支援的參數有 `length`, `encoding` 跟 `limit`
+
+```js
+import getRawBody from "raw-body";
+import http from "http";
+
+const server = http.createServer((req, res) => {
+  getRawBody(
+    req,
+    {
+      length: req.headers["content-length"],
+      encoding: req.headers["content-encoding"],
+      limit: 1024,
+    },
+    (err, body) => {},
+  );
+});
+server.listen(5000);
+```
+
+2. 也可以不指定任何參數，這樣就不會檢查長度，且蒐集起來的 body 會是 Buffer
+
+```js
+import getRawBody from "raw-body";
+import http from "http";
+
+const server = http.createServer((req, res) => {
+  getRawBody(req, (err, body) => {});
+});
+server.listen(5000);
+```
+
 ## fresh
 
 ## cookie
@@ -622,6 +684,14 @@ console.log(path); // {:user}
 
 ## vary
 
+## bytes
+
+## iconv-lite
+
+## http-errors
+
+## unpipe
+
 ## 底層 utils
 
 - [statuses](https://www.npmjs.com/package/statuses)
@@ -637,4 +707,3 @@ console.log(path); // {:user}
 <!-- - [mime-types](#mime-types) -->
 - [mime-db](https://www.npmjs.com/package/mime-db)
 <!-- - [path-to-regexp](#path-to-regexp) -->
-- [bytes](https://www.npmjs.com/package/bytes)
