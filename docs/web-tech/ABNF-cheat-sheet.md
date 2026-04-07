@@ -2,7 +2,7 @@
 title: ABNF Cheat Sheet
 description: 想讀懂 HTTP 的 RFC 嗎？ABNF 跟 RFC 9110 是入場券
 last_update:
-  date: "2026-03-06T08:00:00+08:00"
+  date: "2026-04-07T08:00:00+08:00"
 ---
 
 ## 前言
@@ -84,13 +84,15 @@ interface Rule1 extends Rule2
 
 最終 Combine 這個 Rule 就等於 Foo / Bar / Hel
 
-## `Variable Repetition: *Rule`
+## `Variable Repetition: *Rule` and Optional Sequence
 
 [`Variable Repetition: *Rule`](https://datatracker.ietf.org/doc/html/rfc5234#section-3.6)
 
 | Rule         | a (min)     | b (max)     | Meaning      |
 | ------------ | ----------- | ----------- | ------------ |
 | `*element`   | 0 (default) | ∞ (default) | zero or more |
+| `*1element`  | 0 (default) | 1           | 0 ~ 1        |
+| `[element]`  | 0 (default) | 1           | 0 ~ 1        |
 | `1*element`  | 1           | ∞ (default) | one or more  |
 | `3*3element` | 3           | 3           | exactly 3    |
 | `1*2element` | 1           | 2           | one or two   |
@@ -102,6 +104,26 @@ interface Rule1 extends Rule2
 | OWS (Optional WhiteSpace) | `*( SP / HTAB )`                   |
 | RWS (Required WhiteSpace) | `1*( SP / HTAB )`                  |
 | 1#element                 | `element *( OWS "," OWS element )` |
+
+### Content-Type
+
+| Rule            | ABNF Definition                    |
+| --------------- | ---------------------------------- |
+| Content-Type    | media-type                         |
+| media-type      | type "/" subtype parameters        |
+| type            | token                              |
+| subtype         | token                              |
+| parameters      | `*( OWS ";" OWS [ parameter ] )`   |
+| parameter       | parameter-name "=" parameter-value |
+| parameter-name  | token                              |
+| parameter-value | ( token / quoted-string )          |
+
+Content-Type = token "/" token \*( OWS ";" OWS [ token "=" ( token / quoted-string ) ] )
+
+- Content-Type: application/json
+- Content-Type: application/json;charset=utf-8
+- Content-Type: application/json ; charset=utf-8
+- Content-Type: application/json ; charset=utf-8 ; whatever=bar
 
 ### Range
 
