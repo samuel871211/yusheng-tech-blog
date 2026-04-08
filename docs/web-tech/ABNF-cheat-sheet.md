@@ -40,18 +40,18 @@ expectation = token [ "=" ( token / quoted-string ) parameters ]
 
 [Core Rules](https://datatracker.ietf.org/doc/html/rfc5234#appendix-B.1) = 定義基礎字符集
 
-| Core Rule | ABNF Definition                                            |
-| --------- | ---------------------------------------------------------- |
-| ALPHA     | A-Z / a-z                                                  |
-| OCTET     | %x00-FF<br/>8 bits of data                                 |
-| CHAR      | %x01-7F<br/>any 7-bit US-ASCII character<br/>excluding NUL |
-| SP        | %x20 (SPace)                                               |
-| HTAB      | %x09 (Horizontal TAB)                                      |
-| WSP       | SP / HTAB<br/>(White SPace)                                |
-| DIGIT     | %x30-39<br/>0-9                                            |
-| HEXDIG    | DIGIT / "A" / "B" / "C" / "D" / "E" / "F"                  |
-| DQUOTE    | %x22 (Double QUOTE)                                        |
-| VCHAR     | %x21-7E<br/>visible (printing) characters                  |
+| Core Rule | ABNF Definition                           | Description                                    |
+| --------- | ----------------------------------------- | ---------------------------------------------- |
+| ALPHA     | A-Z / a-z                                 |                                                |
+| OCTET     | %x00-FF                                   | 8 bits of data                                 |
+| CHAR      | %x01-7F                                   | any 7-bit US-ASCII character<br/>excluding NUL |
+| SP        | %x20                                      | SPace                                          |
+| HTAB      | %x09                                      | Horizontal TAB                                 |
+| WSP       | SP / HTAB                                 | White SPace                                    |
+| DIGIT     | %x30-39                                   | 0-9                                            |
+| HEXDIG    | DIGIT / "A" / "B" / "C" / "D" / "E" / "F" |                                                |
+| DQUOTE    | %x22                                      | Double QUOTE                                   |
+| VCHAR     | %x21-7E                                   | visible (printing) characters                  |
 
 ## Concatenation: Rule1 Rule2
 
@@ -97,13 +97,20 @@ interface Rule1 extends Rule2
 | `3*3element` | 3           | 3           | exactly 3    |
 | `1*2element` | 1           | 2           | one or two   |
 
-## RFC 9110
+## HTTP/1.1 (RFC 9110 & RFC 9112)
 
-| Rule                      | ABNF Definition                    |
-| ------------------------- | ---------------------------------- |
-| OWS (Optional WhiteSpace) | `*( SP / HTAB )`                   |
-| RWS (Required WhiteSpace) | `1*( SP / HTAB )`                  |
-| 1#element                 | `element *( OWS "," OWS element )` |
+| Rule          | ABNF Definition                                                                                                                                  | Description            |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
+| OWS           | `*( SP / HTAB )`                                                                                                                                 | Optional WhiteSpace    |
+| RWS           | `1*( SP / HTAB )`                                                                                                                                | Required WhiteSpace    |
+| 1#element     | `element *( OWS "," OWS element )`                                                                                                               |                        |
+| token         | `1*tchar`                                                                                                                                        |                        |
+| tchar         | `"!"` / `"#"` / `"$"` / `"%"` / `"&"` / `"'"` /<br/>`"*"` / `"+"` / `"-"` / `"."` / `"^"` / `"_"` /<br/>``"`"`` / `"\|"` / `"~"` / DIGIT / ALPHA |                        |
+| field-line    | token ":" OWS field-value OWS                                                                                                                    |                        |
+| field-value   | `*field-content`                                                                                                                                 |                        |
+| field-content | field-vchar [ 1*( SP / HTAB / field-vchar ) field-vchar ]                                                                                        | 頭尾都要是 field-vchar |
+| field-vchar   | VCHAR / obs-text                                                                                                                                 |                        |
+| obs-text      | %x80-FF                                                                                                                                          | obsolete text          |
 
 ### Content-Type
 
@@ -136,19 +143,19 @@ https://datatracker.ietf.org/doc/html/rfc9110#name-range
 - The final 500 bytes: `bytes=-500` or `bytes=9500-`
 - The first, middle, and last 1000 bytes: ` bytes= 0-999, 4500-5499, -1000`
 
-| Rule             | ABNF Definition                        |
-| ---------------- | -------------------------------------- |
-| Range            | ranges-specifier                       |
-| ranges-specifier | range-unit "=" range-set               |
-| range-unit       | token                                  |
-| range-set        | 1#range-spec                           |
-| range-spec       | int-range / suffix-range / other-range |
-| int-range        | `first-pos "-" [ last-pos ]`           |
-| first-pos        | `1*DIGIT`                              |
-| last-pos         | `1*DIGIT`                              |
-| suffix-range     | `"-" suffix-length`                    |
-| suffix-length    | `1*DIGIT`                              |
-| other-range      | `1*(VCHAR excluding comma)`            |
+| Rule             | ABNF Definition                         |
+| ---------------- | --------------------------------------- |
+| Range            | ranges-specifier                        |
+| ranges-specifier | range-unit "=" range-set                |
+| range-unit       | token                                   |
+| range-set        | range-spec \*( OWS "," OWS range-spec ) |
+| range-spec       | int-range / suffix-range / other-range  |
+| int-range        | `first-pos "-" [ last-pos ]`            |
+| first-pos        | `1*DIGIT`                               |
+| last-pos         | `1*DIGIT`                               |
+| suffix-range     | `"-" suffix-length`                     |
+| suffix-length    | `1*DIGIT`                               |
+| other-range      | `1*(VCHAR excluding comma)`             |
 
 ### Content-Range
 
@@ -167,10 +174,6 @@ https://datatracker.ietf.org/doc/html/rfc9110#name-content-range
 | incl-range        | first-pos "-" last-pos                           |
 | unsatisfied-range | `"*/" complete-length`                           |
 | complete-length   | `1*DIGIT`                                        |
-
-### Tokens
-
-[token](https://datatracker.ietf.org/doc/html/rfc9110#name-tokens) 是組成 HTTP Header Field & Value 最重要的基本單位
 
 ### Quoted Strings
 
