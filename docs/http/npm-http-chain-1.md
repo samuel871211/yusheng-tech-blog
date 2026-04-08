@@ -680,7 +680,144 @@ server.listen(5000);
 
 ## send
 
+### 基本資訊
+
+- [Github Repo](https://github.com/pillarjs/send)
+- 測試版本：send@1.2.1 (range-parser@1.2.1)
+
+### 解決什麼問題？
+
+- Serve single file or directory
+- Support Range Request and Conditional Request
+
+### 用法介紹
+
+1. Serve a specific file
+
+```js
+import send from "send";
+import http from "http";
+import { join } from "path";
+
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url || "", "http://localhost:5000");
+  if (req.method === "GET" && url.pathname === "/") {
+    // ✅ 核心概念就這兩行，serve "index.html" for "GET / HTTP/1.1"
+    const sendStream = send(req, "/index.html", { root: import.meta.dirname });
+    sendStream.pipe(res);
+    return;
+  }
+  return res.writeHead(404).end("Not Found");
+});
+server.listen(5000);
+```
+
+2. Serve all files from a directory
+
+```js
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url || "", "http://localhost:5000");
+  if (req.method === "GET") {
+    const sendStream = send(req, url.pathname, { root: import.meta.dirname });
+    sendStream.pipe(res);
+    return;
+  }
+  return res.writeHead(404).end("Not Found");
+});
+server.listen(5000);
+```
+
+### 功能測試
+
+1. 不支援 multi-ranges，會直接 fallback 回傳 200 OK（原始碼註解也有提到）
+
+```js
+// valid (syntactically invalid/multiple ranges are treated as a regular response)
+if (ranges !== -2 && ranges.length === 1) {
+  debug("range %j", ranges);
+
+  // Content-Range
+  res.statusCode = 206;
+  res.setHeader("Content-Range", contentRange("bytes", len, ranges[0]));
+
+  // adjust for requested range
+  offset += ranges[0].start;
+  len = ranges[0].end - ranges[0].start + 1;
+}
+```
+
+2. 僅支援 Weak ETag
+
+```js
+if (this._etag && !res.getHeader("ETag")) {
+  // etag 套件針對 fs.Stats 預設會產 Weak ETag
+  var val = etag(stat);
+  debug("etag %s", val);
+  res.setHeader("ETag", val);
+}
+```
+
+3. 如果結尾有 trailing slash，預設會去抓該目錄的 "index.html"（`/test/` => `/test/index.html`）
+4. 如果請求的是 directory，會回傳 301
+
+Request
+
+```
+GET /test HTTP/1.1
+Host: localhost:5000
+```
+
+Response
+
+```
+HTTP/1.1 301 Moved Permanently
+Content-Type: text/html; charset=UTF-8
+Content-Length: 154
+Content-Security-Policy: default-src 'none'
+X-Content-Type-Options: nosniff
+Location: /test/
+Date: Wed, 08 Apr 2026 08:00:33 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Redirecting</title>
+</head>
+<body>
+<pre>Redirecting to /test/</pre>
+</body>
+</html>
+```
+
+4. dotfiles 預設會回傳 404，例如 `/.env`
+
+```js
+if (containsDotFile(parts)) {
+  debug('%s dotfile "%s"', this._dotfiles, path);
+  switch (this._dotfiles) {
+    case "allow":
+      break;
+    case "deny":
+      this.error(403);
+      return res;
+    case "ignore":
+    default:
+      this.error(404);
+      return res;
+  }
+}
+```
+
 ## serve-static
+
+### 基本資訊
+
+- [Github Repo](https://github.com/expressjs/serve-static)
+
+### 解決什麼問題？
 
 ## vary
 
