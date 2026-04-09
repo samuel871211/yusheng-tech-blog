@@ -678,6 +678,90 @@ server.listen(5000);
 
 ## range-parser
 
+### 基本資訊
+
+- [Github Repo](https://github.com/jshttp/range-parser)
+- 測試版本：1.2.1
+
+### 核心概念
+
+提供一個 util function 來解析 Range Header
+
+### 用法介紹
+
+1. 正常情境
+
+```js
+import RangeParser from "range-parser";
+
+console.log(RangeParser(100, "bytes=0-1"));
+// [ { start: 0, end: 1 }, type: 'bytes' ]
+```
+
+2. 如果無法解析出 start 跟 end，則回傳 -1
+
+```js
+console.log(RangeParser(100, "bytes=x-y"));
+// -1
+```
+
+3. 沒有 = 的情況，會回傳 -2
+
+```js
+console.log(RangeParser(100, "3-5"));
+// -2
+```
+
+4. invalid start + valid end，會解析成 `-end` 的形式
+
+```js
+console.log(RangeParser(100, "bytes=x-5"));
+// [ { start: 95, end: 99 }, type: 'bytes' ]
+```
+
+5. valid start + invalid end，會解析成 `start-` 的形式
+
+```js
+console.log(RangeParser(100, "bytes=3-x"));
+// [ { start: 3, end: 99 }, type: 'bytes' ]
+```
+
+6. 支援 multi-range
+
+```js
+console.log(RangeParser(100, "bytes=0-1,-10"));
+// [ { start: 0, end: 1 }, { start: 90, end: 99 }, type: 'bytes' ]
+```
+
+7. `combine: true` 可以把重疊的區間合併
+
+```js
+console.log(RangeParser(100, "bytes=0-1,-100", { combine: true }));
+// [ { start: 0, end: 99 }, type: 'bytes' ]
+```
+
+8. 對空格有一定程度容忍
+
+```js
+console.log(RangeParser(100, "byte = 0 - 1, 3 - 3"));
+// [ { start: 0, end: 1 }, { start: 3, end: 3 }, type: 'bytes' ]
+```
+
+9. end 超出上限，會截斷成上限值
+
+```js
+console.log(RangeParser(100, "bytes=0-300"));
+// [ { start: 0, end: 99 }, type: 'bytes' ]
+```
+
+10. 多個 Range Header 的解析
+
+```js
+// 第二組會被分割成 ["bytes=0", "8"]，等同於 invalid start + valid end，會解析成 `-end` 的形式
+console.log(RangeParser(100, "bytes=0-6, bytes=0-8"));
+// [ { start: 0, end: 6 }, { start: 92, end: 99 }, type: 'bytes' ]
+```
+
 ## send
 
 ### 基本資訊
