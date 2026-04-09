@@ -800,13 +800,11 @@ server.listen(5000);
 
 ```js
 const server = http.createServer((req, res) => {
+  if (req.method !== "GET") return res.writeHead(405).end();
+
   const url = new URL(req.url || "", "http://localhost:5000");
-  if (req.method === "GET") {
-    const sendStream = send(req, url.pathname, { root: import.meta.dirname });
-    sendStream.pipe(res);
-    return;
-  }
-  return res.writeHead(404).end("Not Found");
+  const sendStream = send(req, url.pathname, { root: import.meta.dirname });
+  sendStream.pipe(res);
 });
 server.listen(5000);
 ```
@@ -933,6 +931,8 @@ if (containsDotFile(parts)) {
 - [Github Repo](https://github.com/expressjs/serve-static)
 
 ### 解決什麼問題？
+
+把 [send](#send) 包裝成 middleware function 的形式
 
 ## vary
 
