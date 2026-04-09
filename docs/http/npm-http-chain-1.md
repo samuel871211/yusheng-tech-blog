@@ -811,6 +811,20 @@ const server = http.createServer((req, res) => {
 server.listen(5000);
 ```
 
+### SendStream events
+
+收到一個 HTTP Request 後，有三種可能的路線
+
+```mermaid
+flowchart TD
+  A["HTTP Request"] --> B["on('directory')<br/>a directory was requested"]
+  A --> C["on('error')<br/>an error occurred"]
+  A --> D["on('file')<br/>a file was requested "]
+  D --> E["on('headers')<br/>the headers are about to be set on a file"]
+  E --> F["on('stream')<br/>file streaming has started "]
+  F --> G["on('end')<br/>streaming has completed"]
+```
+
 ### 功能測試
 
 1. 不支援 multi-ranges，會直接 fallback 回傳 200 OK（原始碼註解也有提到）
@@ -876,7 +890,24 @@ Keep-Alive: timeout=5
 </html>
 ```
 
-4. dotfiles 預設會回傳 404，例如 `/.env`
+5. 承上，可透過 `on('directory')` 自訂 response
+
+```js
+const sendStream = send(req, url.pathname, { root: import.meta.dirname });
+sendStream.on("directory", (res, path) =>
+  res.writeHead(403).end("Directory Listing Denied"),
+);
+```
+
+6. 可透過 `.on('error')` 自訂 error response
+
+```js
+sendStream.on("error", (err) =>
+  res.writeHead(500).end("Oops... an error occurred"),
+);
+```
+
+7. dotfiles 預設是 "ignore"，會回傳 404，例如 `/.env`
 
 ```js
 if (containsDotFile(parts)) {
