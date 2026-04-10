@@ -2,18 +2,13 @@
 title: 拆解 npm HTTP 俄羅斯套娃：從 ee-first 到 Express 的依賴地獄
 description: weekly download 幾千萬的套件，核心可能只有 30 行。帶你從最底層的 EventEmitter 工具到 Express，系統性拆解 npm HTTP 生態系的每一層。
 last_update:
-  date: "2026-03-17T08:00:00+08:00"
+  date: "2026-04-10T08:00:00+08:00"
 ---
 
 ## 架構
 
 ```mermaid
-flowchart TD
-    Node.js --> Express
-    Node.js --> koa
-    Node.js --> fastify
-    Node.js --> Connect
-
+flowchart LR
     Express --> finalhandler
     Express --> merge-descriptors
     Express --> body-parser
@@ -40,6 +35,8 @@ flowchart TD
     send --> mime-types
     send --> range-parser
     send --> etag
+    send --> fresh
+    send --> on-finished
 
     type-is --> content-type
     type-is --> mime-types
@@ -599,6 +596,14 @@ console.log(path); // {:user}
 
 ## body-parser
 
+### 基本資訊
+
+- [Github Repo](https://github.com/expressjs/body-parser)
+
+### 解決什麼問題？
+
+把 [raw-body](#raw-body) 包裝成 middleware function 的形式
+
 ## raw-body
 
 ### 基本資訊
@@ -660,11 +665,47 @@ server.listen(5000);
 
 ## fresh
 
+### 基本資訊
+
+- [Github Repo](https://github.com/jshttp/fresh)
+
+### 解決什麼問題？
+
+判斷 conditional request 可否回 304
+
+### 用法介紹
+
+```js
+const isFresh = fresh(req.headers, res.getHeaders());
+if (isFresh) {
+  res.statusCode = 304;
+  // ...
+}
+```
+
 ## cookie
 
 ## cookie-signature
 
 ## content-type
+
+### 基本資訊
+
+- [Github Repo](https://github.com/jshttp/content-type)
+
+### 解決什麼問題？
+
+content-type parsing
+
+### 用法介紹
+
+```js
+console.log(contentType.parse("application/json; charset=utf-8"));
+// {
+//   parameters: [Object: null prototype] { charset: 'utf-8' },
+//   type: 'application/json'
+// }
+```
 
 ## content-disposition
 
@@ -673,6 +714,31 @@ server.listen(5000);
 ## media-typer
 
 ## etag
+
+### 基本資訊
+
+- [Github Repo](https://github.com/jshttp/etag)
+
+### 解決什麼問題？
+
+A util function that generates etag
+
+### 用法介紹
+
+```js
+import etag from "etag";
+import { statSync } from "fs";
+import { join } from "path";
+
+console.log(etag("123"));
+// "3-QL0AFWMIX8NRZTKeof9cXsvbvu8"
+
+console.log(etag(Buffer.from([0x20])));
+// "1-uFjLKCYX+wlW2WAhXI6E0cz5CcY"
+
+console.log(etag(statSync(join(import.meta.dirname, "index.ts"))));
+// W/"123-19d766644a3"
+```
 
 ## proxy-addr
 
@@ -934,9 +1000,24 @@ if (containsDotFile(parts)) {
 
 把 [send](#send) 包裝成 middleware function 的形式
 
+### 用法介紹
+
+```js
+import serveStatic from "serve-static";
+import http from "http";
+import finalhandler from "finalhandler";
+
+const serve = serveStatic(import.meta.dirname);
+
+const server = http.createServer((req, res) =>
+  serve(req, res, finalhandler(req, res)),
+);
+server.listen(5000);
+```
+
 ## vary
 
-## bytes
+<!-- ## bytes -->
 
 ## iconv-lite
 
@@ -952,9 +1033,9 @@ if (containsDotFile(parts)) {
 - [ms](https://www.npmjs.com/package/ms)
 - [debug](https://www.npmjs.com/package/debug)
 - [parseurl](https://www.npmjs.com/package/parseurl)
-- [bytes](https://www.npmjs.com/package/bytes)
-  <!-- - [content-type](#content-type) -->
-  <!-- - [content-disposition](#content-disposition) -->
+  <!-- - [bytes](https://www.npmjs.com/package/bytes) -->
+    <!-- - [content-type](#content-type) -->
+    <!-- - [content-disposition](#content-disposition) -->
 - [media-typer](#media-typer)
 <!-- - [mime-types](#mime-types) -->
 - [mime-db](https://www.npmjs.com/package/mime-db)
