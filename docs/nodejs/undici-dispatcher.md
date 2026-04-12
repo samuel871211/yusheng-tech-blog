@@ -2,7 +2,7 @@
 title: undici Class Dispatcher
 description: undici Class Dispatcher
 last_update:
-  date: "2026-04-07T08:00:00+08:00"
+  date: "2026-04-12T08:00:00+08:00"
 ---
 
 - Dispatcher 是 undici 最底層、最核心的 Class，用來 "發起各式各樣的 HTTP Request"
@@ -526,9 +526,8 @@ https://undici.nodejs.org/#/docs/api/Dispatcher?id=retry
 ```js
 import { Client, interceptors } from "undici";
 
-const client = new Client("http://localhost:5000").compose(
-  interceptors.retry(),
-);
+const retry = interceptors.retry();
+const client = new Client("http://localhost:5000").compose(retry);
 const response = await client.request({ method: "GET", path: "/" });
 ```
 
@@ -994,7 +993,64 @@ undici@8.0.2：lib/interceptor/response-error.js
 
 https://undici.nodejs.org/#/docs/api/Dispatcher?id=cache-interceptor
 
-<!-- todo-yus -->
+我把一些觀察到的重點列出來：
+
+1. 預設使用 `MemoryCacheStore`，背後是一個 JS `Map`
+
+```js
+// Server
+const server = http.createServer((req, res) => {
+  console.log("request received");
+  res.setHeader("cache-control", "max-age=1");
+  res.end("123");
+});
+server.listen(5000);
+
+// Client
+const store = new cacheStores.MemoryCacheStore();
+const cache = interceptors.cache({ store });
+const origin = "http://localhost:5000";
+const client = new Client(origin).compose(cache);
+const response1 = await client.request({ method: "GET", path: "/", origin });
+// 調整 /undici/lib/cache/memory-cache-store.js 的 #entries => entries，方便觀察 Map 的資料結構
+console.log(store.entries);
+// 第二個 request 直接從 cache 拿資料
+const response2 = await client.request({ method: "GET", path: "/", origin });
+```
+
+最終會印出
+
+```js
+request received
+Map(1) {
+  // `${origin}:${path}`
+  'http://localhost:5000:/' => [
+    {
+      origin: 'http://localhost:5000',
+      method: 'GET',
+      path: '/',
+      headers: {
+        'cache-control': 'max-age=1',
+        date: 'Sun, 12 Apr 2026 01:19:23 GMT',
+        'content-length': '3'
+      },
+      statusCode: 200,
+      statusMessage: 'OK',
+      vary: undefined,
+      cacheControlDirectives: { 'max-age': 1 },
+      cachedAt: 1775956763286,
+      // date header + max-age
+      staleAt: 1775956764000,
+      // cachedAt + 2 * (max-age)
+      deleteAt: 1775956765286,
+      body: [ <Buffer 31 32 33> ],
+      size: 3
+    }
+  ]
+}
+```
+
+<!-- todo-yus 更多情境 -->
 
 ### deduplicate
 
