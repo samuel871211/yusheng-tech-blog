@@ -1050,6 +1050,87 @@ Map(1) {
 }
 ```
 
+2. URL query 跟 fragment 也算在 "topLevelCacheKey"，並且會根據 vary 區分不同的 cache
+
+```js
+// Server
+const server = http.createServer((req, res) => {
+  console.log("request", req.url);
+  res.setHeader("cache-control", "max-age=1");
+  res.setHeader("vary", "test");
+  res.end("123");
+});
+server.listen(5000);
+
+// Client
+const store = new cacheStores.MemoryCacheStore();
+const cache = interceptors.cache({ store });
+const origin = "http://localhost:5000";
+const client = new Client(origin).compose(cache);
+const response1 = await client.request({
+  method: "GET",
+  path: "/?a=1#123",
+  origin,
+  headers: { test: "123" },
+});
+const response2 = await client.request({
+  method: "GET",
+  path: "/?a=1#123",
+  origin,
+  headers: { test: "456" },
+});
+console.log(store.entries);
+```
+
+最終會印出
+
+```js
+Map(1) {
+  'http://localhost:5000:/?a=1#123' => [
+    {
+      origin: 'http://localhost:5000',
+      method: 'GET',
+      path: '/?a=1#123',
+      headers: {
+        'cache-control': 'max-age=1',
+        vary: 'test',
+        date: 'Sun, 12 Apr 2026 02:36:25 GMT',
+        'content-length': '3'
+      },
+      statusCode: 200,
+      statusMessage: 'OK',
+      vary: { test: '123' },
+      cacheControlDirectives: { 'max-age': 1 },
+      cachedAt: 1775961385730,
+      staleAt: 1775961386000,
+      deleteAt: 1775961387730,
+      body: [ <Buffer 31 32 33> ],
+      size: 3
+    },
+    {
+      origin: 'http://localhost:5000',
+      method: 'GET',
+      path: '/?a=1#123',
+      headers: {
+        'cache-control': 'max-age=1',
+        vary: 'test',
+        date: 'Sun, 12 Apr 2026 02:36:25 GMT',
+        'content-length': '3'
+      },
+      statusCode: 200,
+      statusMessage: 'OK',
+      vary: { test: '456' },
+      cacheControlDirectives: { 'max-age': 1 },
+      cachedAt: 1775961385733,
+      staleAt: 1775961386000,
+      deleteAt: 1775961387733,
+      body: [ <Buffer 31 32 33> ],
+      size: 3
+    }
+  ]
+}
+```
+
 <!-- todo-yus 更多情境 -->
 
 ### deduplicate
