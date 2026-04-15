@@ -156,9 +156,9 @@ Value: A 32-bit value for the setting.
 
 https://datatracker.ietf.org/doc/html/rfc9113#PUSH_PROMISE -->
 
-<!-- ## Malformed Messages
+## Malformed Messages
 
-https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1 -->
+https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1
 
 ## Node.js HTTP/2 Over HTTP
 
@@ -389,21 +389,24 @@ classDiagram
 - 要創建 HTTP/2 Server => 請使用 `http2.createServer` 或 `http2.createSecureServer`
 - 要發送 HTTP/2 請求 => 請使用 `http2.connect` 來創建 `ClientHttp2Session`
 
-## Keep-Alive
+## HTTP/2 discard connection-specific header fields
 
-### HTTP/2 discard connection-specific header fields
+根據 [RFC 9113 #section-8.2.2](https://datatracker.ietf.org/doc/html/rfc9113#section-8.2.2) 的描述，若 HTTP/2 message 包含以下 "Connection-Specific Header Fields"，則會被視為 [malformed](#malformed-messages)
 
-<!-- todo-yus 到這裡 -->
+- Connection
+- Proxy-Connection
+- Keep-Alive
+- Transfer-Encoding
+- Upgrade
 
-根據 [RFC 9113 #section-8.2.2](https://datatracker.ietf.org/doc/html/rfc9113#section-8.2.2) 的描述
+補充幾點
 
-```
-An endpoint MUST NOT generate an HTTP/2 message containing connection-specific header fields. This includes the Connection header field and those listed as having connection-specific semantics in Section 7.6.1 of [HTTP] (that is, Proxy-Connection, Keep-Alive, Transfer-Encoding, and Upgrade). Any message containing connection-specific header fields MUST be treated as malformed.
-```
+- HTTP/2 允許 TE 出現在 request headers，且唯一能出現的組合是 `TE: trailers`
+- 若 HTTP/2 server 允許 Transfer-Encoding，則可能會有 [H2.TE vulnerabilities](../port-swigger/http-request-smuggling.md#h2te-vulnerabilities)
 
-若 HTTP/2 server 允許 Transfer-Encoding，則可能會有 [H2.TE vulnerabilities](../port-swigger/http-request-smuggling.md#h2te-vulnerabilities)
+## Malformed HTTP/2 Response With Connection Header
 
-### Malformed HTTP/2 Response With Connection Header
+<!-- todo-yus 到這 -->
 
 我猜測瀏覽器應該會嚴格遵守這個規範，所以我們來構造一個 malformed HTTP/2 Response
 
@@ -435,7 +438,7 @@ clientHttp2Session1.request().on("response", console.log).end();
 HTTP/2 connections are persistent. For best performance, it is expected that clients will not close connections until it is determined that no further communication with a server is necessary (for example, when a user navigates away from a particular web page) or until the server closes the connection.
 ```
 
-### Node.js HTTP/1.1 vs HTTP/2 Client API
+## Node.js HTTP/1.1 vs HTTP/2 Client API
 
 從 Node.js http, http2 的 Client API，也可以明顯感覺到差異
 
@@ -456,7 +459,7 @@ clientHttp2Session.request({ ":path": "/path/to/resource" });
 
 <!-- todo-yus -->
 
-### HTTP/2 solves HTTP/1.1 HOL Blocking
+## HTTP/2 solves HTTP/1.1 HOL Blocking
 
 所謂的 `http2.connect('Origin')`，其實就是建立一個 TCP Connection，並且在 Application Layer 建立一個 HTTP/2 的 Persistent Connection，後續所有 HTTP Request, Response 都在這個 TCP Connection 傳輸。
 
