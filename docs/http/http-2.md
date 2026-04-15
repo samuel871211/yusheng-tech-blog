@@ -135,6 +135,8 @@ Value: A 32-bit value for the setting.
 
 對照 [RFC 9113 section-6.5.2](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2)
 
+<!-- todo-yus -->
+
 | Settings                        | Hex   | Description |
 | ------------------------------- | ----- | ----------- |
 | SETTINGS_HEADER_TABLE_SIZE      | 00 01 | -           |
@@ -175,7 +177,7 @@ http2Server.on("request", (req, res) => {
 http2Server.listen(5001);
 ```
 
-一樣用 curl，有支援 HTTP/2 Over HTTP 的 Client
+一樣用 curl（有支援 HTTP/2 Over HTTP 的 Client）
 
 ```
 curl --http2-prior-knowledge http://localhost:5001
@@ -404,41 +406,32 @@ classDiagram
 - HTTP/2 允許 TE 出現在 request headers，且唯一能出現的組合是 `TE: trailers`
 - 若 HTTP/2 server 允許 Transfer-Encoding，則可能會有 [H2.TE vulnerabilities](../port-swigger/http-request-smuggling.md#h2te-vulnerabilities)
 
-## Malformed HTTP/2 Response With Connection Header
+## Node.js malformed HTTP/2 response with connection header
 
-<!-- todo-yus 到這 -->
-
-我猜測瀏覽器應該會嚴格遵守這個規範，所以我們來構造一個 malformed HTTP/2 Response
+我們構造一個 malformed HTTP/2 response
 
 ```ts
-// server
-https2Server.on("request", (req, res) => {
-  console.log(req.headers);
+const http2Server = http2.createServer();
+http2Server.on("request", (req, res) => {
   res.writeHead(200, { connection: "keep-alive" });
   res.end("Welcome to HTTP/2 Server");
 });
-
-// client
-const rootCA = readFileSync("mkcert -CAROOT");
-const clientHttp2Session1 = http2.connect("https://localhost:5002", {
-  ca: rootCA,
-});
-clientHttp2Session1.request().on("response", console.log).end();
+http2Server.listen(5001);
 ```
 
-瀏覽器跟 Node.js HTTP/2 Client 的行為都一致 => 把 Connection Header 移除
+用 `curl --http2-prior-knowledge http://localhost:5001/` 戳看看，Node.js 會噴以下 warning message，不讓 user program 設定 connection header
 
 ```
 (node:6224) UnsupportedWarning: The provided connection header is not valid, the value will be dropped from the header and will never be in use.
 ```
 
-回到剛才 HTTP/2 把 connection-specific header fields 移除的原因，參考 [RFC 9113 #section-9.1](https://datatracker.ietf.org/doc/html/rfc9113#section-9.1) 的描述
+<!-- 參考 [RFC 9113 #section-9.1](https://datatracker.ietf.org/doc/html/rfc9113#section-9.1) 的描述
 
 ```
 HTTP/2 connections are persistent. For best performance, it is expected that clients will not close connections until it is determined that no further communication with a server is necessary (for example, when a user navigates away from a particular web page) or until the server closes the connection.
-```
+``` -->
 
-## Node.js HTTP/1.1 vs HTTP/2 Client API
+## Node.js HTTP/1.1 Client API vs HTTP/2 Client API
 
 從 Node.js http, http2 的 Client API，也可以明顯感覺到差異
 
@@ -457,11 +450,9 @@ const clientHttp2Session = http2.connect("Origin");
 clientHttp2Session.request({ ":path": "/path/to/resource" });
 ```
 
-<!-- todo-yus -->
-
 ## HTTP/2 solves HTTP/1.1 HOL Blocking
 
-所謂的 `http2.connect('Origin')`，其實就是建立一個 TCP Connection，並且在 Application Layer 建立一個 HTTP/2 的 Persistent Connection，後續所有 HTTP Request, Response 都在這個 TCP Connection 傳輸。
+所謂的 `http2.connect('Origin')`，其實就是建立一個 TCP Connection，後續所有 HTTP/2 Request, Response 都在這個 TCP Connection 傳輸。
 
 [RFC 9113 #section-9.1](https://datatracker.ietf.org/doc/html/rfc9113#section-9.1) 也有提到
 
@@ -485,12 +476,11 @@ https2Server.on("session", (session) => {
 });
 ```
 
-瀏覽器打開 https://localhost:5002/，F12 > Console 輸入
+瀏覽器打開 https://localhost:5002/，一次發送 30 個請求
 
 ```ts
-Array(30)
-  .fill(0)
-  .forEach(() => fetch(location.origin));
+const arr30 = Array(30).fill(0);
+arr30.forEach(() => fetch(location.origin));
 ```
 
 如果按照 HTTP/1.1 的概念
@@ -499,10 +489,10 @@ Array(30)
 - 第 7 ~ 12 個請求會 Stalled 1 秒，因為要等待前面 6 個 請求完成，才能複用 TCP Connection，並且會在第 2 秒之後完成
 - 依此類推，總共需要 5 秒才能完成
 
-但是 HTTP/2 解決了這個問題，這 30 個請求幾乎都是同時回傳，並且 Server 也只有建立一個 TCP Connection
+但是 HTTP/2 解決了這個問題，這 30 個請求幾乎都是同時回傳
 ![http2-30-requests-no-stalled](../../static/img/http2-30-requests-no-stalled.jpg)
 
-並且 Server 也只有建立一個 TCP Connection，以及一個 HTTP/2 的 Persistent Connection
+並且 Server 也只有建立一個 TCP Connection
 
 ```
 socket created
