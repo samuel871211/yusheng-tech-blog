@@ -2,7 +2,7 @@
 title: HTTP/2
 description: HTTP/2
 last_update:
-  date: "2025-11-02T08:00:00+08:00"
+  date: "2026-04-16T08:00:00+08:00"
 ---
 
 ## 前言
@@ -501,13 +501,15 @@ session created
 
 ## Http2Session
 
-Node.js 的 [Http2Session](https://nodejs.org/api/http2.html#class-http2session)，就是代表 HTTP/2 的 Persistent Connection，官方描述如下
+Node.js 的 [Http2Session](https://nodejs.org/api/http2.html#class-http2session) 在 Layer 4 對應的是一個 TCP Connection，官方描述如下
 
 ```
 Instances of the http2.Http2Session class represent an active communications session between an HTTP/2 client and server.
+
+Every Http2Session instance is associated with exactly one net.Socket or tls.TLSSocket when it is created.
 ```
 
-### Restrict maxHttp2Sessions for Http2Server
+## Restrict maxHttp2Sessions for Http2Server
 
 當我們使用 `http2.connect()` 的時候，就會建立一個 `Http2Session`
 
@@ -527,9 +529,10 @@ const clientHttp2Session1 = http2.connect("https://localhost:5002", {
 const clientHttp2Session2 = http2.connect("https://localhost:5002", {
   ca: rootCA,
 });
+clientHttp2Session2.on("error", console.log);
 ```
 
-就會噴以下錯誤訊息
+`clientHttp2Session2` 就會噴以下錯誤訊息
 
 ```ts
 Error: read ECONNRESET
@@ -540,13 +543,7 @@ Error: read ECONNRESET
 }
 ```
 
-P.S. 這個錯誤是會直接讓 Node.js Server 掛掉的，所以記得在 `ClientHttp2Session` 加上錯誤捕捉
-
-```ts
-clientHttp2Session2.on("error", console.log);
-```
-
-### @types/node not perfect
+<!-- ## @types/node not perfect
 
 P.S. [@types/node](https://www.npmjs.com/package/@types/node) 雖然有在 `Http2Session` 定義
 
@@ -584,7 +581,7 @@ export interface ClientHttp2Session extends Http2Session {
 }
 ```
 
-導致型別推導不完全，這問題其實我每次在寫 Node.js 的時候都覺得很不方便，但畢竟 [@types/node](https://www.npmjs.com/package/@types/node) 跟 Node.js 本身是分開維護的，建議還是看 [Node.js 官方文件](https://nodejs.org/docs/latest/api/)，查詢對應 Node.js Major Version 會比較準確
+導致型別推導不完全，這問題其實我每次在寫 Node.js 的時候都覺得很不方便，但畢竟 [@types/node](https://www.npmjs.com/package/@types/node) 跟 Node.js 本身是分開維護的，建議還是看 [Node.js 官方文件](https://nodejs.org/docs/latest/api/)，查詢對應 Node.js Major Version 會比較準確 -->
 
 ## Http2Stream
 
@@ -604,47 +601,17 @@ A "stream" is an independent, bidirectional sequence of frames exchanged between
 
 ## Node.js maxConcurrentStreams
 
-<!-- todo-yus -->
-
-承接 [HTTP/2 solves HTTP/1.1 HOL Blocking](#http2-solves-http11-hol-blocking)，我很好奇，一個 HTTP/2 的連線，到底可以同時發多少請求？
+承接 [HTTP/2 solves HTTP/1.1 HOL Blocking](#http2-solves-http11-hol-blocking)，一個 HTTP/2 的連線，到底可以同時發多少請求？
 
 先看看 [Node.js 官方文件](https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object)
 
-- `maxConcurrentStreams`: Specifies the maximum number of concurrent streams permitted on an `Http2Session`. There is no default value which implies, at least theoretically, 232-1 streams may be open concurrently at any given time in an `Http2Session`. The minimum value is 0. The maximum allowed value is 232-1. Default: `4294967295`.
-
-再來看看 [RFC 9113 #section-6.5.2-2.6.1](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2-2.6.1)
+maxConcurrentStreams
 
 ```
-SETTINGS_MAX_CONCURRENT_STREAMS (0x03):
-This setting indicates the maximum number of concurrent streams that the sender will allow. This limit is directional: it applies to the number of streams that the sender permits the receiver to create.
+Specifies the maximum number of concurrent streams permitted on an `Http2Session`. Default: `4294967295`.
 ```
 
-## SETTINGS
-
-根據 [RFC 9113 #section-6.5.2](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2)，HTTP/2 的每個連線都可以設定以下
-
-- SETTINGS_HEADER_TABLE_SIZE
-- SETTINGS_ENABLE_PUSH
-- SETTINGS_MAX_CONCURRENT_STREAMS
-- SETTINGS_INITIAL_WINDOW_SIZE
-- SETTINGS_MAX_FRAME_SIZE
-- SETTINGS_MAX_HEADER_LIST_SIZE
-
-重點！
-
-1. 每個連線都可以設定，相當於 Node.js 的 `Http2Session`
-
-```
-A SETTINGS frame MUST be sent by both endpoints at the start of a connection
-
-SETTINGS frames always apply to a connection, never a single stream.
-```
-
-2. Client, Server 可以各自設定彼此的 SETTINGS 給對方遵守
-
-```
-Settings are not negotiated; they describe characteristics of the sending peer, which are used by the receiving peer.
-```
+剛好對應到 RFC 9113 的 [SETTINGS_MAX_CONCURRENT_STREAMS](#http2-settings)
 
 <!-- https://datatracker.ietf.org/doc/html/rfc9113#section-6.5 -->
 
@@ -683,9 +650,13 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-origin -->
 
 https://nodejs.org/docs/latest-v24.x/api/http2.html#event-trailers -->
 
-## frame
+<!-- ## frame
 
-## Header Compression
+https://datatracker.ietf.org/doc/html/rfc9113#name-http-frames -->
+
+<!-- ## Header Compression
+
+https://datatracker.ietf.org/doc/html/rfc7541 -->
 
 ## Content-Length
 
@@ -695,7 +666,7 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-trailers -->
 A request or response that includes message content can include a content-length header field. A request or response is also malformed if the value of a content-length header field does not equal the sum of the DATA frame payload lengths that form the content, unless the message is defined as having no content.
 ```
 
-然而有些 HTTP/2 的實作沒有遵守 RFC 的 "MUST" 規範，導致了 [H2.CL request smuggling](../port-swigger/http-request-smuggling.md#lab-h2cl-request-smuggling)
+若 HTTP/2 的實作沒有遵守 RFC 的 "MUST" 規範，則可能導致 [H2.CL request smuggling](../port-swigger/http-request-smuggling.md#lab-h2cl-request-smuggling)
 
 ## StreamID
 
