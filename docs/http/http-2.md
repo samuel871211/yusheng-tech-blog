@@ -133,26 +133,15 @@ Identifier: A 16-bit setting identifier; see Section 6.5.2.
 Value: A 32-bit value for the setting.
 ```
 
-對照 [RFC 9113 section-6.5.2](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2)
-
-<!-- todo-yus -->
-
-| Settings                        | Hex   | Description |
-| ------------------------------- | ----- | ----------- |
-| SETTINGS_HEADER_TABLE_SIZE      | 00 01 | -           |
-| SETTINGS_ENABLE_PUSH            | 00 02 | server push |
-| SETTINGS_MAX_CONCURRENT_STREAMS | 00 03 | -           |
-| SETTINGS_INITIAL_WINDOW_SIZE    | 00 04 | -           |
-| SETTINGS_MAX_FRAME_SIZE         | 00 05 | -           |
-| SETTINGS_MAX_HEADER_LIST_SIZE   | 00 06 | -           |
+對照 [Defined Settings](./http-2-raw-bytes.md#defined-settings)
 
 故這三組的意思是：
 
-| Hex               | Description                           |
-| ----------------- | ------------------------------------- |
-| 00 03 00 00 00 64 | SETTINGS_MAX_CONCURRENT_STREAMS = 100 |
-| 00 04 00 a0 00 00 | SETTINGS_INITIAL_WINDOW_SIZE = 16000  |
-| 00 02 00 00 00 00 | SETTINGS_ENABLE_PUSH = false          |
+| hex               | Description                                                   |
+| ----------------- | ------------------------------------------------------------- |
+| 00 03 00 00 00 64 | SETTINGS_MAX_CONCURRENT_STREAMS = 0x00000064 = 100            |
+| 00 04 00 a0 00 00 | SETTINGS_INITIAL_WINDOW_SIZE = 0x00a00000 = 10485760 = 10 MiB |
+| 00 02 00 00 00 00 | SETTINGS_ENABLE_PUSH = false                                  |
 
 <!-- ## PUSH_PROMISE
 
