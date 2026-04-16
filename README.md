@@ -8,6 +8,20 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 
 技術文章是主要的產出，CVE 只是研究過程順手拿到的，請勿當成主要 KPI，而模糊了 "初衷"
 
+## 專有名詞規範
+
+- HTTP client
+- HTTP server
+- TCP connection
+- request / response
+- client
+- server
+- TCP socket
+- Node.js
+- Node.js `http.Server`
+- Node.js `http` 模組
+- Node.js `net` 模組
+
 ## Installation
 
 ```
