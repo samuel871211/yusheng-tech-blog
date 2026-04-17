@@ -2,15 +2,15 @@
 title: "Preconnected TCP socket Poisoning: Chrome / Firefox、HTTP/1.1 與 Security 邊界分析"
 description: 分析瀏覽器對 preconnected HTTP/1.1 TCP socket 的 request / response binding 行為，並整理 Chrome、Firefox 為何不將其視為 security issue
 last_update:
-  date: "2025-04-16T08:00:00+08:00"
+  date: "2025-04-17T08:00:00+08:00"
 ---
 
 ## 先備知識
 
-本文預設讀者已熟悉
-
 - [HTTP/1.1 Message](./anatomy-of-an-http-message.md)
-- [HTTP/1.1 Connection & Keep-Alive](./keep-alive-and-connection.md)
+  ![HTTP/1.1-Message](../../static/img/HTTP:1.1-Message.svg)
+- [HTTP/1.1 Keep-Alive, Connection](./keep-alive-and-connection.md)
+  ![HTTP/1.1-Keep-Alive-Connection](../../static/img/HTTP:1.1-Keep-Alive-Connection.svg)
 
 ## 前言
 
@@ -130,7 +130,7 @@ AI 的回覆讓我有了新的想法
 
 可以用來預先建立 TCP 連線（若 https 的話則是 TCP + TLS）
 
-## PoC 時序圖
+## 時序圖
 
 測試情境如下：
 
