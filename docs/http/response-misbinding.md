@@ -8,9 +8,9 @@ last_update:
 ## 先備知識
 
 - [HTTP/1.1 Message](./anatomy-of-an-http-message.md)
-  ![HTTP/1.1-Message](../../static/img/HTTP:1.1-Message.svg)
+  ![HTTP/1.1-Message](../../static/img/HTTP-1.1-Message.svg)
 - [HTTP/1.1 Keep-Alive, Connection](./keep-alive-and-connection.md)
-  ![HTTP/1.1-Keep-Alive-Connection](../../static/img/HTTP:1.1-Keep-Alive-Connection.svg)
+  ![HTTP/1.1-Keep-Alive-Connection](../../static/img/HTTP-1.1-Keep-Alive-Connection.svg)
 
 ## 前言
 

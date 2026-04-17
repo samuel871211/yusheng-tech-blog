@@ -44,7 +44,7 @@ http2Server.listen(5003);
 1. 瀏覽器只支援 HTTP/2 + TLS (簡稱 h2)
 2. HTTP/2 over cleartext (簡稱 h2c) 實作率很低
 
-至於原因，可參考我寫過的 [HTTP/2](./http-2.md#http2-over-https)
+至於原因，可參考我寫過的 [HTTP/2](./http-2.md#http2-for-http-uris-has-been-deprecated)
 
 ## ALPN
 

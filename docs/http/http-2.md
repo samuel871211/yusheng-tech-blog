@@ -133,7 +133,7 @@ Identifier: A 16-bit setting identifier; see Section 6.5.2.
 Value: A 32-bit value for the setting.
 ```
 
-對照 [Defined Settings](./http-2-raw-bytes.md#defined-settings)
+對照 [Defined Settings](./http-2-raw-bytes.md#section-652-defined-settings)
 
 故這三組的意思是：
 

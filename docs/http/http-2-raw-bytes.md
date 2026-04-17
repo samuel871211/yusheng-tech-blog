@@ -46,7 +46,7 @@ client 會送以下 bytes (hex)
   | Flags                        | 00          | reserved for boolean flags specific to the frame type       |
   | Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit field<br/>Stream Identifier: 31-bit integer |
 
-- frame payload（參考 [Defined Settings](#defined-settings)）
+- frame payload（參考 [Defined Settings](#section-652-defined-settings)）
 
   | hex               | Description                                                   |
   | ----------------- | ------------------------------------------------------------- |
