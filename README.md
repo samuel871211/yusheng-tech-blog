@@ -12,6 +12,11 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 
 - HTTP client
 - HTTP server
+- HTTP range requests
+- HTTP caching
+- HTTP header
+- header(s)
+- body
 - TCP connection
 - request / response
 - client
@@ -21,6 +26,9 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 - Node.js `http.Server`
 - Node.js `http` 模組
 - Node.js `net` 模組
+- Apache HTTP Server
+- `200`, `206` ...
+- `OK`, `Partial Content` ...
 
 ## Installation
 
