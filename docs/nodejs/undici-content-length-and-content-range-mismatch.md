@@ -51,7 +51,7 @@ const response = await client.request({
 console.log(response);
 ```
 
-server side 想要達成的情境是
+server 端想要達成的情境是
 
 1. 第一輪宣告 5 bytes 的 response body，但傳輸 3 bytes 就斷線
 
@@ -128,7 +128,7 @@ server.on("request", (req, res) => {
 
 ## 如何讓 `undici` 的 `RetryHandler` 狀態機異常
 
-**如果 `Content-Range`, `Content-Length` 宣告的長度不一致，`undici` 會怎麼處理呢？**
+**如果第二輪 response 的 `Content-Range` 只宣告 2 bytes，但實際傳輸的 body 比 2 bytes 更長，undici 會怎麼處理呢？**
 
 ![normal-vs-unnormal-case](../../static/img/normal-vs-unnormal-case.svg)
 
@@ -241,7 +241,7 @@ server.listen(5000);
 **但最終 `undici` 還是會正確解析出 header/body 一致的 response**
 
 ```js
-// undici http client without "RetryHandler"
+// undici HTTP client without "RetryHandler"
 const client = new Client("http://localhost:5000");
 const response = await client.request({ method: "GET", path: "/users/1" });
 console.log(response);
@@ -262,9 +262,9 @@ console.log(response);
 
 ![retry-handler-conclusion](../../static/img/retry-handler-conclusion.svg)
 
-## Security threat model of http client & server
+## Security threat model of HTTP client & server
 
-被 http client "洗禮" 過之後，我有感而發
+被 HTTP client "洗禮" 過之後，我有感而發
 
 ![http-client-server-threat-req](../../static/img/http-client-server-threat-req.jpg)
 
@@ -279,7 +279,7 @@ AI 的總結很有道理
 - [issue](https://github.com/nodejs/undici/issues/4970)
 - [PR](https://github.com/nodejs/undici/pull/4975)
 
-經過這次經驗，我現在判斷 http client 的 finding 比較像 bug 還是 vulnerability 時，會先問自己：
+經過這次經驗，我現在判斷 HTTP client 的 finding 比較像 bug 還是 vulnerability 時，會先問自己：
 
 - 有了這個 bug，attacker 額外長出了什麼新能力？
-- 這個新能力有沒有跨出單一 reqeust / response 的邊界？
+- 這個新能力有沒有跨出單一 request / response 的邊界？
