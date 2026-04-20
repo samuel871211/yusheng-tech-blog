@@ -13,7 +13,6 @@ flowchart LR
     Express --> merge-descriptors
     Express --> body-parser
     Express --> router
-    Express --> body-parser
     Express --> fresh
     Express --> content-type
     Express --> content-disposition
