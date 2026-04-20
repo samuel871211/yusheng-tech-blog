@@ -8,6 +8,7 @@ last_update:
 ## 目標
 
 參考 [RFC 9113](https://datatracker.ietf.org/doc/html/rfc9113)，拆解 `curl --http2-prior-knowledge http://localhost:5001` 背後傳送的 HTTP/2 raw bytes
+![curl-http2-wireshark](../../static/img/curl-http2-wireshark.jpg)
 
 ## Step 1: HTTP/2 Connection Preface
 
@@ -85,6 +86,110 @@ client 會送以下 bytes (hex)
 :::
 
 ## Step 3: HEADERS frame
+
+## Step 4: server connection preface (SETTINGS frame)
+
+[Section 3.4. HTTP/2 Connection Preface](https://datatracker.ietf.org/doc/html/rfc9113#section-3.4)
+
+server 會送以下 bytes (hex)
+
+```
+00 00 00 04 00 00 00 00 00 // frame header
+```
+
+| field                        | hex         | description                                                 |
+| ---------------------------- | ----------- | ----------------------------------------------------------- |
+| Length                       | 00 00 00    | frame payload has 0 bytes                                   |
+| Type                         | 04          | SETTINGS frame (type=0x04)                                  |
+| Flags                        | 00          | reserved for boolean flags specific to the frame type       |
+| Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit field<br/>Stream Identifier: 31-bit integer |
+
+代表 server 沒有要修改任何設定
+
+## Step 5: client ACK (SETTINGS frame)
+
+[Section 6.5.1. SETTINGS](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5)
+
+client 會送以下 bytes (hex)
+
+```
+00 00 00 04 01 00 00 00 00
+```
+
+| field                        | hex         | description                                                 |
+| ---------------------------- | ----------- | ----------------------------------------------------------- |
+| Length                       | 00 00 00    | frame payload has 0 bytes                                   |
+| Type                         | 04          | SETTINGS frame (type=0x04)                                  |
+| Flags                        | 01          | ACK flag                                                    |
+| Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit field<br/>Stream Identifier: 31-bit integer |
+
+代表 client 收到 server 的 SETTINGS frame 了
+
+## Step 6: server ACK (SETTINGS frame)
+
+server 會送以下 bytes (hex)
+
+```
+00 00 00 04 01 00 00 00 00
+```
+
+| field                        | hex         | description                                                 |
+| ---------------------------- | ----------- | ----------------------------------------------------------- |
+| Length                       | 00 00 00    | frame payload has 0 bytes                                   |
+| Type                         | 04          | SETTINGS frame (type=0x04)                                  |
+| Flags                        | 01          | ACK flag                                                    |
+| Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit field<br/>Stream Identifier: 31-bit integer |
+
+代表 server 收到 client 的 SETTINGS frame 了
+
+## Step 7: server send HEADERS frame
+
+<!-- todo-yus -->
+
+```
+0000   00 00 19 01 04 00 00 00 01 88 61 96 d0 7a be 94
+0010   10 14 86 bb 14 10 04 e2 80 15 c6 83 70 0e 29 8b
+0020   46 ff
+
+```
+
+## Step 8: server send DATA frame
+
+server 會送以下 bytes (hex)
+
+```
+00 00 18 00 00 00 00 00 01                                               // frame header
+57 65 6c 63 6f 6d 65 20 74 6f 20 48 54 54 50 2f 32 20 53 65 72 76 65 72  // frame payload
+```
+
+- fixed 9-octet frame header
+
+  | field                        | hex         | description                                                         |
+  | ---------------------------- | ----------- | ------------------------------------------------------------------- |
+  | Length                       | 00 00 18    | frame payload has 24 bytes                                          |
+  | Type                         | 00          | DATA frame (type=0x00)                                              |
+  | Flags                        | 00          | unset (0x00)                                                        |
+  | Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit field (0)<br/>Stream Identifier: 31-bit integer (1) |
+
+- frame payload
+  - 57 65 6c 63 6f 6d 65 20 74 6f 20 48 54 54 50 2f 32 20 53 65 72 76 65 72 = Welcome to HTTP/2 Server
+
+## Step 9: server send DATA frame (END_STREAM)
+
+server 會送以下 bytes (hex)
+
+```
+00 00 00 00 01 00 00 00 01 // frame header
+```
+
+| field                        | hex         | description                                                         |
+| ---------------------------- | ----------- | ------------------------------------------------------------------- |
+| Length                       | 00 00 00    | frame payload has 0 bytes                                           |
+| Type                         | 00          | DATA frame (type=0x00)                                              |
+| Flags                        | 01          | END_STREAM                                                          |
+| Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit field (0)<br/>Stream Identifier: 31-bit integer (1) |
+
+代表 stream ID = 1 的 request / response 已經傳輸完成，進入 [half-closed 或 closed state](https://datatracker.ietf.org/doc/html/rfc9113#section-5.1)
 
 ## Section 6.5.2 Defined Settings
 
