@@ -273,3 +273,84 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
 - GOAWAY
 
 會在之後的文章介紹到～
+
+## 使用 Node.js `net.Socket` 手搓 HTTP/2 raw bytes
+
+**Why？**
+
+- 要測試 HTTP/2 的 RFC 跟實作差異，就必須學習手搓 HTTP/2 raw bytes
+- 使用封裝好的 HTTP/2 的 client, server 套件、模組，無法精準控制送出的 raw bytes
+  :::info
+  套件送出的 HTTP/2 frame 基本上都會盡可能符合 RFC，無法測試 edge case
+
+  例如要測試 `Transfer-Encoding` + `Content-Length` 的組合，套件可能會把 TE 移除，並且把 CL 改成正確的值
+  :::
+
+### 安裝 nghttp2 HPACK tools
+
+**為何要安裝 [nghttp2](https://github.com/nghttp2/nghttp2)？**
+
+1. Node.js http2 模組底層使用 [nghttp2](https://github.com/nghttp2/nghttp2)
+2. 將 [HPACK](https://datatracker.ietf.org/doc/html/rfc7541) 外包給 [nghttp2](https://github.com/nghttp2/nghttp2)，其餘 frame types 自己組
+
+**Mac 安裝 nghttp2 HPACK tools 步驟：**
+
+1. 到 [releases](https://github.com/nghttp2/nghttp2/releases) 頁面下載 package，我選擇 `nghttp2-1.69.0.tar.gz`
+2. `gunzip nghttp2-1.69.0.tar.gz`
+3. `cd nghttp2-1.69.0`
+4. `brew install jansson`（[README](https://github.com/nghttp2/nghttp2) 說 HPACK tools 需要裝這個）
+5. `make -j8`（j = job）
+
+**Windows 安裝 nghttp2 HPACK tools 步驟：**
+
+### CLI 測試 `deflatehd`
+
+- `deflatehd` = deflate header
+- `-t` 參數，讓我們可以用 HTTP/1.1 的格式宣告 HTTP/2 headers
+- `<<'EOF'`：接下來的多行文字，原樣當 stdin 餵給它
+- `EOF`：結尾
+
+```
+./src/deflatehd -t <<'EOF'
+:method: GET
+:scheme: https
+:path: /
+:authority: example.com
+
+EOF
+```
+
+預期 output
+
+```
+{
+  "cases":
+  [
+{
+  "seq": 0,
+  "input_length": 49,
+  "output_length": 13,
+  "percentage_of_original_size": 26.53061224489796,
+  "wire": "82878441882f91d35d055c87a7",
+  "headers": [
+    {
+      ":method": "GET"
+    },
+    {
+      ":scheme": "https"
+    },
+    {
+      ":path": "/"
+    },
+    {
+      ":authority": "example.com"
+    }
+  ],
+  "header_table_size": 4096
+}
+  ]
+}
+Overall: input=49 output=13 ratio=0.27
+```
+
+### Node.js + CLI

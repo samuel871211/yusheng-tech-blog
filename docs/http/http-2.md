@@ -143,13 +143,9 @@ Value: A 32-bit value for the setting.
 | 00 04 00 a0 00 00 | SETTINGS_INITIAL_WINDOW_SIZE = 0x00a00000 = 10485760 = 10 MiB |
 | 00 02 00 00 00 00 | SETTINGS_ENABLE_PUSH = false                                  |
 
-<!-- ## PUSH_PROMISE
+<!-- ## Malformed Messages
 
-https://datatracker.ietf.org/doc/html/rfc9113#PUSH_PROMISE -->
-
-## Malformed Messages
-
-https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1
+https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1 -->
 
 ## Node.js HTTP/2 Over HTTP
 
