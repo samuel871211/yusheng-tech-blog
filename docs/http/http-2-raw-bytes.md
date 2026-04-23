@@ -2,14 +2,27 @@
 title: 深入瞭解 HTTP/2 raw bytes
 description: 深入瞭解 HTTP/2 raw bytes
 last_update:
-  date: "2026-04-16T08:00:00+08:00"
+  date: "2026-04-23T08:00:00+08:00"
 ---
 
 ## 目標
 
+用 Node.js 架一個 `http2.Http2Server`
+
+```js
+const http2Server = http2.createServer((req, res) =>
+  res.end("Welcome to HTTP/2 Server"),
+);
+http2Server.listen(5001);
+```
+
 參考 [RFC 9113](https://datatracker.ietf.org/doc/html/rfc9113)，拆解 `curl --http2-prior-knowledge http://localhost:5001` 背後傳送的 HTTP/2 raw bytes
 
+## wireshark 抓包
+
 ![curl-http2-wireshark](../../static/img/curl-http2-wireshark.jpg)
+
+## 循序圖
 
 ```mermaid
 sequenceDiagram
@@ -38,7 +51,7 @@ sequenceDiagram
 - [Section 3.4. HTTP/2 Connection Preface](https://datatracker.ietf.org/doc/html/rfc9113#section-3.4)
 - [Section 4.1. Frame Format](https://datatracker.ietf.org/doc/html/rfc9113#section-4.1)
 - [Section 5.1.1. Stream Identifiers](https://datatracker.ietf.org/doc/html/rfc9113#section-5.1.1)
-- [Section 6.5.1. SETTINGS](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5)
+- [Section 6.5. SETTINGS](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5)
 - [Section 6.5.1. SETTINGS Format](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.1)
 - [Section 6.5.2. Defined Settings](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2)
 
@@ -50,8 +63,6 @@ client 會送以下 bytes (hex)
 00 04 00 a0 00 00          // frame payload
 00 02 00 00 00 00          // frame payload
 ```
-
-可以解讀成 frame header 跟 frame payload 兩個大區塊
 
 - frame header
 
@@ -81,9 +92,7 @@ client 會送以下 bytes (hex)
 3e 7f 00 01                // frame payload
 ```
 
-可以解讀成 frame header 跟 frame payload 兩個大區塊
-
-- fixed 9-octet frame header
+- frame header
 
   | field                        | hex         | description                                           |
   | ---------------------------- | ----------- | ----------------------------------------------------- |
@@ -111,9 +120,7 @@ client 會送以下 bytes (hex)
 82 86 41 8a a0 e4 1d 13 9d 09 b8 d8 00 1f 84 7a 88 25 b6 50 c3 cb ba b8 7f 53 03 2a 2f 2a // frame payload
 ```
 
-可以解讀成 frame header 跟 frame payload 兩個大區塊
-
-- fixed 9-octet frame header
+- frame header
 
   | field                        | hex         | description                                           |
   | ---------------------------- | ----------- | ----------------------------------------------------- |
@@ -123,7 +130,8 @@ client 會送以下 bytes (hex)
   | Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (1) |
 
 - frame payload
-  - 82 86 41 8a a0 e4 1d 13 9d 09 b8 d8 00 1f 84 7a 88 25 b6 50 c3 cb ba b8 7f 53 03 2a 2f 2a (HPACK)
+
+  `82 86 41 8a a0 e4 1d 13 9d 09 b8 d8 00 1f 84 7a 88 25 b6 50 c3 cb ba b8 7f 53 03 2a 2f 2a` (HPACK)
 
 ## Step 5: SETTINGS frame (Connection Preface)
 
@@ -146,7 +154,7 @@ server 會送以下 bytes (hex)
 
 ## Step 6: SETTINGS frame (client ACK)
 
-[Section 6.5.1. SETTINGS](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5)
+[Section 6.5. SETTINGS](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5)
 
 client 會送以下 bytes (hex)
 
@@ -161,7 +169,7 @@ client 會送以下 bytes (hex)
 | Flags                        | 01          | ACK flag                                              |
 | Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
 
-代表 client 收到 server 的 SETTINGS frame 了
+代表 client 收到 [Step 5: server 的 SETTINGS frame](#step-5-settings-frame-connection-preface) 了
 
 ## Step 6: SETTINGS frame (server ACK)
 
@@ -178,7 +186,7 @@ server 會送以下 bytes (hex)
 | Flags                        | 01          | ACK flag                                              |
 | Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
 
-代表 server 收到 client 的 SETTINGS frame 了
+代表 server 收到 [Step 2: client 的 SETTINGS frame](#step-2-settings-frame-connection-preface) 了
 
 ## Step 7: HEADERS frame
 
@@ -189,9 +197,7 @@ server 會送以下 bytes (hex)
 88 61 96 d0 7a be 94 10 14 86 bb 14 10 04 e2 80 7a e0 1f b8 db 4a 62 d1 bf // frame payload
 ```
 
-可以解讀成 frame header 跟 frame payload 兩個大區塊
-
-- fixed 9-octet frame header
+- frame header
 
   | field                        | hex         | description                                           |
   | ---------------------------- | ----------- | ----------------------------------------------------- |
@@ -201,7 +207,8 @@ server 會送以下 bytes (hex)
   | Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (1) |
 
 - frame payload
-  - 88 61 96 d0 7a be 94 10 14 86 bb 14 10 04 e2 80 15 c6 83 70 0e 29 8b 46 ff (HPACK)
+
+  `88 61 96 d0 7a be 94 10 14 86 bb 14 10 04 e2 80 15 c6 83 70 0e 29 8b 46 ff` (HPACK)
 
 ## Step 8: server send DATA frame
 
@@ -212,7 +219,7 @@ server 會送以下 bytes (hex)
 57 65 6c 63 6f 6d 65 20 74 6f 20 48 54 54 50 2f 32 20 53 65 72 76 65 72  // frame payload
 ```
 
-- fixed 9-octet frame header
+- frame header
 
   | field                        | hex         | description                                                         |
   | ---------------------------- | ----------- | ------------------------------------------------------------------- |
@@ -222,7 +229,8 @@ server 會送以下 bytes (hex)
   | Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit field (0)<br/>Stream Identifier: 31-bit integer (1) |
 
 - frame payload
-  - 57 65 6c 63 6f 6d 65 20 74 6f 20 48 54 54 50 2f 32 20 53 65 72 76 65 72 = Welcome to HTTP/2 Server
+
+  `57 65 6c 63 6f 6d 65 20 74 6f 20 48 54 54 50 2f 32 20 53 65 72 76 65 72` = Welcome to HTTP/2 Server
 
 ## Step 9: server send DATA frame (END_STREAM)
 
@@ -254,13 +262,14 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
 | SETTINGS_MAX_FRAME_SIZE         | 00 05 | frame payload, max = 2^24 - 1             |
 | SETTINGS_MAX_HEADER_LIST_SIZE   | 00 06 | -                                         |
 
-<!-- ## frame header
+## 小結
 
-[Section 4.1. Frame Format](https://datatracker.ietf.org/doc/html/rfc9113#section-4.1)
+以上是一個 round trip 結束，就關閉 TCP 連線的情境。實際上 HTTP/2 還有其他 frame types
 
-| field | hex | description |
-| ----- | -------- | ----------- |
-| Length | 00 00 04 | frame payload has 4 bytes |
-| Type | 08 | WINDOW_UPDATE frame (type=0x08) |
-| Flags | 00 | reserved for boolean flags specific to the frame type |
-| Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit field<br/>Stream Identifier: 31-bit integer | -->
+- RST_STREAM
+- PUSH_PROMISE
+- PRIORITY
+- PING
+- GOAWAY
+
+會在之後的文章介紹到～
