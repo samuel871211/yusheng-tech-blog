@@ -238,7 +238,6 @@ const sidebars: SidebarsConfig = {
       items: [
         "reflections/responsible-disclosure-roi",
         "reflections/real-world-http-request-smuggling",
-        "reflections/tpbet-wordpress-pdf",
       ],
     },
   ],
