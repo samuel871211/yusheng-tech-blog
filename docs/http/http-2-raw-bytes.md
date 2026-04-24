@@ -2,21 +2,26 @@
 title: 深入瞭解 HTTP/2 raw bytes
 description: 深入瞭解 HTTP/2 raw bytes
 last_update:
-  date: "2026-04-23T08:00:00+08:00"
+  date: "2026-04-24T08:00:00+08:00"
 ---
 
 ## 目標
 
-用 Node.js 架一個 `http2.Http2Server`
+1. 參考 [RFC 9113](https://datatracker.ietf.org/doc/html/rfc9113)，拆解 HTTP/2 raw bytes
+2. 用 Node.js `net.Socket` 手搓 HTTP/2 raw bytes (client side)
+
+## 環境架設
+
+1. 用 Node.js 架一個 `http2.Http2Server`
 
 ```js
-const http2Server = http2.createServer((req, res) =>
+const http2Server = http2.createServer((req, res) => {
   res.end("Welcome to HTTP/2 Server"),
-);
+});
 http2Server.listen(5001);
 ```
 
-參考 [RFC 9113](https://datatracker.ietf.org/doc/html/rfc9113)，拆解 `curl --http2-prior-knowledge http://localhost:5001` 背後傳送的 HTTP/2 raw bytes
+2. `curl --http2-prior-knowledge http://localhost:5001`
 
 ## wireshark 抓包
 
@@ -262,19 +267,7 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
 | SETTINGS_MAX_FRAME_SIZE         | 00 05 | frame payload, max = 2^24 - 1             |
 | SETTINGS_MAX_HEADER_LIST_SIZE   | 00 06 | -                                         |
 
-## 小結
-
-以上是一個 round trip 結束，就關閉 TCP 連線的情境。實際上 HTTP/2 還有其他 frame types
-
-- RST_STREAM
-- PUSH_PROMISE
-- PRIORITY
-- PING
-- GOAWAY
-
-會在之後的文章介紹到～
-
-## 使用 Node.js `net.Socket` 手搓 HTTP/2 raw bytes
+## Node.js `net.Socket` 手搓 HTTP/2 raw bytes
 
 **Why？**
 
@@ -295,7 +288,7 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
 
 **Mac 安裝 nghttp2 HPACK tools 步驟：**
 
-1. 到 [releases](https://github.com/nghttp2/nghttp2/releases) 頁面下載 package，我選擇 `nghttp2-1.69.0.tar.gz`
+1. 到 [releases](https://github.com/nghttp2/nghttp2/releases) 頁面下載 package，我個人是選擇 `nghttp2-1.69.0.tar.gz`
 2. `gunzip nghttp2-1.69.0.tar.gz`
 3. `cd nghttp2-1.69.0`
 4. `brew install jansson`（[README](https://github.com/nghttp2/nghttp2) 說 HPACK tools 需要裝這個）
@@ -303,12 +296,11 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
 
 **Windows 安裝 nghttp2 HPACK tools 步驟：**
 
+<!-- todo-yus -->
+
 ### CLI 測試 `deflatehd`
 
-- `deflatehd` = deflate header
-- `-t` 參數，讓我們可以用 HTTP/1.1 的格式宣告 HTTP/2 headers
-- `<<'EOF'`：接下來的多行文字，原樣當 stdin 餵給它
-- `EOF`：結尾
+終端機輸入
 
 ```
 ./src/deflatehd -t <<'EOF'
@@ -320,7 +312,12 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
 EOF
 ```
 
-預期 output
+- [deflatehd](https://github.com/nghttp2/nghttp2#deflatehd---header-compressor) = deflate header
+- `-t` 參數，讓我們可以用類似 HTTP/1.1 的格式宣告 HTTP/2 headers
+- `<<'EOF'`：接下來的多行文字，原樣當 stdin 餵給它
+- `EOF`：結尾
+
+預期輸出
 
 ```
 {
@@ -353,4 +350,52 @@ EOF
 Overall: input=49 output=13 ratio=0.27
 ```
 
-### Node.js + CLI
+### Node.js + CLI 串接 `deflatehd`
+
+```js
+import { spawnSync } from "child_process";
+
+const pathToDeflatehd = "/path-to-your/nghttp2-1.69.0/src/deflatehd";
+const spawnSyncReturns = spawnSync(pathToDeflatehd, ["-t"], {
+  input: [
+    ":method: GET",
+    ":scheme: http",
+    ":path: /",
+    ":authority: localhost:5001",
+    "",
+    "",
+  ].join("\n"),
+  encoding: "utf8",
+});
+const result = JSON.parse(spawnSyncReturns.stdout);
+// {
+//   cases: [
+//     {
+//       seq: 0,
+//       input_length: 51,
+//       output_length: 15,
+//       percentage_of_original_size: 29.411764705882355,
+//       wire: '828684418aa0e41d139d09b8d8001f',
+//       headers: [
+//         { ':method': 'GET' },
+//         { ':scheme': 'http' },
+//         { ':path': '/' },
+//         { ':authority': 'localhost:5001' }
+//       ],
+//       header_table_size: 4096
+//     }
+//   ]
+// }
+```
+
+## 小結
+
+以上是一個 round trip 結束，就關閉 TCP 連線的情境。實際上 HTTP/2 還有其他 frame types
+
+- RST_STREAM
+- PUSH_PROMISE
+- PRIORITY
+- PING
+- GOAWAY
+
+會在之後的文章介紹到～
