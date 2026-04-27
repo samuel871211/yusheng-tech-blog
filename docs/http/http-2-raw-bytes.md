@@ -211,6 +211,15 @@ server 會送以下 bytes (hex)
   | Flags                        | 04          | END_HEADERS                                           |
   | Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (1) |
 
+- frame header flags
+
+  | flag        | bits           | hex | description |
+  | ----------- | -------------- | --- | ----------- |
+  | PRIORITY    | 00100000 (2^5) | 20  | -           |
+  | PADDED      | 00001000 (2^3) | 08  | -           |
+  | END_HEADERS | 00000100 (2^2) | 04  | -           |
+  | END_STREAM  | 00000001 (2^0) | 01  | -           |
+
 - frame payload
 
   `88 61 96 d0 7a be 94 10 14 86 bb 14 10 04 e2 80 15 c6 83 70 0e 29 8b 46 ff` (HPACK)
