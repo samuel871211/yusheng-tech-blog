@@ -1,6 +1,6 @@
 ---
-title: Strict-Transport-Security
-description: Strict-Transport-Security
+title: "HSTS: Strict-Transport-Security"
+description: "HSTS: Strict-Transport-Security"
 last_update:
   date: "2025-06-27T08:00:00+08:00"
 ---
@@ -13,7 +13,7 @@ Strict-Transport-Security: max-age=<seconds>; includeSubDomains
 Strict-Transport-Security: max-age=<seconds>; includeSubDomains; preload
 ```
 
-## NodeJS HTTP Server
+## Node.js HTTP server
 
 根據 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security#description) 的描述：
 
@@ -21,7 +21,7 @@ Strict-Transport-Security: max-age=<seconds>; includeSubDomains; preload
 Note: The host must send the Strict-Transport-Security header over HTTPS only, not insecure HTTP. Browsers ignore the header if sent over HTTP to prevent a manipulator-in-the-middle (MITM) from altering the header to expire prematurely or adding it for a host that doesn't support HTTPS.
 ```
 
-在 HTTP Protocol 的情況設定，browser 會忽略，那我們就架一個 NodeJS HTTP Server 試試看！
+在 HTTP Protocol 的情況設定，browser 會忽略，那我們就架一個 Node.js HTTP server 試試看！
 
 index.ts
 
@@ -46,9 +46,9 @@ httpServer.on("request", function requestListener(req, res) {
 ![localhost-5000-hsts-not-found](../../static/img/localhost-5000-hsts-not-found.jpg)
 都沒查到！代表 Chrome 真的忽略了在 HTTP Protocol 設定的 HSTS（但我們還需要驗證在 HTTPS Protocol 是否就會紀錄 HSTS）
 
-## NodeJS HTTPS Server
+## Node.js HTTPS server
 
-我們按照以下步驟，在本機啟動 NodeJS HTTPS Server
+我們按照以下步驟，在本機啟動 Node.js HTTPS server
 
 private-key.pem & cert.pem
 
@@ -106,7 +106,7 @@ mkcert -install
 mkcert -key-file private-key.pem -cert-file cert.pem localhost
 ```
 
-然後重啟 NodeJS HTTPS Server，關閉瀏覽器，並且重開
+然後重啟 Node.js HTTPS Server，關閉瀏覽器，並且重開
 ![localhost-5001-hsts-cert-valid](../../static/img/localhost-5001-hsts-cert-valid.jpg)
 這次沒有跳警告了，我們用 chrome://net-internals/#hsts 查查看
 ![localhost-hsts-not-found](../../static/img/localhost-hsts-not-found.jpg)
@@ -153,7 +153,7 @@ mkcert -key-file private-key.pem -cert-file cert.pem localhost
 
 由於剛剛瀏覽器已經把 `hsts.test.com` 記在 HSTS 列表了，這時候憑證變成不安全，理論上不會讓我們訪問 https://hsts.test.com:5001/
 ![hsts-test-com-cert-invalid-chrome-block](../../static/img/hsts-test-com-cert-invalid-chrome-block.jpg)
-有句話很吸引我的眼球，`Chrome 已及時停止連線，並未傳輸任何資料`，意思是 request 其實根本沒有送出去嗎？我們在 NodeJS HTTPS Server 加個 log 試試看：
+有句話很吸引我的眼球，`Chrome 已及時停止連線，並未傳輸任何資料`，意思是 request 其實根本沒有送出去嗎？我們在 Node.js HTTPS server 加個 log 試試看：
 
 ```ts
 httpServer.on("request", function httpRequestListener(req, res) {
@@ -162,7 +162,7 @@ httpServer.on("request", function httpRequestListener(req, res) {
 });
 ```
 
-重整瀏覽器後，NodeJS 確實沒印出任何 log，瀏覽器在這層的防護是真的很完善！
+重整瀏覽器後，Node.js 確實沒印出任何 log，瀏覽器在這層的防護是真的很完善！
 
 ## disable HSTS
 
@@ -178,13 +178,13 @@ To disable HSTS, set max-age=0. This only takes effect once the browser makes a 
 mkcert -key-file private-key.pem -cert-file cert.pem hsts.test.com nodejs.hsts.test.com sub.nodejs.hsts.test.com
 ```
 
-調整 NodeJS 程式碼
+調整 Node.js 程式碼
 
 ```ts
 res.setHeader("Strict-Transport-Security", "max-age=0");
 ```
 
-瀏覽器關掉重開，然後 NodeJS 重啟，打開 https://hsts.test.com:5001/
+瀏覽器關掉重開，然後 Node.js 重啟，打開 https://hsts.test.com:5001/
 ![hsts-test-com-set-hsts-max-age-0](../../static/img/hsts-test-com-set-hsts-max-age-0.jpg)
 確定有看到 `max-age=0` 之後，再到 chrome://net-internals/#hsts 查詢
 ![hsts-test-com-hsts-not-found](../../static/img/hsts-test-com-hsts-not-found.jpg)
