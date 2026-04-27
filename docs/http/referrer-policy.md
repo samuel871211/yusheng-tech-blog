@@ -1,6 +1,6 @@
 ---
-title: 深入瞭解 Referrer Policy
-description: 深入瞭解 Referrer Policy
+title: 深入瞭解 Referrer-Policy (referrerPolicy)
+description: 深入瞭解 Referrer-Policy (referrerPolicy)
 last_update:
   date: "2025-03-16T08:00:00+08:00"
 ---
