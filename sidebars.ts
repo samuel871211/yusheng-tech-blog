@@ -72,6 +72,8 @@ const sidebars: SidebarsConfig = {
         // "http/expect-based-desync-attacks"
         "http/http-2", // 可拆 ing
         "http/http-2-raw-bytes",
+        "http/http-2-raw-bytes-2",
+        "http/http-2-errors",
 
         // "http/service-worker-allowed",
         // "http/http-caching-4", // ing
