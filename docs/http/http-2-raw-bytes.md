@@ -2,7 +2,7 @@
 title: 深入瞭解 HTTP/2 raw bytes
 description: 深入瞭解 HTTP/2 raw bytes
 last_update:
-  date: "2026-04-24T08:00:00+08:00"
+  date: "2026-04-27T08:00:00+08:00"
 ---
 
 ## 目標
@@ -12,16 +12,16 @@ last_update:
 
 ## 環境架設
 
-1. 用 Node.js 架一個 `http2.Http2Server`
+- 用 Node.js 架一個 `http2.Http2Server`
 
-```js
-const http2Server = http2.createServer((req, res) => {
-  res.end("Welcome to HTTP/2 Server"),
-});
-http2Server.listen(5001);
-```
+  ```js
+  const http2Server = http2.createServer((req, res) => {
+    res.end("Welcome to HTTP/2 Server"),
+  });
+  http2Server.listen(5001);
+  ```
 
-2. `curl --http2-prior-knowledge http://localhost:5001`
+- `curl --http2-prior-knowledge http://localhost:5001`
 
 ## wireshark 抓包
 
@@ -300,7 +300,7 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
 
 ### CLI 測試 `deflatehd`
 
-終端機輸入
+**終端機輸入**
 
 ```
 ./src/deflatehd -t <<'EOF'
@@ -317,7 +317,7 @@ EOF
 - `<<'EOF'`：接下來的多行文字，原樣當 stdin 餵給它
 - `EOF`：結尾
 
-預期輸出
+**預期輸出**
 
 ```
 {
@@ -351,6 +351,8 @@ Overall: input=49 output=13 ratio=0.27
 ```
 
 ### Node.js + CLI 串接 `deflatehd`
+
+**使用 `spawnSync` 開啟一個同步的 child process 來執行 `deflatehd`**
 
 ```js
 import { spawnSync } from "child_process";
@@ -388,14 +390,46 @@ const result = JSON.parse(spawnSyncReturns.stdout);
 // }
 ```
 
+**其中 `result.cases[0].wire` 就是我們要的 HPACKED raw bytes (HEADERS frame payload)**
+
+### 最終程式碼
+
+**接續上面的 `result`，接著開始組其他 HTTP/2 frames**
+
+```js
+const bufferMagic = Buffer.from("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", "latin1");
+const bufferEmptySettingsFrame = Buffer.from(
+  "00 00 00 04 00 00 00 00 00".replaceAll(" ", ""),
+  "hex",
+);
+// 計算 HEADERS frame payload length，轉成 3 bytes 的 HEX 格式
+const bufferHeadersFramePayloadLength3Bytes = Buffer.alloc(3);
+bufferHeadersFramePayloadLength3Bytes.writeUintBE(
+  Buffer.from(result.cases[0].wire, "hex").byteLength,
+  0,
+  3,
+);
+const bufferHeadersFrame = Buffer.concat([
+  bufferHeadersFramePayloadLength3Bytes,
+  Buffer.from(
+    `01 05 00 00 00 01 ${result.cases[0].wire}`.replaceAll(" ", ""),
+    "hex",
+  ),
+]);
+
+const frames = Buffer.concat([
+  bufferMagic,
+  bufferEmptySettingsFrame,
+  bufferHeadersFrame,
+]);
+const socket = connect({ host: "localhost", port: 5001 });
+socket.write(frames);
+```
+
+**使用 Wireshark 抓 HTTP server 回應的 response（有正確回應）**
+
+![http2-client-raw-bytes-wireshark-response](../../static/img/http2-client-raw-bytes-wireshark-response.jpg)
+
 ## 小結
 
-以上是一個 round trip 結束，就關閉 TCP 連線的情境。實際上 HTTP/2 還有其他 frame types
-
-- RST_STREAM
-- PUSH_PROMISE
-- PRIORITY
-- PING
-- GOAWAY
-
-會在之後的文章介紹到～
+這篇文章涵蓋的是基本情境（一個 HTTP/2 round trip）。實際上 HTTP/2 還有其他 frame types，會在下一篇文章介紹到
