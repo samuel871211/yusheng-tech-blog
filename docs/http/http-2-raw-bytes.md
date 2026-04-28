@@ -32,7 +32,7 @@ last_update:
 ```mermaid
 sequenceDiagram
   participant c as curl
-  participant s as Node.js http2.createServer
+  participant s as Node.js http2.Http2Server
 
   Note over c,s: TCP 3-way handshake
   c ->> s: Magic, SETTINGS[0], WINDOW_UPDATE[0]
