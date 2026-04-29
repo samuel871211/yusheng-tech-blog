@@ -9,6 +9,8 @@ last_update:
 
 [Section 6.4. RST_STREAM](https://datatracker.ietf.org/doc/html/rfc9113#section-6.4)
 
+**使用情境：將對應的 stream ID 變為 "closed" 狀態**
+
 ### 測試方法
 
 - client (curl)
@@ -87,6 +89,10 @@ server 會送以下 bytes (hex)
 
 ## PING frame
 
+[Section 6.7. PING](https://datatracker.ietf.org/doc/html/rfc9113#section-6.7)
+
+**使用情境：測量 round trip 來回時間 + 確認對方還活著**
+
 ### 測試方法
 
 - client (curl)
@@ -100,10 +106,10 @@ server 會送以下 bytes (hex)
   ```js
   const http2Server = http2.createServer();
   http2Server.on("session", (session) => {
-    const payload = Buffer.alloc(8);
-    session.ping(payload, (err, duration, payload) =>
-      console.log({ err, duration, payload }),
-    );
+    const payload = Buffer.alloc(8).fill(0);
+    session.ping(payload, (err, duration, payload) => {
+      console.log({ err, duration, payload });
+    });
   });
   http2Server.listen(5000);
   ```
@@ -145,9 +151,53 @@ sequenceDiagram
 
 server 會送以下 bytes (hex)
 
+```
+00 00 08 06 00 00 00 00 00 // frame header
+00 00 00 00 00 00 00 00    // frame payload
+```
+
+- frame header
+
+  | field                        | hex         | description                                           |
+  | ---------------------------- | ----------- | ----------------------------------------------------- |
+  | Length                       | 00 00 08    | frame payload has 8 bytes                             |
+  | Type                         | 06          | PING frame (type=0x06)                                |
+  | Flags                        | 00          | unset (0x00)                                          |
+  | Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
+
+- frame payload
+
+  | field       | hex                     | description             |
+  | ----------- | ----------------------- | ----------------------- |
+  | Opaque Data | 00 00 00 00 00 00 00 00 | fixed length of 8 bytes |
+
+client 會送以下 bytes (hex)
+
+```
+00 00 08 06 01 00 00 00 00 // frame header
+00 00 00 00 00 00 00 00    // frame payload
+```
+
+- frame header
+
+  | field                        | hex         | description                                           |
+  | ---------------------------- | ----------- | ----------------------------------------------------- |
+  | Length                       | 00 00 08    | frame payload has 8 bytes                             |
+  | Type                         | 06          | PING frame (type=0x06)                                |
+  | Flags                        | 01          | ACK (0x01)                                            |
+  | Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
+
+- frame payload
+
+  | field       | hex                     | description             |
+  | ----------- | ----------------------- | ----------------------- |
+  | Opaque Data | 00 00 00 00 00 00 00 00 | fixed length of 8 bytes |
+
 ## GOAWAY frame
 
 [Section 6.8. GOAWAY](https://datatracker.ietf.org/doc/html/rfc9113#section-6.8)
+
+**使用情境：gracefully shutdown the connection**
 
 ### 測試方法
 
@@ -220,7 +270,7 @@ server 會送以下 bytes (hex)
 
 [Section 6.10. CONTINUATION](https://datatracker.ietf.org/doc/html/rfc9113#section-6.10)
 
-**正常使用情境：headers 太長，無法在一個 HEADERS frame 送出，就會用 CONTINUATION frame 來送**
+**使用情境：headers 太長，無法在一個 HEADERS frame 送出，就會用 CONTINUATION frame 來送**
 
 ### 測試方法
 
