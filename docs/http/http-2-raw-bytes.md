@@ -267,6 +267,10 @@ server 會送以下 bytes (hex)
 
 代表 stream ID = 1 的 request / response 已經傳輸完成，進入 [half-closed 或 closed state](https://datatracker.ietf.org/doc/html/rfc9113#section-5.1)
 
+:::info
+Step 8 + Step 9 可以優化成一個 Step，只需要在 Step 8 設定 END_STREAM 即可
+:::
+
 ## Section 6.5.2 Defined Settings
 
 https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
@@ -307,7 +311,7 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2
 4. `brew install jansson`（[README](https://github.com/nghttp2/nghttp2) 說 HPACK tools 需要裝這個）
 5. `make -j8`（j = job）
 
-**Windows 安裝 nghttp2 HPACK tools 步驟：**
+<!-- **Windows 安裝 nghttp2 HPACK tools 步驟：** -->
 
 <!-- todo-yus -->
 
