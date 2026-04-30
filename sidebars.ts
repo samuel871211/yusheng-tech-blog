@@ -228,10 +228,11 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-uncommon-features",
         "nodejs/undici",
         "nodejs/undici-client",
-        "nodejs/undici-dispatcher",
-        "nodejs/undici-client-lifecycle",
+        "nodejs/undici-dispatcher", // todo-yus 很肥，感覺可拆
+        // "nodejs/undici-client-lifecycle",
         "nodejs/undici-content-length-and-content-range-mismatch",
         "nodejs/destroy-socket-after-head",
+        "nodejs/http2",
       ],
     },
     {
