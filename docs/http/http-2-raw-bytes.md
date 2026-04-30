@@ -2,7 +2,7 @@
 title: 深入瞭解 HTTP/2 raw bytes
 description: 深入瞭解 HTTP/2 raw bytes
 last_update:
-  date: "2026-04-27T08:00:00+08:00"
+  date: "2026-04-30T08:00:00+08:00"
 ---
 
 ## 目標
@@ -118,6 +118,8 @@ client 會送以下 bytes (hex)
 
 ## Step 4: HEADERS frame
 
+[Section 6.2. HEADERS](https://datatracker.ietf.org/doc/html/rfc9113#section-6.2)
+
 client 會送以下 bytes (hex)
 
 ```
@@ -224,7 +226,9 @@ server 會送以下 bytes (hex)
 
   `88 61 96 d0 7a be 94 10 14 86 bb 14 10 04 e2 80 15 c6 83 70 0e 29 8b 46 ff` (HPACK)
 
-## Step 8: server send DATA frame
+## Step 8: DATA frame
+
+[Section 6.1. DATA](https://datatracker.ietf.org/doc/html/rfc9113#section-6.1)
 
 server 會送以下 bytes (hex)
 
@@ -246,7 +250,7 @@ server 會送以下 bytes (hex)
 
   `57 65 6c 63 6f 6d 65 20 74 6f 20 48 54 54 50 2f 32 20 53 65 72 76 65 72` = Welcome to HTTP/2 Server
 
-## Step 9: server send DATA frame (END_STREAM)
+## Step 9: DATA frame (END_STREAM)
 
 server 會送以下 bytes (hex)
 
