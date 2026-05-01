@@ -1,8 +1,8 @@
 ---
 title: 深入瞭解 HTTP/2 RST_STREAM, PUSH_PROMISE, PING, GOAWAY 跟 CONTINUATION
-description: 深入瞭解 HTTP/2 在多個 request /response 的情況，怎麼透過各種 frame types 來溝通
+description: 深入瞭解 HTTP/2 RST_STREAM, PUSH_PROMISE, PING, GOAWAY 跟 CONTINUATION
 last_update:
-  date: "2026-04-28T08:00:00+08:00"
+  date: "2026-05-01T08:00:00+08:00"
 ---
 
 ## RST_STREAM frame
@@ -86,6 +86,124 @@ server 會送以下 bytes (hex)
   | [Error Code](./http-2-errors.md#7-error-codes) | 00 00 00 00 | NO_ERROR (0x00) |
 
 ## PUSH_PROMISE frame
+
+[Section 6.6. PUSH_PROMISE](https://datatracker.ietf.org/doc/html/rfc9113#section-6.6)
+
+**使用情境：server 預測 client 可能需要什麼資源，主動推送給 client**
+
+### 測試方法
+
+- server (Node.js http2)
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.on("stream", (stream) => {
+    if (stream.pushAllowed) {
+      const requestHeaders = { ":path": "/style.css" };
+      stream.pushStream(requestHeaders, (err, pushStream, headers) => {
+        console.log({ err, headers });
+        // 可以在 stream ID = 2 開始推送 /style.css 的內容
+        // pushStream.respond();
+        // pushStream.end();
+      });
+    }
+  });
+  http2Server.listen(5000);
+  ```
+
+- client (Node.js net.Socket)，直接用 [Node.js + CLI 串接 `deflatehd`](#測試方法-4) 產出的 HPACK raw bytes
+
+  ```js
+  // prettier-ignore
+  const settingsEnableServerPushFrame = Buffer.from([
+    0x00, 0x00, 0x06,                   // Length
+    0x04,                               // Type
+    0x00,                               // Flags
+    0x00, 0x00, 0x00, 0x00,             // Reserved + Stream Identifier
+    0x00, 0x02, 0x00, 0x00, 0x00, 0x01, // Payload
+  ]);
+  const hpackedHeaders = Buffer.from("828684418aa0e41d139d09b8d8000f", "hex");
+  const payloadLength = byteLengthTo3BytesBuffer(hpackedHeaders.byteLength);
+  // prettier-ignore
+  const headersFrame = Buffer.from([
+    ...payloadLength,       // Length
+    0x01,                   // Type
+    0x05,                   // Flags (END_STREAM)
+    0x00, 0x00, 0x00, 0x01, // Reserved + Stream Identifier
+    ...hpackedHeaders,      // Payload
+  ]);
+  const frames = Buffer.concat([
+    magic,
+    settingsEnableServerPushFrame,
+    headersFrame,
+  ]);
+  const socket = connect({ host: "localhost", port: 5000 });
+  socket.write(frames);
+  ```
+
+- server output
+
+  ```js
+  {
+    err: null,
+    headers: [Object: null prototype] {
+      ':path': '/style.css',
+      ':method': 'GET',
+      ':authority': 'localhost:5000',
+      ':scheme': 'http'
+    }
+  }
+  ```
+
+### Wireshark 抓包
+
+:::info
+P.S. 不確定為何這些 HTTP/2 封包會被 Wireshark 解析成 RSL Malformed Packet，但總之抓 TCP payload 就對了
+:::
+
+![wireshark-http2-push-promise](../../static/img/wireshark-http2-push-promise.jpg)
+
+### 時序圖
+
+```mermaid
+sequenceDiagram
+  participant c as curl
+  participant s as Node.js http2.Http2Server
+
+  Note over c,s: TCP 3-way handshake
+  c ->> s: Magic, SETTINGS[0], HEADERS[1]
+  s ->> c: SETTINGS[0]
+  s ->> c: SETTINGS[0] (ACK), PUSH_PROMISE[1]
+```
+
+:::info
+這邊 client 其實應該回應 SETTINGS[0] (ACK)，但由於不影響 PUSH_PROMISE 的抓包，故沒特別處理
+:::
+
+### 解析 PUSH_PROMISE raw bytes
+
+server 會送以下 bytes (hex)
+
+```
+00 00 1b 05 04 00 00 00 01                                                       // frame header
+00 00 00 02 04 87 61 09 f5 41 57 22 11 82 41 8a a0 e4 1d 13 9d 09 b8 d8 00 0f 86 // frame payload
+```
+
+- frame header
+
+  | field                        | hex         | description                                           |
+  | ---------------------------- | ----------- | ----------------------------------------------------- |
+  | Length                       | 00 00 1b    | frame payload has 27 bytes                            |
+  | Type                         | 05          | PUSH_PROMISE frame (type=0x05)                        |
+  | Flags                        | 04          | END_HEADERS                                           |
+  | Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (1) |
+
+- frame payload
+
+  | field                         | hex                                                                  | description                                                            |
+  | ----------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+  | Reserved + Promised Stream ID | 00 00 00 02                                                          | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (2)                  |
+  | Field Block Fragment          | 04 87 61 09 f5 41 57 22 11 82 41 8a a0 e4 1d 13 9d 09 b8 d8 00 0f 86 | Identical to [server output (headers)](#測試方法-1) after HPACK decode |
 
 ## PING frame
 
@@ -297,70 +415,39 @@ server 會送以下 bytes (hex)
 
   ```js
   const magicFrame = Buffer.from("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", "latin1");
+  // prettier-ignore
   const emptySettingsFrame = Buffer.from([
-    0x00,
-    0x00,
-    0x00, // Length
-    0x04, // Type
-    0x00, // Flags
-    0x00,
-    0x00,
-    0x00,
-    0x00, // Reserved + Stream Identifier
+    0x00, 0x00, 0x00,       // Length
+    0x04,                   // Type
+    0x00,                   // Flags
+    0x00, 0x00, 0x00, 0x00, // Reserved + Stream Identifier
   ]);
   // 刻意設定 empty headers
+  // prettier-ignore
   const emptyHeadersFrame = Buffer.from([
-    0x00,
-    0x00,
-    0x00, // Length
-    0x01, // Type
-    0x01, // Flags (END_STREAM)
-    0x00,
-    0x00,
-    0x00,
-    0x01, // Reserved + Stream Identifier
+    0x00, 0x00, 0x00,       // Length
+    0x01,                   // Type
+    0x01,                   // Flags (END_STREAM)
+    0x00, 0x00, 0x00, 0x01, // Reserved + Stream Identifier
   ]);
   // 刻意把 828684418aa0e41d139d09b8d8000f 拆成兩組 CONTINUATION frame
+  // prettier-ignore
   const continuationFrame1 = Buffer.from([
-    0x00,
-    0x00,
-    0x08, // Length
-    0x09, // Type
-    0x00, // Flags
-    0x00,
-    0x00,
-    0x00,
-    0x01, // Reserved + Stream Identifier
-
+    0x00, 0x00, 0x08,       // Length
+    0x09,                   // Type
+    0x00,                   // Flags
+    0x00, 0x00, 0x00, 0x01, // Reserved + Stream Identifier
     // Field Block Fragment
-    0x82,
-    0x86,
-    0x84,
-    0x41,
-    0x8a,
-    0xa0,
-    0xe4,
-    0x1d,
+    0x82, 0x86, 0x84, 0x41, 0x8a, 0xa0, 0xe4, 0x1d,
   ]);
+  // prettier-ignore
   const continuationFrame2 = Buffer.from([
-    0x00,
-    0x00,
-    0x07, // Length
-    0x09, // Type
-    0x04, // Flags (END_HEADERS)
-    0x00,
-    0x00,
-    0x00,
-    0x01, // Reserved + Stream Identifier
-
+    0x00, 0x00, 0x07,       // Length
+    0x09,                   // Type
+    0x04,                   // Flags (END_HEADERS)
+    0x00, 0x00, 0x00, 0x01, // Reserved + Stream Identifier
     // Field Block Fragment
-    0x13,
-    0x9d,
-    0x09,
-    0xb8,
-    0xd8,
-    0x00,
-    0x0f,
+    0x13, 0x9d, 0x09, 0xb8, 0xd8, 0x00, 0x0f,
   ]);
   const frames = Buffer.concat([
     magicFrame,
@@ -408,3 +495,13 @@ server 會送以下 bytes (hex)
   ```
 
 ## PRIORITY frame
+
+deprecated，暫不討論
+
+## 小結
+
+這篇文章主要介紹 RST_STREAM, PUSH_PROMISE, PING, GOAWAY 跟 CONTINUATION 這五種 frame types 的 raw bytes 跟使用方法
+
+學完所有 frame types 的用法之後，再去理解 Node.js http2 模組的 API 設計，會發現閱讀起來特別順暢，本質上就是 RFC 9113 的封裝
+
+下一篇會介紹 Node.js http2 模組所有的 events, classes, properties, methods
