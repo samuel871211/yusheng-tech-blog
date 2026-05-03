@@ -74,6 +74,7 @@ const sidebars: SidebarsConfig = {
         "http/http-2-raw-bytes",
         "http/http-2-raw-bytes-2",
         "http/http-2-errors",
+        // "http/http2-HAPCK-header-compression",
 
         // "http/service-worker-allowed",
         // "http/http-caching-4", // ing
