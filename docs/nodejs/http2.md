@@ -5,7 +5,9 @@ last_update:
   date: "2026-04-30T08:00:00+08:00"
 ---
 
-## maxHeaderListPairs
+## http2.createServer
+
+### maxHeaderListPairs
 
 - 測試目標：超出 `maxHeaderListPairs` 的 HTTP request 會如何處理
 - server (Node.js http2)
@@ -69,6 +71,9 @@ last_update:
 
 ## goaway 語法
 
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-goaway
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiongoawaycode-laststreamid-opaquedata
+
 延續我在之前的文章介紹到的 [GOAWAY frame](../http/http-2-raw-bytes-2.md#goaway-frame)
 
 - server
@@ -107,6 +112,9 @@ last_update:
   ```
 
 ## ping 語法
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-ping
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpingpayload-callback
 
 延續我在之前的文章介紹到的 [PING frame](../http/http-2-raw-bytes-2.md#ping-frame)
 
@@ -184,3 +192,239 @@ last_update:
     payload: <Buffer 31 32 33 34 35 36 37 38>
   }
   ```
+### maxSendHeaderBlockLength
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler
+
+### maxSessionMemory
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler
+
+### maxOutstandingPings
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler
+
+## ORIGIN frame
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionoriginset
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createsecureserveroptions-onrequesthandler
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionoriginorigins
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-origin
+- https://datatracker.ietf.org/doc/html/rfc8336
+
+## http2.performServerHandshake
+
+## trailers
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-trailers
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-wanttrailers
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsenttrailers
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsendtrailersheaders
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#requestrawtrailers
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#requesttrailers
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#responseaddtrailersheaders
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsenttrailers
+
+## SETTINGS
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getpackedsettingssettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getunpackedsettingsbuf
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object
+
+## push
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-push
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampushallowed
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampushstreamheaders-options-callback
+
+## timeout
+
+- http2Session
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettimeoutmsecs-callback
+- http2Stream
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_1
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsettimeoutmsecs-callback
+- httpServer
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_2
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout
+- http2SecureServer
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_3
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback_1
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout_1
+
+## 加密相關
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionalpnprotocol
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionencrypted
+
+## Http2Session
+
+### Event: 'close'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-close
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionclosecallback
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionclosed
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiondestroyerror-code
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiondestroyed
+
+### Event: 'connect'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-connect
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionconnecting
+
+### Event: 'error'
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-error
+
+### Event: 'frameError'
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-frameerror
+
+### Event: 'stream'
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream
+
+### socket
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionref
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsocket
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionunref
+
+### state
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate
+
+### properties
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiontype
+
+### altsvc
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionaltsvcalt-originorstream
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-altsvc
+
+## clienthttp2session.request
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2connectauthority-options-listener
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#clienthttp2sessionrequestheaders-options
+
+## Http2Stream
+
+### Event: 'aborted'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-aborted
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamaborted
+
+### Event: 'close'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-close_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamaborted
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamclosed
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamdestroyed
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrstcode
+
+### Event: 'error'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-error_1
+
+### Event: 'frameError'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-frameerror_1
+
+### Event: 'ready'
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-ready
+
+### Event: 'continue'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-continue
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-checkcontinue
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-checkcontinue_1
+
+### Event: 'headers'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-headers
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamadditionalheadersheaders
+
+### Event: 'response'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-response
+
+### properties
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamendafterheaders
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamid
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampending
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentheaders
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentinfoheaders
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsession
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamheaderssent
+
+### respond
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampushstreamheaders-options-callback
+
+### respondWithFD
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options
+
+### respondWithFiles
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options
+
+## Http2Server
+
+### Event: 'connection'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-connection
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-connection_1
+
+### Event: 'session'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-session
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-session_1
+
+### Event: 'sessionError'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-sessionerror
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-sessionerror_1
+
+### Event: 'stream'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream_2
+
+### Event: 'unknownProtocol'
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-unknownprotocol
+
+### close
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverclosecallback
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serversymbolasyncdispose
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverclosecallback_1
+
+### Compatibility API
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-request
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-request_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverrequest
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverresponse
+
+## CONNECT
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#the-extended-connect-protocol
