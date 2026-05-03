@@ -33,3 +33,7 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-7
 | `ENHANCE_YOUR_CALM`   | `0x0b` | peer is generating excessive load       |
 | `INADEQUATE_SECURITY` | `0x0c` | TLS/security requirements not met       |
 | `HTTP_1_1_REQUIRED`   | `0x0d` | endpoint requires HTTP/1.1              |
+
+## 8.1.1. Malformed Messages
+
+https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1
