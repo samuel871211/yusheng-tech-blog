@@ -1,6 +1,6 @@
 ---
-title: HTTP/2
-description: HTTP/2
+title: HTTP/2 overview
+description: HTTP/2 overview
 last_update:
   date: "2026-04-16T08:00:00+08:00"
 ---
@@ -46,13 +46,13 @@ HTTP2-Settings: <base64url encoding of HTTP/2 SETTINGS payload>
 
 其中 h2c 代表 HTTP/2 over cleartext TCP
 
-Server 若不支援，則回傳
+server 若不支援，則回傳
 
 ```
 HTTP/1.1 200 OK
 ```
 
-Server 若支援，則回傳
+server 若支援，則回傳
 
 ```
 HTTP/1.1 101 Switching Protocols
@@ -62,7 +62,7 @@ Upgrade: h2c
 
 ## HTTP/2 for "http" URIs has been deprecated
 
-看起來很美好，但實務上支援的 Server 並不多，畢竟各大瀏覽器廠商都說只支援 HTTP/2 Over HTTPS，那這樣的場景自然就不需要實作。並且在 HTTP/2 最新的 [RFC 9113 #section-3.1](https://datatracker.ietf.org/doc/html/rfc9113#section-3.1) 有提到這個機制已被棄用
+看起來很美好，但實務上支援的 server 並不多，畢竟各大瀏覽器廠商都說只支援 HTTP/2 Over HTTPS，那這樣的場景自然就不需要實作。並且在 HTTP/2 最新的 [RFC 9113 #section-3.1](https://datatracker.ietf.org/doc/html/rfc9113#section-3.1) 有提到這個機制已被棄用
 
 ```
 The "h2c" string was previously used as a token for use in the HTTP Upgrade mechanism's Upgrade header field (Section 7.8 of [HTTP]). This usage was never widely deployed and is deprecated by this document. The same applies to the HTTP2-Settings header field, which was used with the upgrade to "h2c".
@@ -72,13 +72,13 @@ The "h2c" string was previously used as a token for use in the HTTP Upgrade mech
 
 根據 [bugzilla](https://bugzilla.mozilla.org/show_bug.cgi?id=1418832) 在 2017 年的某則討論，裡面就有明確說到不實作 h2c 的原因，參考 [comment 7](https://bugzilla.mozilla.org/show_bug.cgi?id=1418832#c7)
 
-在 client 跟 HTTP/2 Server 中間可能會有很多 transparent proxies 只支援 HTTP/1.0, HTTP/1.1，並且會攔截/修改 HTTP 流量。這些 transparent proxies 遇到 HTTPS 就會直接轉發，遇到 h2c 可能會導致解析失敗，所以讓 HTTP/2 for "https" 算是一種向後兼容的作法
+在 client 跟 HTTP/2 server 中間可能會有很多 transparent proxies 只支援 HTTP/1.0, HTTP/1.1，並且會攔截/修改 HTTP 流量。這些 transparent proxies 遇到 HTTPS 就會直接轉發，遇到 h2c 可能會導致解析失敗，所以讓 HTTP/2 for "https" 算是一種向後兼容的作法
 
 ## curl as h2c client
 
-雖說支援 h2c 的 Server 並不多，但還是可以玩看看 h2c client 是怎麼發送 HTTP Request 的
+雖說支援 h2c 的 server 並不多，但還是可以玩看看 h2c client 是怎麼發送 HTTP Request 的
 
-架一個簡單的 Node.js HTTP/1.1 Server
+架一個簡單的 Node.js HTTP/1.1 server
 
 ```ts
 import { createServer } from "http";
@@ -86,7 +86,7 @@ const httpServer = createServer().listen(5000);
 
 httpServer.on("request", (req, res) => {
   console.log(req.headers);
-  res.end("Welcome to HTTP/1.1 Server");
+  res.end("Welcome to HTTP/1.1 server");
 });
 ```
 
@@ -96,7 +96,7 @@ httpServer.on("request", (req, res) => {
 curl --http2 http://localhost:5000
 ```
 
-Server 會看到
+server 會看到
 
 ```js
 {
@@ -143,10 +143,6 @@ Value: A 32-bit value for the setting.
 | 00 04 00 a0 00 00 | SETTINGS_INITIAL_WINDOW_SIZE = 0x00a00000 = 10485760 = 10 MiB |
 | 00 02 00 00 00 00 | SETTINGS_ENABLE_PUSH = false                                  |
 
-<!-- ## Malformed Messages
-
-https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1 -->
-
 ## Node.js HTTP/2 Over HTTP
 
 最小 PoC
@@ -168,7 +164,7 @@ http2Server.listen(5001);
 curl --http2-prior-knowledge http://localhost:5001
 ```
 
-Server 會看到
+server 會看到
 
 ```js
 [Object: null prototype] {
@@ -182,7 +178,7 @@ Server 會看到
 }
 ```
 
-所謂的 `--http2-prior-knowledge`，就是直接跳過協商步驟，Client 假定 Server 有支援 HTTP/2，直接發送 HTTP/2 的請求
+所謂的 `--http2-prior-knowledge`，就是直接跳過協商步驟，client 假定 server 有支援 HTTP/2，直接發送 HTTP/2 的請求
 
 ```
 curl --help all
@@ -207,7 +203,7 @@ const https2Server = http2.createSecureServer({
 });
 https2Server.on("request", (req, res) => {
   console.log(req.headers);
-  res.end("Welcome to HTTP/2 Server");
+  res.end("Welcome to HTTP/2 server");
 });
 https2Server.listen(5002);
 ```
@@ -239,7 +235,7 @@ curl --http2-prior-knowledge -i "http://localhost:5001/hello/world?test=123"
 HTTP/2 200
 date: Fri, 31 Oct 2025 02:26:02 GMT
 
-Welcome to HTTP/2 Server
+Welcome to HTTP/2 server
 ```
 
 改用 Node.js HTTP/2
@@ -256,7 +252,7 @@ clientHttp2Server
   .on("error", console.log);
 ```
 
-Server 會看到
+server 會看到
 
 ```js
 [Object: null prototype] {
@@ -291,7 +287,7 @@ A server SHOULD treat a request as malformed if it contains a Host header field 
 An intermediary that needs to generate a Host header field (which might be necessary to construct an HTTP/1.1 request) MUST use the value from the ":authority" pseudo-header field as the value of the Host field, unless the intermediary also changes the request target. This replaces any existing Host field to avoid potential vulnerabilities in HTTP routing.
 ```
 
-假設有 Client => HTTP/2 Server => HTTP/1.1 Internal API 的架構，Client 可以構造以下 Request Headers
+假設有 client => HTTP/2 server => HTTP/1.1 Internal API 的架構，Client 可以構造以下 Request Headers
 
 ```js
 {
@@ -317,8 +313,8 @@ clientHttp2Server
 
 假設
 
-1. HTTP/2 Server 的實作，沒有拒絕這種請求（RFC 9113 並沒有強制規定 Server 必須要拒絕）
-2. HTTP/2 Server => HTTP/1.1 Internal API 這段 downgrade 的過程沒有遵守規範，將 `host: 'malicious.host'` 傳遞下去
+1. HTTP/2 server 的實作，沒有拒絕這種請求（RFC 9113 並沒有強制規定 server 必須要拒絕）
+2. HTTP/2 server => HTTP/1.1 Internal API 這段 downgrade 的過程沒有遵守規範，將 `host: 'malicious.host'` 傳遞下去
 
 就有機會達成 [HTTP Request Smuggling](../port-swigger/http-request-smuggling.md) 或是 [HTTP Host Header Attacks](../port-swigger/http-host-header-attacks.md)
 
@@ -373,7 +369,7 @@ classDiagram
 - 1 個 `Http2Session` 管理 n 個 `Http2Stream`
 - 1 個 `Http2Session` 在 Layer 4 對應的是一個 TCP 連線
 - 1 個 `Http2Stream` 對應的是一個 Request / Response Pair
-- 要創建 HTTP/2 Server => 請使用 `http2.createServer` 或 `http2.createSecureServer`
+- 要創建 HTTP/2 server => 請使用 `http2.createServer` 或 `http2.createSecureServer`
 - 要發送 HTTP/2 請求 => 請使用 `http2.connect` 來創建 `ClientHttp2Session`
 
 ## HTTP/2 discard connection-specific header fields
@@ -399,7 +395,7 @@ classDiagram
 const http2Server = http2.createServer();
 http2Server.on("request", (req, res) => {
   res.writeHead(200, { connection: "keep-alive" });
-  res.end("Welcome to HTTP/2 Server");
+  res.end("Welcome to HTTP/2 server");
 });
 http2Server.listen(5001);
 ```
@@ -416,9 +412,9 @@ http2Server.listen(5001);
 HTTP/2 connections are persistent. For best performance, it is expected that clients will not close connections until it is determined that no further communication with a server is necessary (for example, when a user navigates away from a particular web page) or until the server closes the connection.
 ``` -->
 
-## Node.js HTTP/1.1 Client API vs HTTP/2 Client API
+## Node.js HTTP/1.1 client API vs HTTP/2 client API
 
-從 Node.js http, http2 的 Client API，也可以明顯感覺到差異
+從 Node.js http, http2 的 client API，也可以明顯感覺到差異
 
 HTTP/1.1
 
@@ -447,11 +443,11 @@ Clients SHOULD NOT open more than one HTTP/2 connection to a given host and port
 
 如果理解 [BrowserMaxTCPConnectionPerHost = 6](./browser-max-tcp-connection-6-per-host.md) 的話，可能就會想問，只建議開一個連線，那還不如用 HTTP/1.1 開六條 TCP Connection，速度肯定更快！
 
-我們實測看看，先在 Server 加上
+我們實測看看，先在 server 加上
 
 ```ts
 https2Server.on("request", (req, res) => {
-  setTimeout(() => res.end("Welcome to HTTP/2 Server"), 1000);
+  setTimeout(() => res.end("Welcome to HTTP/2 server"), 1000);
 });
 https2Server.on("connection", (socket) => {
   console.log("socket created");
@@ -477,7 +473,7 @@ arr30.forEach(() => fetch(location.origin));
 但是 HTTP/2 解決了這個問題，這 30 個請求幾乎都是同時回傳
 ![http2-30-requests-no-stalled](../../static/img/http2-30-requests-no-stalled.jpg)
 
-並且 Server 也只有建立一個 TCP Connection
+並且 server 也只有建立一個 TCP Connection
 
 ```
 socket created
@@ -598,17 +594,6 @@ Specifies the maximum number of concurrent streams permitted on an `Http2Session
 
 剛好對應到 RFC 9113 的 [SETTINGS_MAX_CONCURRENT_STREAMS](#http2-settings)
 
-<!-- https://datatracker.ietf.org/doc/html/rfc9113#section-6.5 -->
-
-<!-- ## frameError
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-frameerror -->
-
-<!-- ## goaway
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-goaway
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiongoawaycode-laststreamid-opaquedata -->
-
 <!-- ## localSettings
 
 https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
@@ -620,29 +605,6 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings
 https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
 https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings -->
 
-<!-- ## ping
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-ping
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpingpayload-callback -->
-
-<!-- ## originSet
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionoriginorigins
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionoriginset
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-origin -->
-
-<!-- ## trailers
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-trailers -->
-
-<!-- ## frame
-
-https://datatracker.ietf.org/doc/html/rfc9113#name-http-frames -->
-
-<!-- ## Header Compression
-
-https://datatracker.ietf.org/doc/html/rfc7541 -->
-
 ## Content-Length
 
 根據 [RFC 9113 #section-8.1.1](https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1) 的描述
@@ -652,10 +614,6 @@ A request or response that includes message content can include a content-length
 ```
 
 若 HTTP/2 的實作沒有遵守 RFC 的 "MUST" 規範，則可能導致 [H2.CL request smuggling](../port-swigger/http-request-smuggling.md#lab-h2cl-request-smuggling)
-
-## StreamID
-
-<!-- https://datatracker.ietf.org/doc/html/rfc9113#section-5.1.1 -->
 
 ## 參考資料
 
