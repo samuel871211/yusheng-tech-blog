@@ -5,9 +5,7 @@ last_update:
   date: "2026-04-30T08:00:00+08:00"
 ---
 
-## http2.createServer
-
-### maxHeaderListPairs
+## maxHeaderListPairs
 
 - 測試目標：超出 `maxHeaderListPairs` 的 HTTP request 會如何處理
 - server (Node.js http2)
@@ -192,6 +190,7 @@ last_update:
     payload: <Buffer 31 32 33 34 35 36 37 38>
   }
   ```
+
 ### maxSendHeaderBlockLength
 
 https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler
