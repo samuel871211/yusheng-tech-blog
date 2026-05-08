@@ -92,6 +92,60 @@ last_update:
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-push
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampushallowed
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampushstreamheaders-options-callback
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#push-streams-on-the-client
+
+延續我在之前的文章介紹到的 [PUSH_PROMISE frame](../http/http-2-raw-bytes-2.md#push_promise-frame)
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (serverHttp2Stream) => {
+    if (!serverHttp2Stream.pushAllowed) return;
+    // server 猜測 client 接下來需要 style.css
+    const reqHeaders = { ":path": "/style.css" };
+    serverHttp2Stream.pushStream(
+      reqHeaders,
+      (err, pushStream, finalReqHeaders) => {
+        if (err) return console.error(err);
+        // 真正在 stream id = 2 回傳 style.css 的內容
+        pushStream.respond();
+        pushStream.end("content of style.css");
+      },
+    );
+  });
+  ```
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000", {
+    settings: { enablePush: true },
+  });
+  clientHttp2Session.request({ ":path": "/index.html" });
+  clientHttp2Session.on("stream", (pushedStream) => {
+    pushedStream.on("push", (headers, flags) => {
+      console.log({ headers, flags });
+    });
+    pushedStream.setEncoding("latin1");
+    pushedStream.on("data", console.log);
+  });
+  ```
+
+- client output
+
+  ```js
+  {
+    headers: [Object: null prototype] {
+      ':status': 200,
+      date: 'Fri, 08 May 2026 06:39:28 GMT',
+      Symbol(sensitiveHeaders): []
+    },
+    flags: 4 // END_HEADERS
+  }
+  content of style.css
+  ```
 
 ## maxHeaderListPairs
 
