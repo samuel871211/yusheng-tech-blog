@@ -251,6 +251,44 @@ last_update:
   }
   ```
 
+## http2session.socket
+
+**文件**
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionref
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsocket
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionunref
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2session-and-sockets
+
+**解釋**
+
+- `http2session` 是 Node.js http2 模組的抽象，代表一個 "http2 的長連線"，跟 Layer 4 的 TCP socket 是 1:1 的關聯
+- 建議不要用 `http2session.socket.write()`, `http2session.socket.on("data")` 來破壞 `http2session` 的狀態機
+- Node.js 會阻擋 user code 去 get/set `http2session.socket` 的部分 properties 或 methods，背後使用 JS 的 [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
+
+  ```js
+  class Http2Session extends EventEmitter {
+    get socket() {
+      const proxySocket = this[kProxySocket];
+      if (proxySocket === null)
+        return (this[kProxySocket] = new Proxy(this, proxySocketHandler));
+      return proxySocket;
+    }
+  }
+
+  const proxySocketHandler = {
+    get(session, prop) {
+      switch (prop) {
+        case "setTimeout":
+        case "ref":
+        case "unref":
+          return session[prop].bind(session);
+        // ... other cases 省略
+      }
+    },
+  };
+  ```
+
 ## maxSendHeaderBlockLength
 
 https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler
@@ -345,12 +383,6 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-frameerror
 
 https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream
 
-### socket
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionref
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsocket
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionunref
-
 ### state
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate
@@ -369,7 +401,7 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2connectauthority-options-listener
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#clienthttp2sessionrequestheaders-options
 
-## Http2Stream
+## Http2Stream 生命週期
 
 ### Event: 'aborted'
 
