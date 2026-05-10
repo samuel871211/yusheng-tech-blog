@@ -401,32 +401,223 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2connectauthority-options-listener
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#clienthttp2sessionrequestheaders-options
 
-## Http2Stream 生命週期
+## ClientHttp2Stream
 
-### Event: 'aborted'
+### 繼承鍊
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-aborted
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamaborted
+```mermaid
+flowchart LR
+    A[ClientHttp2Stream] --> B[Http2Stream]
+    B --> C[stream.Duplex]
+```
 
-### Event: 'close'
+### events
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-close_1
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamaborted
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamclosed
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamdestroyed
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrstcode
+**ClientHttp2Stream 有以下 events（不包含從 stream.Duplex 繼承來的）**
 
-### Event: 'error'
+- `'aborted'`
+- `'close'`
+- `'error'`
+- `'frameError'`
+- `'ready'`
+- `'timeout'`
+- `'trailers'`
+- `'wantTrailers'`
+- `'continue'`
+- `'headers'`
+- `'push'`
+- `'response'`
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-error_1
+### 正常情境的生命週期
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    stream.respond();
+    stream.end("ok");
+  });
+  ```
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request();
+  console.log({ id: clientHttp2Stream.id });
+  clientHttp2Stream.on("ready", () => {
+    console.log("ready", { id: clientHttp2Stream.id });
+  });
+  clientHttp2Stream.on("response", (headers, flags, rawHeaders) => {
+    console.log("response", { headers, flags, rawHeaders });
+  });
+  clientHttp2Stream.on("data", (chunk) => console.log("data", chunk));
+  clientHttp2Stream.on("end", () => {
+    const { readableEnded } = clientHttp2Stream;
+    console.log("end", { readableEnded });
+  });
+  clientHttp2Stream.on("close", () => {
+    const { destroyed, closed, rstCode } = clientHttp2Stream;
+    console.log("close", { destroyed, closed, rstCode });
+  });
+  ```
+
+- client output
+
+  ```js
+  { id: undefined }
+  ready { id: 1 }
+  response {
+    headers: [Object: null prototype] {
+      ':status': 200,
+      date: 'Sat, 09 May 2026 08:59:36 GMT',
+      Symbol(sensitiveHeaders): []
+    },
+    flags: 4, // END_HEADERS
+    rawHeaders: [ ':status', '200', 'date', 'Sat, 09 May 2026 08:59:36 GMT' ]
+  }
+  data ok
+  end { readableEnded: true }
+  close { destroyed: true, closed: true, rstCode: 0 }
+  ```
+
+**會依序觸發**
+
+```mermaid
+flowchart LR
+    A["ready"] --> B["response"]
+    B --> C["data"]
+    C --> D["end"]
+    D --> E["close"]
+```
+
+**各個 event 代表的含意：**
+
+| event    | description                                       |
+| -------- | ------------------------------------------------- |
+| ready    | TCP 連線建立，成功從 nghttp2 分配到一個 stream ID |
+| response | 收到完整的 response headers 觸發（END_HEADERS）   |
+| data     | 收到 chunk of response body 時觸發                |
+| end      | 收到完整的 HTTP response 觸發（END_STREAM）       |
+| close    | `end` 之後觸發                                    |
+
+### request body 寫到一半就中斷
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    // 模擬讀取 request body 到一半就中斷
+    stream.on("data", () => stream.close());
+  });
+  ```
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request({ ":method": "POST" });
+  clientHttp2Stream.write("123");
+  console.log({ id: clientHttp2Stream.id });
+  clientHttp2Stream.on("ready", () => {
+    console.log("ready", { id: clientHttp2Stream.id });
+  });
+  clientHttp2Stream.on("aborted", () => {
+    const { aborted } = clientHttp2Stream;
+    console.log("aborted", { aborted });
+  });
+  clientHttp2Stream.on("end", () => {
+    const { readableEnded } = clientHttp2Stream;
+    console.log("end", { readableEnded });
+  });
+  clientHttp2Stream.on("close", () => {
+    const { destroyed, closed, rstCode } = clientHttp2Stream;
+    console.log("close", { destroyed, closed, rstCode });
+  });
+  ```
+
+- client output
+
+  ```js
+  { id: undefined }
+  ready { id: 1 }
+  aborted { aborted: true }
+  end { readableEnded: true }
+  close { destroyed: true, closed: true, rstCode: 0 }
+  ```
+
+**會依序觸發**
+
+```mermaid
+flowchart LR
+    A["ready"] --> B["aborted"]
+    B --> C["end"]
+    C --> D["close"]
+```
+
+**各個 event 代表的含意：**
+
+| event   | description                 |
+| ------- | --------------------------- |
+| aborted | request body 寫到一半就中斷 |
+
+### close with error
+
+**基本概念**
+
+- [正常情境](#正常情境的生命週期)不需要自行呼叫 `stream.close()`，stream 也會走到 `closed` 狀態
+- `stream.close()` 對應的 HTTP/2 frame 是 [RST_STREAM](../http/http-2-raw-bytes-2.md#rst_stream-frame)
+
+**`stream.close()` 若搭配 [Error Code](../http/http-2-errors.md#7-error-codes) > 0，則 client 跟 server 皆需要監聽 `stream.on("error")` 來捕捉此錯誤**
+
+- server
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    stream.on("error", console.log);
+  });
+  ```
+- client
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request();
+  clientHttp2Stream.close(http2.constants.NGHTTP2_INTERNAL_ERROR);
+  clientHttp2Stream.on("error", console.log);
+  ```
+- output
+  ```js
+  Error [ERR_HTTP2_STREAM_ERROR]: Stream closed with error code NGHTTP2_INTERNAL_ERROR
+      at ClientHttp2Stream._destroy (node:internal/http2/core:2475:13)
+      at _destroy (node:internal/streams/destroy:122:10)
+      at ClientHttp2Stream.destroy (node:internal/streams/destroy:84:5)
+      at Writable.destroy (node:internal/streams/writable:1120:11)
+      at [kMaybeDestroy] (node:internal/http2/core:2515:14)
+      at ClientHttp2Stream.<anonymous> (node:internal/http2/core:1949:28)
+      at ClientHttp2Stream.emit (node:events:509:28)
+      at finish (node:internal/streams/writable:953:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    code: 'ERR_HTTP2_STREAM_ERROR'
+  }
+  Error [ERR_HTTP2_STREAM_ERROR]: Stream closed with error code NGHTTP2_INTERNAL_ERROR
+      at ServerHttp2Stream._destroy (node:internal/http2/core:2475:13)
+      at _destroy (node:internal/streams/destroy:122:10)
+      at ServerHttp2Stream.destroy (node:internal/streams/destroy:84:5)
+      at Writable.destroy (node:internal/streams/writable:1120:11)
+      at Http2Stream.onStreamClose (node:internal/http2/core:609:12) {
+    code: 'ERR_HTTP2_STREAM_ERROR'
+  }
+  ```
+
+<!-- todo-yus 到這 -->
 
 ### Event: 'frameError'
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-frameerror_1
-
-### Event: 'ready'
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-ready
 
 ### Event: 'continue'
 
@@ -438,10 +629,6 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-ready
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-headers
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamadditionalheadersheaders
-
-### Event: 'response'
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-response
 
 ### properties
 
