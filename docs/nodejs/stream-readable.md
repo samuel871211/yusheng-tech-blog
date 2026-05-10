@@ -332,7 +332,7 @@ myReadable.on("close", () => {
 // 918.7669 end
 // 919.0596 _destroy
 // 1021.6917 close
-```
+````
 
 執行順序如下：
 
@@ -409,12 +409,11 @@ myReadable.on("error", (err) => {
   assert(myReadable.destroyed === true);
   assert(err === myReadable.errored);
   console.log("on('error')", err.message);
-
 });
 myReadable.on("close", () => {
   assert(myReadable.closed === true);
   console.log("on('close')");
-})
+});
 
 // Prints
 // _destroy
@@ -451,9 +450,9 @@ class MyReadable extends Readable {
 }
 
 const myReadable = new MyReadable();
-myReadable.on('readable', () => {
+myReadable.on("readable", () => {
   myReadable.read();
-})
+});
 // ✅ 使用者請記得用 on('error') 捕捉錯誤
 myReadable.on("error", (err) => {
   assert(myReadable.readable === false);
@@ -464,8 +463,8 @@ myReadable.on("error", (err) => {
 });
 myReadable.on("close", () => {
   assert(myReadable.closed === true);
-  console.log("on('close')")
-})
+  console.log("on('close')");
+});
 
 // Prints
 // _destroy
@@ -500,4 +499,3 @@ flowchart LR
 ## 參考資料
 
 - https://nodejs.org/api/stream.html
-````
