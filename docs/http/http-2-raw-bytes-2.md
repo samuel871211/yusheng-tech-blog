@@ -128,7 +128,7 @@ server 會送以下 bytes (hex)
   const headersFrame = Buffer.from([
     ...payloadLength,       // Length
     0x01,                   // Type
-    0x05,                   // Flags (END_STREAM)
+    0x05,                   // Flags (END_STREAM + END_HEADERS)
     0x00, 0x00, 0x00, 0x01, // Reserved + Stream Identifier
     ...hpackedHeaders,      // Payload
   ]);

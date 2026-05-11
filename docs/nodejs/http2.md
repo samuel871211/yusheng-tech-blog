@@ -401,15 +401,135 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2connectauthority-options-listener
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#clienthttp2sessionrequestheaders-options
 
-## ClientHttp2Stream
+## Http2Stream
 
 ### 繼承鍊
 
 ```mermaid
 flowchart LR
-    A[ClientHttp2Stream] --> B[Http2Stream]
-    B --> C[stream.Duplex]
+    A[ClientHttp2Stream] --> C[Http2Stream]
+    B[ServerHttp2Stream] --> C
+    C --> D[stream.Duplex]
 ```
+
+## ServerHttp2Stream
+
+### respond
+
+**ServerHttp2Stream 才有的 method，用來送出 [HEADERS](../http/http-2-raw-bytes.md#step-4-headers-frame) frame**
+
+**simple case**
+
+- server
+  ```js
+  const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    stream.respond();
+    stream.end();
+  });
+  ```
+- client
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request();
+  clientHttp2Stream.on("response", (headers, flags, rawHeaders) => {
+    console.log("response", { headers, flags, rawHeaders });
+  });
+  ```
+- client output
+  ```js
+  response {
+    headers: [Object: null prototype] {
+      ':status': 200,
+      date: 'Mon, 11 May 2026 12:03:27 GMT',
+      Symbol(sensitiveHeaders): []
+    },
+    flags: 4, // END_HEADERS
+    rawHeaders: [ ':status', '200', 'date', 'Mon, 11 May 2026 12:03:27 GMT' ]
+  }
+  ```
+
+**endStream（對應 END_STREAM flag，在這邊代表 response headers 之後不會有 response body）**
+
+- server
+  ```js
+  const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    stream.respond({}, { endStream: true });
+  });
+  ```
+
+### respondWithFD
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options
+
+### respondWithFiles
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options
+
+### properties
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamendafterheaders
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamid
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampending
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentheaders
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentinfoheaders
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsession
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamheaderssent
+
+### frameError
+
+**送出 frame 失敗時觸發**
+
+- server（使用 `maxSendHeaderBlockLength` 來限制 server 回傳給 client 的 headers 大小）
+
+  ```js
+  const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    stream.on("frameError", (frameType, errorCode, streamID) => {
+      console.log({ frameType, errorCode, streamID });
+    });
+    stream.on("error", console.log);
+    stream.respond();
+  });
+  ```
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request();
+  clientHttp2Stream.on("error", console.log);
+  ```
+
+- output
+
+  ```js
+  { frameType: 1, errorCode: 6, streamID: 1 } // frameType = HEADERS, errorCode = FRAME_SIZE_ERROR
+  Error [ERR_HTTP2_STREAM_ERROR]: Stream closed with error code NGHTTP2_FRAME_SIZE_ERROR
+      at ServerHttp2Stream._destroy (node:internal/http2/core:2475:13)
+      at _destroy (node:internal/streams/destroy:122:10)
+      at ServerHttp2Stream.destroy (node:internal/streams/destroy:84:5)
+      at Writable.destroy (node:internal/streams/writable:1120:11)
+      at Http2Stream.onStreamClose (node:internal/http2/core:609:12) {
+    code: 'ERR_HTTP2_STREAM_ERROR'
+  }
+  Error [ERR_HTTP2_STREAM_ERROR]: Stream closed with error code NGHTTP2_FRAME_SIZE_ERROR
+      at ClientHttp2Stream._destroy (node:internal/http2/core:2475:13)
+      at _destroy (node:internal/streams/destroy:122:10)
+      at ClientHttp2Stream.destroy (node:internal/streams/destroy:84:5)
+      at Writable.destroy (node:internal/streams/writable:1120:11)
+      at Http2Stream.onStreamClose (node:internal/http2/core:609:12) {
+    code: 'ERR_HTTP2_STREAM_ERROR'
+  }
+  ```
+
+## ClientHttp2Stream
 
 ### events
 
@@ -662,78 +782,6 @@ flowchart LR
 | -------- | -------------------------- |
 | continue | 收到 `:status: 100` 時觸發 |
 | headers  | 收到 `:status: 1xx` 時觸發 |
-
-### properties
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamendafterheaders
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamid
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampending
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentheaders
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentinfoheaders
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsession
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamheaderssent
-
-### respond
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampushstreamheaders-options-callback
-
-### respondWithFD
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options
-
-### respondWithFiles
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options
-
-## frameError
-
-**送出 frame 失敗時觸發**
-
-- server（使用 `maxSendHeaderBlockLength` 來限制 server 回傳給 client 的 headers 大小）
-
-  ```js
-  const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
-  http2Server.listen(5000);
-  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
-    stream.on("frameError", (frameType, errorCode, streamID) => {
-      console.log({ frameType, errorCode, streamID });
-    });
-    stream.on("error", console.log);
-    stream.respond();
-  });
-  ```
-
-- client
-
-  ```js
-  const clientHttp2Session = http2.connect("http://localhost:5000");
-  const clientHttp2Stream = clientHttp2Session.request();
-  clientHttp2Stream.on("error", console.log);
-  ```
-
-- output
-
-  ```js
-  { frameType: 1, errorCode: 6, streamID: 1 } // frameType = HEADERS, errorCode = FRAME_SIZE_ERROR
-  Error [ERR_HTTP2_STREAM_ERROR]: Stream closed with error code NGHTTP2_FRAME_SIZE_ERROR
-      at ServerHttp2Stream._destroy (node:internal/http2/core:2475:13)
-      at _destroy (node:internal/streams/destroy:122:10)
-      at ServerHttp2Stream.destroy (node:internal/streams/destroy:84:5)
-      at Writable.destroy (node:internal/streams/writable:1120:11)
-      at Http2Stream.onStreamClose (node:internal/http2/core:609:12) {
-    code: 'ERR_HTTP2_STREAM_ERROR'
-  }
-  Error [ERR_HTTP2_STREAM_ERROR]: Stream closed with error code NGHTTP2_FRAME_SIZE_ERROR
-      at ClientHttp2Stream._destroy (node:internal/http2/core:2475:13)
-      at _destroy (node:internal/streams/destroy:122:10)
-      at ClientHttp2Stream.destroy (node:internal/streams/destroy:84:5)
-      at Writable.destroy (node:internal/streams/writable:1120:11)
-      at Http2Stream.onStreamClose (node:internal/http2/core:609:12) {
-    code: 'ERR_HTTP2_STREAM_ERROR'
-  }
-  ```
 
 ## Http2Server
 
