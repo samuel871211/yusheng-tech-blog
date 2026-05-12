@@ -473,8 +473,8 @@ flowchart LR
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamendafterheaders
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamid
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampending
+  <!-- - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamid -->
+  <!-- - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampending -->
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentheaders
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentinfoheaders
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsession
@@ -566,9 +566,11 @@ flowchart LR
   ```js
   const clientHttp2Session = http2.connect("http://localhost:5000");
   const clientHttp2Stream = clientHttp2Session.request();
-  console.log({ id: clientHttp2Stream.id });
+  const { id, pending } = clientHttp2Stream;
+  console.log({ id, pending });
   clientHttp2Stream.on("ready", () => {
-    console.log("ready", { id: clientHttp2Stream.id });
+    const { id, pending } = clientHttp2Stream;
+    console.log("ready", { id, pending });
   });
   clientHttp2Stream.on("response", (headers, flags, rawHeaders) => {
     console.log("response", { headers, flags, rawHeaders });
@@ -587,8 +589,8 @@ flowchart LR
 - client output
 
   ```js
-  { id: undefined }
-  ready { id: 1 }
+  { id: undefined, pending: true }
+  ready { id: 1, pending: false }
   response {
     headers: [Object: null prototype] {
       ':status': 200,
@@ -642,9 +644,11 @@ flowchart LR
   const clientHttp2Session = http2.connect("http://localhost:5000");
   const clientHttp2Stream = clientHttp2Session.request({ ":method": "POST" });
   clientHttp2Stream.write("123");
-  console.log({ id: clientHttp2Stream.id });
+  const { id, pending } = clientHttp2Stream;
+  console.log({ id, pending });
   clientHttp2Stream.on("ready", () => {
-    console.log("ready", { id: clientHttp2Stream.id });
+    const { id, pending } = clientHttp2Stream;
+    console.log("ready", { id, pending });
   });
   clientHttp2Stream.on("aborted", () => {
     const { aborted } = clientHttp2Stream;
@@ -663,8 +667,8 @@ flowchart LR
 - client output
 
   ```js
-  { id: undefined }
-  ready { id: 1 }
+  { id: undefined, pending: true }
+  ready { id: 1, pending: false }
   aborted { aborted: true }
   end { readableEnded: true }
   close { destroyed: true, closed: true, rstCode: 0 }
