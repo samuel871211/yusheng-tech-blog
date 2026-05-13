@@ -253,15 +253,6 @@ last_update:
 
 ## http2session.socket
 
-**文件**
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionref
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsocket
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionunref
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2session-and-sockets
-
-**解釋**
-
 - `http2session` 是 Node.js http2 模組的抽象，代表一個 "http2 的長連線"，跟 Layer 4 的 TCP socket 是 1:1 的關聯
 - 建議不要用 `http2session.socket.write()`, `http2session.socket.on("data")` 來破壞 `http2session` 的狀態機
 - Node.js 會阻擋 user code 去 get/set `http2session.socket` 的部分 properties 或 methods，背後使用 JS 的 [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
@@ -309,14 +300,9 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
 
 <!-- ## trailers
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-trailers
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-wanttrailers
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsenttrailers
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsendtrailersheaders
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#requestrawtrailers
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#requesttrailers
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#responseaddtrailersheaders
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsenttrailers -->
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#responseaddtrailersheaders -->
 
 <!-- ## SETTINGS
 
@@ -356,50 +342,148 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionalpnprotocol
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionencrypted -->
 
-<!-- ## Http2Session
+## http2session.close()
 
-### Event: 'close'
+**概念**
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-close
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionclosecallback
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionclosed
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiondestroyerror-code
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiondestroyed
+- Gracefully closes the `Http2Session`
+- Allowing any existing streams to complete on their own
+- Preventing new Http2Stream instances from being created
+- 背後會送 [GOAWAY](../http/http-2-raw-bytes-2.md#goaway-frame) frame
 
-### Event: 'connect'
+**範例**
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-connect
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionconnecting
+- client
 
-### Event: 'error'
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  clientHttp2Session.on("connect", () => {
+    const clientHttp2Stream = clientHttp2Session.request();
+    clientHttp2Stream.on("response", () => console.log("response"));
+    setImmediate(() => clientHttp2Session.close());
+  });
+  clientHttp2Session.on("close", () => {
+    const { closed, destroyed } = clientHttp2Session;
+    console.log("close", { closed, destroyed });
+  });
+  ```
 
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-error
+- server
 
-### Event: 'frameError'
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    stream.respond();
+    stream.end();
+  });
+  ```
 
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-frameerror
+- client output
 
-### Event: 'stream'
+  ```js
+  response
+  close { closed: true, destroyed: true }
+  ```
 
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream
+## http2session.destroy()
 
-### state
+**概念**
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate
+- 比 [http2session.close()](#http2sessionclose) 還要激進，發送 GOAWAY 之後，直接關閉 TCP 連線
 
-### properties
+**範例**
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiontype
+- client
 
-### altsvc
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  clientHttp2Session.on("connect", () => {
+    const clientHttp2Stream = clientHttp2Session.request();
+    clientHttp2Stream.on("response", () => console.log("response"));
+    setImmediate(() => clientHttp2Session.close());
+  });
+  clientHttp2Session.on("close", () => {
+    const { closed, destroyed } = clientHttp2Session;
+    console.log("close", { closed, destroyed });
+  });
+  ```
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    stream.respond();
+    stream.end();
+  });
+  ```
+
+- client output
+
+  ```js
+  close { closed: true, destroyed: true }
+  ```
+
+## http2session.on("connect")
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  console.log(clientHttp2Session.connecting); // true
+  clientHttp2Session.on("connect", (session, socket) =>
+    console.log(clientHttp2Session.connecting),
+  ); // false
+  ```
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  ```
+
+## http2session.type
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  console.log(
+    clientHttp2Session.type === http2.constants.NGHTTP2_SESSION_CLIENT,
+  ); // true
+  ```
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("session", (serverHttp2Session) => {
+    console.log(
+      serverHttp2Session.type === http2.constants.NGHTTP2_SESSION_SERVER,
+    ); // true
+  });
+  ```
+
+<!-- ### Event: 'error'
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#event-error -->
+
+<!-- ### state
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate -->
+
+<!-- ### altsvc
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionaltsvcalt-originorstream
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-altsvc -->
 
-<!-- ## clienthttp2session.request
+<!-- ## http2.connect
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2connectauthority-options-listener
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#clienthttp2sessionrequestheaders-options -->
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2connectauthority-options-listener -->
 
 ## Http2Stream
 
@@ -412,24 +496,14 @@ flowchart LR
     C --> D[stream.Duplex]
 ```
 
-## ServerHttp2Stream
+## ServerHttp2Stream.respond
 
-### respond
-
-**ServerHttp2Stream 才有的 method，用來送出 [HEADERS](../http/http-2-raw-bytes.md#step-4-headers-frame) frame**
+:::info
+ServerHttp2Stream 才有的 method，用來送出 [HEADERS](../http/http-2-raw-bytes.md#step-4-headers-frame) frame
+:::
 
 **simple case**
 
-- server
-  ```js
-  const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
-  http2Server.listen(5000);
-  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
-    console.log(stream.endAfterHeaders); // true
-    stream.respond();
-    stream.end();
-  });
-  ```
 - client
   ```js
   const clientHttp2Session = http2.connect("http://localhost:5000");
@@ -438,7 +512,23 @@ flowchart LR
     console.log("response", { headers, flags, rawHeaders });
   });
   ```
+- server
+
+  ```js
+  const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    console.log(stream.endAfterHeaders); // true (GET request 在 Node.js 預設是 no payload)
+    console.log(stream.headersSent); // false
+    stream.respond();
+    console.log(stream.sentHeaders); // { ':status': 200, date: 'Wed, 13 May 2026 10:21:00 GMT' }
+    console.log(stream.headersSent); // true
+    stream.end();
+  });
+  ```
+
 - client output
+
   ```js
   response {
     headers: [Object: null prototype] {
@@ -453,24 +543,27 @@ flowchart LR
 
 **endStream（對應 END_STREAM flag，在這邊代表 response headers 之後不會有 response body）**
 
-- server
-
-  ```js
-  const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
-  http2Server.listen(5000);
-  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
-    console.log(stream.endAfterHeaders); // true
-    stream.respond({}, { endStream: true });
-  });
-  ```
-
 - client
 
   ```js
   const clientHttp2Session = http2.connect("http://localhost:5000");
   const clientHttp2Stream = clientHttp2Session.request();
   clientHttp2Stream.on("response", (headers, flags, rawHeaders) => {
-    console.log("response", { headers, flags, rawHeaders });
+    const { endAfterHeaders } = clientHttp2Stream;
+    console.log("response", { headers, flags, rawHeaders, endAfterHeaders });
+  });
+  ```
+
+- server
+
+  ```js
+  const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    console.log(stream.endAfterHeaders); // true (GET request 在 Node.js 預設是 no payload)
+    console.log(stream.headersSent); // false
+    stream.respond({}, { endStream: true });
+    console.log(stream.headersSent); // true
   });
   ```
 
@@ -484,27 +577,12 @@ flowchart LR
       Symbol(sensitiveHeaders): []
     },
     flags: 5, // END_STREAM + END_HEADERS
-    rawHeaders: [ ':status', '200', 'date', 'Tue, 12 May 2026 00:23:52 GMT' ]
+    rawHeaders: [ ':status', '200', 'date', 'Tue, 12 May 2026 00:23:52 GMT' ],
+    endAfterHeaders: false // 應該要是 true，但 Node.js lib/internal/http2/core.js "onSessionHeaders" 似乎有 BUG
   }
   ```
 
 **waitForTrailers（在這邊代表 response body 之後，是否要再送 trailers）**
-
-- server
-
-  ```js
-  const http2Server = http2.createServer();
-  http2Server.listen(5000);
-  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
-    console.log(stream.endAfterHeaders); // true
-    stream.respond({}, { waitForTrailers: true });
-    stream.end();
-    stream.on("wantTrailers", () => {
-      stream.sendTrailers({ test: 123 });
-      console.log(stream.sentTrailers); // { test: 123 }
-    });
-  });
-  ```
 
 - client
 
@@ -516,6 +594,24 @@ flowchart LR
   });
   clientHttp2Stream.on("trailers", (headers, flags, rawHeaders) => {
     console.log("trailers", { headers, flags, rawHeaders });
+  });
+  ```
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    console.log(stream.endAfterHeaders); // true (GET request 在 Node.js 預設是 no payload)
+    console.log(stream.headersSent); // false
+    stream.respond({}, { waitForTrailers: true });
+    console.log(stream.headersSent); // true
+    stream.end();
+    stream.on("wantTrailers", () => {
+      stream.sendTrailers({ test: 123 });
+      console.log(stream.sentTrailers); // { test: 123 }
+    });
   });
   ```
 
@@ -541,25 +637,21 @@ flowchart LR
   }
   ```
 
-<!-- ### respondWithFD
+<!-- ## ServerHttp2Stream.respondWithFD
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options -->
 
-<!-- ### respondWithFiles
+<!-- ## ServerHttp2Stream.respondWithFiles
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options -->
 
-### properties
+## Http2Stream properties
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamendafterheaders
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentheaders
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentinfoheaders
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsession
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamheaderssent
 
-### frameError
+## Http2Stream.on("frameError")
 
 **送出 frame 失敗時觸發**
 
@@ -609,7 +701,7 @@ flowchart LR
 
 ## ClientHttp2Stream
 
-### events
+<!-- ### events
 
 **ClientHttp2Stream 有以下 events（不包含從 stream.Duplex 繼承來的）**
 
@@ -624,7 +716,7 @@ flowchart LR
 - `'continue'`
 - `'headers'`
 - `'push'`
-- `'response'`
+- `'response'` -->
 
 ### 正常情境的生命週期
 
@@ -829,6 +921,7 @@ flowchart LR
   http2Server.listen(5000);
   http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
     stream.additionalHeaders({ test: "123", ":status": 100 });
+    console.log(stream.sentInfoHeaders); // { test: "123", ":status": 100 }
   });
   ```
 
@@ -865,39 +958,24 @@ flowchart LR
 | continue | 收到 `:status: 100` 時觸發 |
 | headers  | 收到 `:status: 1xx` 時觸發 |
 
-<!-- ## Http2Server
+## Http2Server
 
 ### Event: 'connection'
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-connection
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-connection_1
 
-### Event: 'session'
+<!-- ### Event: 'unknownProtocol'
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-session
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-session_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-unknownprotocol -->
 
-### Event: 'sessionError'
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-sessionerror
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-sessionerror_1
-
-### Event: 'stream'
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream_1
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream_2
-
-### Event: 'unknownProtocol'
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-unknownprotocol
-
-### close
+<!-- ### close
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#serverclosecallback
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversymbolasyncdispose
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverclosecallback_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverclosecallback_1 -->
 
-### Compatibility API
+<!-- ### Compatibility API
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-request
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-request_1
