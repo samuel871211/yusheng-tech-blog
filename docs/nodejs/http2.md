@@ -289,25 +289,25 @@ last_update:
   };
   ```
 
-## maxSendHeaderBlockLength
+<!-- ## maxSendHeaderBlockLength
 
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler -->
 
-## maxSessionMemory
+<!-- ## maxSessionMemory
 
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler -->
 
-## ORIGIN frame
+<!-- ## ORIGIN frame
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionoriginset
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createsecureserveroptions-onrequesthandler
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionoriginorigins
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-origin
-- https://datatracker.ietf.org/doc/html/rfc8336
+- https://datatracker.ietf.org/doc/html/rfc8336 -->
 
-## http2.performServerHandshake
+<!-- ## http2.performServerHandshake -->
 
-## trailers
+<!-- ## trailers
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-trailers
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-wanttrailers
@@ -316,9 +316,9 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#requestrawtrailers
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#requesttrailers
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#responseaddtrailersheaders
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsenttrailers
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsenttrailers -->
 
-## SETTINGS
+<!-- ## SETTINGS
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
@@ -332,9 +332,9 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getpackedsettingssettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getunpackedsettingsbuf
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
 
-## timeout
+<!-- ## timeout
 
 - http2Session
   - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout
@@ -349,14 +349,14 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
 - http2SecureServer
   - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_3
   - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback_1
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout_1
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout_1 -->
 
-## 加密相關
+<!-- ## 加密相關
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionalpnprotocol
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionencrypted
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionencrypted -->
 
-## Http2Session
+<!-- ## Http2Session
 
 ### Event: 'close'
 
@@ -394,12 +394,12 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#event-stream
 ### altsvc
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionaltsvcalt-originorstream
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-altsvc
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-altsvc -->
 
-## clienthttp2session.request
+<!-- ## clienthttp2session.request
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2connectauthority-options-listener
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#clienthttp2sessionrequestheaders-options
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#clienthttp2sessionrequestheaders-options -->
 
 ## Http2Stream
 
@@ -425,6 +425,7 @@ flowchart LR
   const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
   http2Server.listen(5000);
   http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    console.log(stream.endAfterHeaders); // true
     stream.respond();
     stream.end();
   });
@@ -453,28 +454,105 @@ flowchart LR
 **endStream（對應 END_STREAM flag，在這邊代表 response headers 之後不會有 response body）**
 
 - server
+
   ```js
   const http2Server = http2.createServer({ maxSendHeaderBlockLength: 1 });
   http2Server.listen(5000);
   http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    console.log(stream.endAfterHeaders); // true
     stream.respond({}, { endStream: true });
   });
   ```
 
-### respondWithFD
+- client
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request();
+  clientHttp2Stream.on("response", (headers, flags, rawHeaders) => {
+    console.log("response", { headers, flags, rawHeaders });
+  });
+  ```
 
-### respondWithFiles
+- client output
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options
+  ```js
+  response {
+    headers: [Object: null prototype] {
+      ':status': 200,
+      date: 'Tue, 12 May 2026 00:23:52 GMT',
+      Symbol(sensitiveHeaders): []
+    },
+    flags: 5, // END_STREAM + END_HEADERS
+    rawHeaders: [ ':status', '200', 'date', 'Tue, 12 May 2026 00:23:52 GMT' ]
+  }
+  ```
+
+**waitForTrailers（在這邊代表 response body 之後，是否要再送 trailers）**
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    console.log(stream.endAfterHeaders); // true
+    stream.respond({}, { waitForTrailers: true });
+    stream.end();
+    stream.on("wantTrailers", () => {
+      stream.sendTrailers({ test: 123 });
+      console.log(stream.sentTrailers); // { test: 123 }
+    });
+  });
+  ```
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request();
+  clientHttp2Stream.on("response", (headers, flags, rawHeaders) => {
+    console.log("response", { headers, flags, rawHeaders });
+  });
+  clientHttp2Stream.on("trailers", (headers, flags, rawHeaders) => {
+    console.log("trailers", { headers, flags, rawHeaders });
+  });
+  ```
+
+- client output
+
+  ```js
+  response {
+    headers: [Object: null prototype] {
+      ':status': 200,
+      date: 'Wed, 13 May 2026 05:56:05 GMT',
+      Symbol(sensitiveHeaders): []
+    },
+    flags: 4, // END_HEADERS
+    rawHeaders: [ ':status', '200', 'date', 'Wed, 13 May 2026 05:56:05 GMT' ]
+  }
+  trailers {
+    headers: [Object: null prototype] {
+      test: '123',
+      Symbol(sensitiveHeaders): []
+    },
+    flags: 5, // END_HEADERS + END_STREAM
+    rawHeaders: [ 'test', '123' ]
+  }
+  ```
+
+<!-- ### respondWithFD
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options -->
+
+<!-- ### respondWithFiles
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options -->
 
 ### properties
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamendafterheaders
-  <!-- - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamid -->
-  <!-- - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampending -->
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentheaders
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsentinfoheaders
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsession
@@ -787,7 +865,7 @@ flowchart LR
 | continue | 收到 `:status: 100` 時觸發 |
 | headers  | 收到 `:status: 1xx` 時觸發 |
 
-## Http2Server
+<!-- ## Http2Server
 
 ### Event: 'connection'
 
@@ -824,8 +902,8 @@ flowchart LR
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-request
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-request_1
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverrequest
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverresponse
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverresponse -->
 
-## CONNECT
+<!-- ## CONNECT
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#the-extended-connect-protocol
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#the-extended-connect-protocol -->
