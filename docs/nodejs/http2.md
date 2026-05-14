@@ -2,13 +2,20 @@
 title: Node.js http2 模組 API 介紹
 description: 將 Node.js http2 模組所有的 API 都使用過一輪（包含一般開發者平常用不到的 API）
 last_update:
-  date: "2026-05-11T08:00:00+08:00"
+  date: "2026-05-14T08:00:00+08:00"
 ---
 
-## goaway 語法
+## Node.js http2 原始碼
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-goaway
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessiongoawaycode-laststreamid-opaquedata
+整體來說，架構比 Node.js http 模組乾淨，寫法也比較現代，閱讀起來比較舒適
+
+| File path                    | Description                                                                                                  |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| lib/internal/http2/compat.js | Implementation of [Compatibility API](https://nodejs.org/docs/latest-v24.x/api/http2.html#compatibility-api) |
+| lib/internal/http2/core.js   | Implementation of Http2Sever, Http2Session, Http2Stream......                                                |
+| lib/internal/http2/util.js   | util functions                                                                                               |
+
+## goaway 語法
 
 延續我在之前的文章介紹到的 [GOAWAY frame](../http/http-2-raw-bytes-2.md#goaway-frame)
 
@@ -49,9 +56,6 @@ last_update:
 
 ## ping 語法
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-ping
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpingpayload-callback
-
 延續我在之前的文章介紹到的 [PING frame](../http/http-2-raw-bytes-2.md#ping-frame)
 
 - server
@@ -89,11 +93,6 @@ last_update:
 
 ## push 語法
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-push
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampushallowed
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streampushstreamheaders-options-callback
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#push-streams-on-the-client
-
 延續我在之前的文章介紹到的 [PUSH_PROMISE frame](../http/http-2-raw-bytes-2.md#push_promise-frame)
 
 - server
@@ -109,7 +108,7 @@ last_update:
       reqHeaders,
       (err, pushStream, finalReqHeaders) => {
         if (err) return console.error(err);
-        // 真正在 stream id = 2 回傳 style.css 的內容
+        // 真正在 stream id = 偶數，回傳 style.css 的內容
         pushStream.respond();
         pushStream.end("content of style.css");
       },
@@ -251,7 +250,7 @@ last_update:
   }
   ```
 
-## http2session.socket
+## Http2session.socket
 
 - `http2session` 是 Node.js http2 模組的抽象，代表一個 "http2 的長連線"，跟 Layer 4 的 TCP socket 是 1:1 的關聯
 - 建議不要用 `http2session.socket.write()`, `http2session.socket.on("data")` 來破壞 `http2session` 的狀態機
@@ -280,69 +279,7 @@ last_update:
   };
   ```
 
-<!-- ## maxSendHeaderBlockLength
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler -->
-
-<!-- ## maxSessionMemory
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler -->
-
-<!-- ## ORIGIN frame
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionoriginset
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createsecureserveroptions-onrequesthandler
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionoriginorigins
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-origin
-- https://datatracker.ietf.org/doc/html/rfc8336 -->
-
-<!-- ## http2.performServerHandshake -->
-
-<!-- ## trailers
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#requestrawtrailers
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#requesttrailers
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#responseaddtrailersheaders -->
-
-<!-- ## SETTINGS
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getpackedsettingssettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getunpackedsettingsbuf
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
-
-<!-- ## timeout
-
-- http2Session
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettimeoutmsecs-callback
-- http2Stream
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_1
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsettimeoutmsecs-callback
-- httpServer
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_2
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout
-- http2SecureServer
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_3
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback_1
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout_1 -->
-
-<!-- ## 加密相關
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionalpnprotocol
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionencrypted -->
-
-## http2session.close()
+## Http2session.close()
 
 **概念**
 
@@ -386,7 +323,7 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
   close { closed: true, destroyed: true }
   ```
 
-## http2session.destroy()
+## Http2session.destroy()
 
 **概念**
 
@@ -426,7 +363,7 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
   close { closed: true, destroyed: true }
   ```
 
-## http2session.on("connect")
+## Http2session.on("connect")
 
 - client
 
@@ -445,7 +382,7 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
   http2Server.listen(5000);
   ```
 
-## http2session.type
+## Http2session.type
 
 - client
 
@@ -468,26 +405,7 @@ https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onr
   });
   ```
 
-<!-- ### Event: 'error'
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-error -->
-
-<!-- ### state
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate -->
-
-<!-- ### altsvc
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionaltsvcalt-originorstream
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-altsvc -->
-
-<!-- ## http2.connect
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2connectauthority-options-listener -->
-
-## Http2Stream
-
-### 繼承鍊
+## Http2Stream 繼承鍊
 
 ```mermaid
 flowchart LR
@@ -637,20 +555,6 @@ ServerHttp2Stream 才有的 method，用來送出 [HEADERS](../http/http-2-raw-b
   }
   ```
 
-<!-- ## ServerHttp2Stream.respondWithFD
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options -->
-
-<!-- ## ServerHttp2Stream.respondWithFiles
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options -->
-
-## Http2Stream properties
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsession
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate
-
 ## Http2Stream.on("frameError")
 
 **送出 frame 失敗時觸發**
@@ -700,23 +604,6 @@ ServerHttp2Stream 才有的 method，用來送出 [HEADERS](../http/http-2-raw-b
   ```
 
 ## ClientHttp2Stream
-
-<!-- ### events
-
-**ClientHttp2Stream 有以下 events（不包含從 stream.Duplex 繼承來的）**
-
-- `'aborted'`
-- `'close'`
-- `'error'`
-- `'frameError'`
-- `'ready'`
-- `'timeout'`
-- `'trailers'`
-- `'wantTrailers'`
-- `'continue'`
-- `'headers'`
-- `'push'`
-- `'response'` -->
 
 ### 正常情境的生命週期
 
@@ -912,7 +799,7 @@ flowchart LR
   }
   ```
 
-### informational response
+## informational response
 
 - server
 
@@ -958,22 +845,298 @@ flowchart LR
 | continue | 收到 `:status: 100` 時觸發 |
 | headers  | 收到 `:status: 1xx` 時觸發 |
 
-## Http2Server
+## Http2Server.on("connection")
 
-### Event: 'connection'
+**TCP 連線建立後觸發**
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-connection
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-connection_1
+- client
 
-<!-- ### Event: 'unknownProtocol'
+  ```js
+  const socket = net.connect({ host: "localhost", port: 5000 });
+  ```
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-unknownprotocol -->
+- server
 
-<!-- ### close
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("connection", (socket) =>
+    console.log(socket instanceof net.Socket),
+  ); // true
+  ```
 
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverclosecallback
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serversymbolasyncdispose
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverclosecallback_1 -->
+## Http2Server.close()
+
+**概念**
+
+- Stops the server from establishing new sessions and streams
+- Calls [Http2Session.close()](#http2sessionclose) on all active sessions
+
+**範例**
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flag, rawHeaders) => {
+    stream.respond();
+    stream.end();
+  });
+  http2Server.on("close", () => console.log("http2Server close"));
+  ```
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream1 = clientHttp2Session.request();
+  clientHttp2Stream1.on("response", () => {
+    console.log("response1");
+    http2Server.close();
+  });
+  clientHttp2Session.on("close", () => console.log("clientHttp2Session close"));
+  ```
+
+- output
+
+  ```js
+  response1
+  clientHttp2Session close
+  http2Server close
+  ```
+
+## trailers
+
+**承接 [ServerHttp2Stream.respond](#serverhttp2streamrespond)，client side 也可以送出 trailers**
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request(
+    { ":method": "POST" },
+    { waitForTrailers: true },
+  );
+  clientHttp2Stream.end();
+  clientHttp2Stream.on("wantTrailers", () => {
+    clientHttp2Stream.sendTrailers({ test: 123 });
+  });
+  ```
+
+- server（使用跟 Node.js http 模組相容的 [Compatibility API](https://nodejs.org/docs/latest-v24.x/api/http2.html#compatibility-api)）
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("request", (req, res) => {
+    req.on("data", console.log);
+    req.on("end", () => {
+      const { trailers, rawTrailers } = req;
+      console.log({ trailers, rawTrailers });
+    });
+  });
+  ```
+
+- server output
+
+  ```js
+  {
+    trailers: { test: '123', Symbol(sensitiveHeaders): [] },
+    rawTrailers: [ 'test', '123' ]
+  }
+  ```
+
+## Http2Session.on("error")
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  clientHttp2Session.on("error", console.log);
+  ```
+
+- server
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("session", (serverHttp2Session) => {
+    serverHttp2Session.goaway(http2.constants.NGHTTP2_INTERNAL_ERROR);
+  });
+  ```
+
+- client output
+
+  ```js
+  Error [ERR_HTTP2_SESSION_ERROR]: Session closed with error code 2
+      at Http2Session.onGoawayData (node:internal/http2/core:760:21) {
+    code: 'ERR_HTTP2_SESSION_ERROR'
+  }
+  ```
+
+## maxReservedRemoteStreams
+
+**限制 ClientHttp2Session 同時能收到的 push stream 數量上限**
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000", {
+    maxReservedRemoteStreams: 1,
+  });
+  clientHttp2Session.on("stream", (pushedStream) => {
+    // 消耗 response body，讓 pushedStream 進入 end, close 狀態
+    pushedStream.resume();
+    pushedStream.on("end", () =>
+      console.log({
+        time: performance.now(),
+        streamID: pushedStream.id,
+      }),
+    );
+  });
+  clientHttp2Session.request();
+  // 第 2 個 request 延遲 1 秒後再送出，此時第 1 個 pushedStream 的生命週期已結束
+  setTimeout(() => clientHttp2Session.request(), 1000);
+  ```
+
+- server（同 [push 語法](#push-語法) 的範例程式碼）
+
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (serverHttp2Stream) => {
+    if (!serverHttp2Stream.pushAllowed) return;
+    // server 猜測 client 接下來需要 style.css
+    const reqHeaders = { ":path": "/style.css" };
+    serverHttp2Stream.pushStream(
+      reqHeaders,
+      (err, pushStream, finalReqHeaders) => {
+        if (err) return console.error(err);
+        // 真正在 stream id = 偶數，回傳 style.css 的內容
+        pushStream.respond();
+        pushStream.end("content of style.css");
+      },
+    );
+  });
+  ```
+
+- client output
+
+  ```js
+  { time: 123.517083, streamID: 2 }
+  { time: 1121.916125, streamID: 4 }
+  ```
+
+<!-- ## strictFieldWhitespaceValidation -->
+
+<!-- ### state
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate -->
+
+<!-- ## ServerHttp2Stream.respondWithFD
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options -->
+
+<!-- ## ServerHttp2Stream.respondWithFiles
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options -->
+
+<!-- ## Http2Stream properties
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate -->
+
+<!-- ## SETTINGS
+
+maxSettings
+peerMaxConcurrentStreams
+settings
+remoteCustomSettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getpackedsettingssettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getunpackedsettingsbuf
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
+
+<!-- todo-yus 行為怪異，不知道該怎研究 -->
+<!-- ## timeout
+
+- http2Session
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettimeoutmsecs-callback
+- http2Stream
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_1
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsettimeoutmsecs-callback
+- httpServer
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_2
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout
+- http2SecureServer
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_3
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback_1
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout_1 -->
+
+## encrypted, alpnProtocol
+
+參考之前寫的文章 [mkcert 建立本機 CA](../http/strict-transport-security.md#mkcert-建立本機-ca)
+
+- client
+
+  ```js
+  const rootCA = readFileSync("/path-to-your/mkcert/rootCA.pem");
+  const clientHttp2Session = http2.connect("https://localhost:5000", {
+    ca: rootCA,
+  });
+  ```
+
+- server
+
+  ```js
+  const https2Server = http2.createSecureServer({
+    key: readFileSync(join(import.meta.dirname, "private-key.pem")),
+    cert: readFileSync(join(import.meta.dirname, "cert.pem")),
+  });
+  https2Server.on("session", (serverHttp2Session) => {
+    console.log(serverHttp2Session.encrypted); // true
+    console.log(serverHttp2Session.alpnProtocol); // h2
+  });
+  https2Server.listen(5000);
+  ```
+
+## Http2SecureServer.on("unknownProtocol")
+
+**client 在建立 TLS 連線時，沒帶 ALPN protocol，server 就會觸發這個事件**
+
+- client
+
+  ```js
+  const rootCA = readFileSync("/path-to-your/mkcert/rootCA.pem");
+  const tlsSocket = tls.connect({ host: "localhost", port: 5000, ca: rootCA });
+  ```
+
+- server
+
+  ```js
+  const https2Server = http2.createSecureServer({
+    key: readFileSync(join(import.meta.dirname, "private-key.pem")),
+    cert: readFileSync(join(import.meta.dirname, "cert.pem")),
+  });
+  https2Server.on("unknownProtocol", (tlsSocket) => {
+    console.log(tlsSocket instanceof tls.TLSSocket); // true
+    // 需自行呼叫 socket.destroy
+    tlsSocket.destroy();
+  });
+  https2Server.listen(5000);
+  ```
 
 <!-- ### Compatibility API
 
@@ -982,6 +1145,12 @@ flowchart LR
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverrequest
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverresponse -->
 
-<!-- ## CONNECT
+<!-- ## CONNECT`
 
+- https://datatracker.ietf.org/doc/html/rfc8441
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#the-extended-connect-protocol -->
+
+<!-- todo-yus 不知道怎測 -->
+<!-- ## maxSessionMemory
+
+https://nodejs.org/docs/latest-v24.x/api/http2.html#http2createserveroptions-onrequesthandler -->
