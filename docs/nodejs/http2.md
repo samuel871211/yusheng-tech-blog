@@ -1028,63 +1028,6 @@ flowchart LR
   { time: 1121.916125, streamID: 4 }
   ```
 
-<!-- ## strictFieldWhitespaceValidation -->
-
-<!-- ### state
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate -->
-
-<!-- ## ServerHttp2Stream.respondWithFD
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options -->
-
-<!-- ## ServerHttp2Stream.respondWithFiles
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options -->
-
-<!-- ## Http2Stream properties
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate -->
-
-<!-- ## SETTINGS
-
-maxSettings
-peerMaxConcurrentStreams
-settings
-remoteCustomSettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getpackedsettingssettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getunpackedsettingsbuf
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
-
-<!-- todo-yus 行為怪異，不知道該怎研究 -->
-<!-- ## timeout
-
-- http2Session
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettimeoutmsecs-callback
-- http2Stream
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_1
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsettimeoutmsecs-callback
-- httpServer
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_2
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout
-- http2SecureServer
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_3
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback_1
-  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout_1 -->
-
 ## encrypted, alpnProtocol
 
 參考之前寫的文章 [mkcert 建立本機 CA](../http/strict-transport-security.md#mkcert-建立本機-ca)
@@ -1149,6 +1092,63 @@ remoteCustomSettings
 
 - https://datatracker.ietf.org/doc/html/rfc8441
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#the-extended-connect-protocol -->
+
+<!-- ## strictFieldWhitespaceValidation -->
+
+<!-- ### state
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate -->
+
+<!-- ## ServerHttp2Stream.respondWithFD
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfdfd-headers-options -->
+
+<!-- ## ServerHttp2Stream.respondWithFiles
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamrespondwithfilepath-headers-options -->
+
+<!-- ## Http2Stream properties
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate -->
+
+<!-- ## SETTINGS
+
+maxSettings
+peerMaxConcurrentStreams
+settings
+remoteCustomSettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getpackedsettingssettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getunpackedsettingsbuf
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
+
+<!-- todo-yus 行為怪異，不知道該怎研究 -->
+<!-- ## timeout
+
+- http2Session
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettimeoutmsecs-callback
+- http2Stream
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_1
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamsettimeoutmsecs-callback
+- httpServer
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_2
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout
+- http2SecureServer
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-timeout_3
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#serversettimeoutmsecs-callback_1
+  - https://nodejs.org/docs/latest-v24.x/api/http2.html#servertimeout_1 -->
 
 <!-- todo-yus 不知道怎測 -->
 <!-- ## maxSessionMemory
