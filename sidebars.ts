@@ -234,6 +234,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/undici-content-length-and-content-range-mismatch",
         "nodejs/destroy-socket-after-head",
         "nodejs/http2",
+        "nodejs/c-and-c++",
       ],
     },
     {
