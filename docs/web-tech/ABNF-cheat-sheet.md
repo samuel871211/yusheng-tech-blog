@@ -2,7 +2,7 @@
 title: ABNF Cheat Sheet
 description: 想讀懂 HTTP 的 RFC 嗎？ABNF 跟 RFC 9110 是入場券
 last_update:
-  date: "2026-04-07T08:00:00+08:00"
+  date: "2026-05-17T08:00:00+08:00"
 ---
 
 ## 前言
@@ -99,18 +99,18 @@ interface Rule1 extends Rule2
 
 ## HTTP/1.1 (RFC 9110 & RFC 9112)
 
-| Rule          | ABNF Definition                                                                                                                                  | Description            |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
-| OWS           | `*( SP / HTAB )`                                                                                                                                 | Optional WhiteSpace    |
-| RWS           | `1*( SP / HTAB )`                                                                                                                                | Required WhiteSpace    |
-| 1#element     | `element *( OWS "," OWS element )`                                                                                                               |                        |
-| token         | `1*tchar`                                                                                                                                        |                        |
-| tchar         | `"!"` / `"#"` / `"$"` / `"%"` / `"&"` / `"'"` /<br/>`"*"` / `"+"` / `"-"` / `"."` / `"^"` / `"_"` /<br/>``"`"`` / `"\|"` / `"~"` / DIGIT / ALPHA |                        |
-| field-line    | token ":" OWS field-value OWS                                                                                                                    |                        |
-| field-value   | `*field-content`                                                                                                                                 |                        |
-| field-content | field-vchar [ 1*( SP / HTAB / field-vchar ) field-vchar ]                                                                                        | 頭尾都要是 field-vchar |
-| field-vchar   | VCHAR / obs-text                                                                                                                                 |                        |
-| obs-text      | %x80-FF                                                                                                                                          | obsolete text          |
+| Rule          | ABNF Definition                                                                                                                                  | Description                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| OWS           | `*( SP / HTAB )`                                                                                                                                 | Optional WhiteSpace        |
+| RWS           | `1*( SP / HTAB )`                                                                                                                                | Required WhiteSpace        |
+| 1#element     | `element *( OWS "," OWS element )`                                                                                                               |                            |
+| token         | `1*tchar`                                                                                                                                        |                            |
+| tchar         | `"!"` / `"#"` / `"$"` / `"%"` / `"&"` / `"'"` /<br/>`"*"` / `"+"` / `"-"` / `"."` / `"^"` / `"_"` /<br/>``"`"`` / `"\|"` / `"~"` / DIGIT / ALPHA |                            |
+| field-line    | token ":" OWS field-value OWS                                                                                                                    | HTTP header key value      |
+| field-value   | `*field-content`                                                                                                                                 |                            |
+| field-content | field-vchar [ 1*( SP / HTAB / field-vchar ) field-vchar ]                                                                                        | start/end with field-vchar |
+| field-vchar   | VCHAR / obs-text                                                                                                                                 |                            |
+| obs-text      | %x80-FF                                                                                                                                          | obsolete text              |
 
 ### Content-Type
 
