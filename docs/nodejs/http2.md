@@ -1195,11 +1195,6 @@ flowchart LR
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverrequest
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2http2serverresponse -->
 
-<!-- ## CONNECT`
-
-- https://datatracker.ietf.org/doc/html/rfc8441
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#the-extended-connect-protocol -->
-
 <!-- ### state
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionstate -->
