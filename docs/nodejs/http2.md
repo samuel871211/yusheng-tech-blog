@@ -2,7 +2,7 @@
 title: Node.js http2 模組 API 介紹
 description: 將 Node.js http2 模組所有的 API 都使用過一輪（包含一般開發者平常用不到的 API）
 last_update:
-  date: "2026-05-14T08:00:00+08:00"
+  date: "2026-05-18T08:00:00+08:00"
 ---
 
 ## Node.js http2 原始碼
@@ -1082,6 +1082,111 @@ flowchart LR
   ```
 
 ## strictFieldWhitespaceValidation
+
+**是否允許 HTTP header field value 有 leading/trailing space**
+
+- 正常我們看到的 HTTP header key value：✅ `hello: world`
+- 雖 [RFC 9112](https://datatracker.ietf.org/doc/html/rfc9112.html#section-5) 可容許在 field value 前後有多個空白或是 Tab：✅ `hello: \tworld\t`
+- 但 [RFC 9113](https://datatracker.ietf.org/doc/html/rfc9113#section-8.2.1) 不容許在 field value 前後有多個空白或是 Tab：❌ `hello: \tworld\t`
+
+### 測試 false 情境
+
+- client（參考 [Node.js + CLI 串接 `deflatehd`](../http/http-2-raw-bytes.md#nodejs--cli-串接-deflatehd)，產 HPACK raw bytes）
+
+  ```js
+  const pathToDeflatehd = "/path-to-your/nghttp2-1.69.0/src/deflatehd";
+  const spawnSyncReturns = spawnSync(pathToDeflatehd, ["-t"], {
+    input: [
+      ":method: GET",
+      ":scheme: http",
+      ":path: /",
+      ":authority: localhost:5001",
+      "hello: world ", // field value 刻意加上 trailing whitespace
+      "",
+      "",
+    ].join("\n"),
+    encoding: "utf8",
+  });
+  const result = JSON.parse(spawnSyncReturns.stdout);
+  const { wire } = result.cases[0];
+  ```
+
+- client（組 HTTP/2 raw bytes）
+
+  ```js
+  const payloadLength = byteLengthTo3BytesBuffer(result.cases[0].output_length);
+  const headersFrame = Buffer.from([
+    ...payloadLength, // Length
+    0x01, // Type
+    0x05, // Flags (END_STREAM + END_HEADERS)
+    0x00,
+    0x00,
+    0x00,
+    0x01, // Reserved + Stream Identifier
+    ...Buffer.from(wire, "hex"), // Payload
+  ]);
+  const frames = Buffer.concat([magic, emptySettingsFrame, headersFrame]);
+  const socket = net.connect({ host: "localhost", port: 5000 });
+  socket.write(frames);
+  ```
+
+- server (Node.js http2)
+
+  ```js
+  const http2Server = http2.createServer({
+    strictFieldWhitespaceValidation: false,
+  });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers) => {
+    console.log("stream", headers);
+    assert(Object.hasOwn(headers, "hello"));
+  });
+  ```
+
+- server output
+
+  ```js
+  stream [Object: null prototype] {
+    ':method': 'GET',
+    ':scheme': 'http',
+    ':path': '/',
+    ':authority': 'localhost:5001',
+    hello: 'world ', // field value 有空白
+    Symbol(sensitiveHeaders): []
+  }
+  ```
+
+**結論：可以容忍 field value 有 leading/trailing whitespace**
+
+### 測試 true 情境
+
+- client 程式碼不變
+- server (Node.js http2)
+
+  ```js
+  const http2Server = http2.createServer({
+    strictFieldWhitespaceValidation: true,
+  });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers) => {
+    console.log("stream", headers);
+    assert(Object.hasOwn(headers, "hello") === false);
+  });
+  ```
+
+- server output
+
+  ```js
+  stream [Object: null prototype] {
+    ':method': 'GET',
+    ':scheme': 'http',
+    ':path': '/',
+    ':authority': 'localhost:5001',
+    Symbol(sensitiveHeaders): []
+  }
+  ```
+
+**結論：會把 field value 有 leading/trailing whitespace 的 header key value 移除**
 
 <!-- ### Compatibility API
 
