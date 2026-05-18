@@ -73,6 +73,8 @@ const sidebars: SidebarsConfig = {
         "http/http-2", // 可拆 ing
         "http/http-2-raw-bytes",
         "http/http-2-raw-bytes-2",
+        // "http/http-2-raw-bytes-3",
+        "http/http-2-flow-control",
         "http/http-2-errors",
         // "http/http2-HAPCK-header-compression",
 
