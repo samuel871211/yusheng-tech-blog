@@ -1202,6 +1202,24 @@ http2.getUnpackedSettings(Buffer.from([0x00, 0x04, 0x00, 0x00, 0x00, 0x64])); //
 - [SETTINGS frame 格式](../http/http-2-raw-bytes.md#step-2-settings-frame-connection-preface)
 - [Section 6.5.2 Defined Settings](../http/http-2-raw-bytes.md#section-652-defined-settings)
 
+## http2.getDefaultSettings()
+
+基本上這些值都有定義在 [RFC 9113 6.5.2. Defined Settings](https://datatracker.ietf.org/doc/html/rfc9113#section-6.5.2)
+
+```js
+http2.getDefaultSettings();
+// [Object: null prototype] {
+//   headerTableSize: 4096,
+//   enablePush: true,
+//   initialWindowSize: 65535,
+//   maxFrameSize: 16384,
+//   maxConcurrentStreams: 4294967295,
+//   maxHeaderSize: 65535,
+//   maxHeaderListSize: 65535,
+//   enableConnectProtocol: false
+// }
+```
+
 <!-- ## SETTINGS
 
 maxSettings
@@ -1217,7 +1235,6 @@ remoteCustomSettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
 
 <!-- ### Compatibility API
