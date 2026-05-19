@@ -1188,6 +1188,38 @@ flowchart LR
 
 **結論：會把 field value 有 leading/trailing whitespace 的 header key value 移除**
 
+## getPackedSettings, getUnpackedSettings
+
+**util functions，用來 settings object 跟 buffer 的轉換**
+
+```js
+http2.getPackedSettings({ initialWindowSize: 100 }); // <Buffer 00 04 00 00 00 64>
+http2.getUnpackedSettings(Buffer.from([0x00, 0x04, 0x00, 0x00, 0x00, 0x64])); // { initialWindowSize: 100 }
+```
+
+**參考**
+
+- [SETTINGS frame 格式](../http/http-2-raw-bytes.md#step-2-settings-frame-connection-preface)
+- [Section 6.5.2 Defined Settings](../http/http-2-raw-bytes.md#section-652-defined-settings)
+
+<!-- ## SETTINGS
+
+maxSettings
+peerMaxConcurrentStreams
+settings
+remoteCustomSettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
+
 <!-- ### Compatibility API
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-request
@@ -1211,26 +1243,6 @@ flowchart LR
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streambuffersize
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2streamstate -->
-
-<!-- ## SETTINGS
-
-maxSettings
-peerMaxConcurrentStreams
-settings
-remoteCustomSettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getdefaultsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getpackedsettingssettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2getunpackedsettingsbuf
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
 
 <!-- todo-yus 行為怪異，不知道該怎研究 -->
 <!-- ## timeout
