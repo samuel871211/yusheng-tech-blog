@@ -5,6 +5,14 @@ last_update:
   date: "2026-05-18T08:00:00+08:00"
 ---
 
+## 前言
+
+這篇文章主要是整理 Node.js http2 模組的使用方式，建議先把 HTTP/2 的基礎讀過
+
+- [HTTP/2 raw bytes (第一篇)](../http/http-2-raw-bytes.md)
+- [HTTP/2 raw bytes (第二篇)](../http/http-2-raw-bytes-2.md)
+- [HTTP/2 raw bytes (第三篇)](../http/http-2-raw-bytes-3.md)
+
 ## Node.js http2 原始碼
 
 整體來說，架構比 Node.js http 模組乾淨，寫法也比較現代，閱讀起來比較舒適
@@ -1219,6 +1227,19 @@ http2.getDefaultSettings();
 //   enableConnectProtocol: false
 // }
 ```
+
+| RFC 9113 Defined Settings       | Node.js correspond settings       |
+| ------------------------------- | --------------------------------- |
+| SETTINGS_HEADER_TABLE_SIZE      | headerTableSize                   |
+| SETTINGS_ENABLE_PUSH            | enablePush                        |
+| SETTINGS_INITIAL_WINDOW_SIZE    | initialWindowSize                 |
+| SETTINGS_MAX_FRAME_SIZE         | maxFrameSize                      |
+| SETTINGS_MAX_CONCURRENT_STREAMS | maxConcurrentStreams              |
+| SETTINGS_MAX_HEADER_LIST_SIZE   | maxHeaderListSize (maxHeaderSize) |
+
+:::info
+enableConnectProtocol 是定義在 RFC 8441，並且會在 [這篇文章](../http/http-2-raw-bytes-3.md) 介紹到
+:::
 
 <!-- ## SETTINGS
 

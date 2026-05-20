@@ -594,17 +594,6 @@ Specifies the maximum number of concurrent streams permitted on an `Http2Session
 
 剛好對應到 RFC 9113 的 [SETTINGS_MAX_CONCURRENT_STREAMS](#http2-settings)
 
-<!-- ## localSettings
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback -->
-
-<!-- ## remoteSettings
-
-https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
-https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings -->
-
 ## Content-Length
 
 根據 [RFC 9113 #section-8.1.1](https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1) 的描述

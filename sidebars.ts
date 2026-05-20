@@ -76,7 +76,7 @@ const sidebars: SidebarsConfig = {
         // "http/http-2-raw-bytes-3",
         "http/http-2-flow-control",
         "http/http-2-errors",
-        // "http/http2-HAPCK-header-compression",
+        // "http/http-2-HAPCK-header-compression",
 
         // "http/service-worker-allowed",
         // "http/http-caching-4", // ing
@@ -235,7 +235,7 @@ const sidebars: SidebarsConfig = {
         // "nodejs/undici-client-lifecycle",
         "nodejs/undici-content-length-and-content-range-mismatch",
         "nodejs/destroy-socket-after-head",
-        "nodejs/http2",
+        "nodejs/http-2",
         "nodejs/c-and-c++",
       ],
     },
