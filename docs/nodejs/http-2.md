@@ -2,7 +2,7 @@
 title: Node.js http2 模組 API 介紹
 description: 將 Node.js http2 模組所有的 API 都使用過一輪（包含一般開發者平常用不到的 API）
 last_update:
-  date: "2026-05-18T08:00:00+08:00"
+  date: "2026-05-21T08:00:00+08:00"
 ---
 
 ## 前言
@@ -1243,7 +1243,7 @@ enableConnectProtocol 是定義在 RFC 8441，並且會在 [這篇文章](../htt
 
 ## updateSettings, remotesettings
 
-**單純做 settings object 的更新，不會更新既有連線的 settings**
+**updateSettings 只有單純做 settings object 的更新，不會更新既有連線的 settings**
 
 ```js
 // 預設 initialWindowSize: 100
@@ -1272,19 +1272,121 @@ clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
 });
 ```
 
+## settings, localsettings, pendingSettingsAck
+
+- server
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  ```
+- client
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  // connection preface 階段，client, server 會先交換一次各自的 settings
+  // 延遲三秒再執行 settings + 掛上 "localSettings" event listener
+  // 確保 callback 只會觸發一次
+  await sleep(3000);
+  // 更新 clientHttp2Session 的 localSettings
+  clientHttp2Session.settings({ initialWindowSize: 100 });
+  assert(clientHttp2Session.pendingSettingsAck === true);
+  clientHttp2Session.on("localSettings", (settings: Settings) => {
+    assert(settings.initialWindowSize === 100);
+    assert(settings === clientHttp2Session.localSettings);
+    assert(clientHttp2Session.pendingSettingsAck === false);
+  });
+  ```
+
+## remoteCustomSettings, customSettings
+
+除了 [DefaultSetting](#http2getdefaultsettings) 定義的七個設定，[SETTINGS frame](../http/http-2-raw-bytes.md#step-2-settings-frame-connection-preface) 本身是可以擴充的，我可以自行定義：
+
+| Setting Name                          | Setting ID | Setting Value |
+| ------------------------------------- | ---------- | ------------- |
+| MY_CUSTOM_SETTING_ENABLE_COOL_FEATURE | 00 0a      | 00 00 00 01   |
+
+而擴充的 Settings 是需要 client, server 雙方協商好的：
+
+- 任一端可以透過 `customSettings` 宣告它的 [`localsettings`](#settings-localsettings-pendingsettingsack)
+- 另一端需要透過 `remoteCustomSettings` 宣告對方會傳送的 custom Setting ID
+
+**使用方法（以 client 發送 `customSettings` 為範例）**
+
+- server
+
+  ```js
+  const http2Server = http2.createServer({
+    remoteCustomSettings: [11,12,13,14,15,16,17,18,19,20]
+  });
+  http2Server.listen(5000);
+  http2Server.on("session", (session) => {
+    session.on("remoteSettings", (settings: Settings) => {
+      console.log(settings.customSettings);
+    })
+  })
+  ```
+
+- client
+
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000", {
+    settings: {
+      customSettings: {
+        11: 11,
+        12: 12,
+        13: 13,
+        14: 14,
+        15: 15,
+        16: 16,
+        17: 17,
+        18: 18,
+        19: 19,
+        20: 20
+      }
+    }
+  });
+  clientHttp2Session.on("localSettings", (settings: Settings) => {
+    console.log(settings.customSettings);
+  });
+  ```
+
+- client & server output
+
+  ```js
+  {
+    '11': 11,
+    '12': 12,
+    '13': 13,
+    '14': 14,
+    '15': 15,
+    '16': 16,
+    '17': 17,
+    '18': 18,
+    '19': 19,
+    '20': 20
+  }
+  ```
+
+## maxSettings
+
+**限制每一個收到的 SETTINGS frame 最多可以有幾組 Settings (ID + Value)**
+
+- server
+  ```js
+  const http2Server = http2.createServer({ maxSettings: 1 });
+  http2Server.listen(5000);
+  http2Server.on("session", (session) => {
+    session.on("error", (err) => console.log(err));
+    session.on("close", () => console.log("server session close"));
+  });
+  ```
+- client
 <!-- ## SETTINGS
 
 maxSettings
 peerMaxConcurrentStreams
-settings
-remoteCustomSettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
+
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
+  -->
 
 <!-- ### Compatibility API
 
