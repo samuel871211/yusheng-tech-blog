@@ -1241,6 +1241,37 @@ http2.getDefaultSettings();
 enableConnectProtocol 是定義在 RFC 8441，並且會在 [這篇文章](../http/http-2-raw-bytes-3.md) 介紹到
 :::
 
+## updateSettings, remotesettings
+
+**單純做 settings object 的更新，不會更新既有連線的 settings**
+
+```js
+// 預設 initialWindowSize: 100
+const http2Server = http2.createServer({ settings: { initialWindowSize: 100 } });
+http2Server.listen(5000);
+
+// 前兩個連線都吃到 initialWindowSize: 100
+const clientHttp2Session1 = http2.connect("http://localhost:5000");
+clientHttp2Session1.on('remoteSettings', (settings: Settings) => {
+  assert(clientHttp2Session1.remoteSettings === settings);
+  assert(settings.initialWindowSize === 100);
+});
+const clientHttp2Session2 = http2.connect("http://localhost:5000");
+clientHttp2Session2.on('remoteSettings', (settings: Settings) => {
+  assert(clientHttp2Session2.remoteSettings === settings);
+  assert(settings.initialWindowSize === 100);
+});
+
+// 第三個連線會吃到 initialWindowSize: 200
+await sleep(1000);
+http2Server.updateSettings({ initialWindowSize: 200 });
+const clientHttp2Session3 = http2.connect("http://localhost:5000");
+clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
+  assert(clientHttp2Session3.remoteSettings === settings);
+  assert(settings.initialWindowSize === 200);
+});
+```
+
 <!-- ## SETTINGS
 
 maxSettings
@@ -1248,14 +1279,11 @@ peerMaxConcurrentStreams
 settings
 remoteCustomSettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-localsettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-remotesettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionlocalsettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionpendingsettingsack
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionremotesettings
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsettingssettings-callback
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverupdatesettingssettings_1
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#settings-object -->
 
 <!-- ### Compatibility API
