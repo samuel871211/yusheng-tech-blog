@@ -12,3 +12,5 @@ last_update:
 - https://datatracker.ietf.org/doc/html/rfc7541
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sensitiveheaders
 - maxDeflateDynamicTableSize
+- maxSendHeaderBlockLength
+- sensitiveHeaders
