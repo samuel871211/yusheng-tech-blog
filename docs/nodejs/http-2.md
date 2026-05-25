@@ -563,7 +563,7 @@ ServerHttp2Stream 才有的 method，用來送出 [HEADERS](../http/http-2-raw-b
   }
   ```
 
-## Http2Stream.on("frameError")
+## Http2Stream.on("frameError"), maxSendHeaderBlockLength
 
 **送出 frame 失敗時觸發**
 
@@ -1370,19 +1370,41 @@ clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
 
 **限制每一個收到的 SETTINGS frame 最多可以有幾組 Settings (ID + Value)**
 
-- server
+- server（設定 `maxSettings: 1`）
   ```js
   const http2Server = http2.createServer({ maxSettings: 1 });
   http2Server.listen(5000);
-  http2Server.on("session", (session) => {
-    session.on("error", (err) => console.log(err));
-    session.on("close", () => console.log("server session close"));
-  });
   ```
-- client
-<!-- ## SETTINGS
+- client（在一個 SETTINGS frame 發送兩組 Settings）
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000", { settings: { customSettings: { 11: 11, 12: 12 } } });
+  clientHttp2Session.on("goaway", (errorCode: number, lastStreamID: number, opaqueData?: Buffer) => {
+    console.log({ errorCode, lastStreamID, opaqueData: opaqueData?.toString("latin1") });
+  });
+  clientHttp2Session.on("error", console.log);
+  clientHttp2Session.on("close", () => console.log("clientHttp2Session close"));
+  ```
+- client output（server 直接用 GOAWAY frame 關閉這條連線）
+  ```js
+  {
+    errorCode: 11, // ENHANCE_YOUR_CALM
+    lastStreamID: 0,
+    opaqueData: 'SETTINGS: too many setting entries'
+  }
+  Error [ERR_HTTP2_SESSION_ERROR]: Session closed with error code 11 // ENHANCE_YOUR_CALM
+      at Http2Session.onGoawayData (node:internal/http2/core:760:21) {
+    code: 'ERR_HTTP2_SESSION_ERROR'
+  }
+  clientHttp2Session close
+  ```
 
-maxSettings
+##
+
+<!-- ## strictSingleValueFields -->
+
+<!-- ## SETTINGS
+maxSessionInvalidFrames
+maxSessionRejectedStreams
 peerMaxConcurrentStreams
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
