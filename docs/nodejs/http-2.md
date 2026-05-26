@@ -208,13 +208,13 @@ last_update:
 
 - Wireshark 抓包
 
-  | field                                  | hex         | description                                                         |
-  | -------------------------------------- | ----------- | ------------------------------------------------------------------- |
-  | Length                                 | 00 00 04    | frame payload has 4 bytes                                           |
-  | Type                                   | 03          | RST_STREAM frame (type=0x03)                                        |
-  | Flags                                  | 00          | unset (0x00)                                                        |
-  | Reserved + Stream Identifier           | 00 00 00 01 | Reserved: 1-bit field (0)<br/>Stream Identifier: 31-bit integer (1) |
-  | [Error Code](../http/http-2-errors.md) | 00 00 00 0b | ENHANCE_YOUR_CALM                                                   |
+  | field                                  | hex         | description                                           |
+  | -------------------------------------- | ----------- | ----------------------------------------------------- |
+  | Length                                 | 00 00 04    | frame payload has 4 bytes                             |
+  | Type                                   | 03          | RST_STREAM frame (type=0x03)                          |
+  | Flags                                  | 00          | unset (0x00)                                          |
+  | Reserved + Stream Identifier           | 00 00 00 01 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (1) |
+  | [Error Code](../http/http-2-errors.md) | 00 00 00 0b | ENHANCE_YOUR_CALM                                     |
 
 ## maxOutstandingPings
 
@@ -1398,7 +1398,61 @@ clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
   clientHttp2Session close
   ```
 
-##
+## maxFrameSize
+
+**限制每一個送出的 frame payload length 最大可以有 bytes**
+
+- server
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  ```
+- client（使用 `net.Socket` 手搓 HTTP/2 raw bytes）
+
+  ```js
+  const maxFrameSizePlus1 = http2.getDefaultSettings().maxFrameSize + 1; // 16385
+  const additionalDebugData = Buffer.alloc(maxFrameSizePlus1 - 8).fill("a");
+  const payloadLength = byteLengthTo3BytesBuffer(maxFrameSizePlus1); // <Buffer 00 40 01>
+  // prettier-ignore
+  const goawayFrame = Buffer.from([
+    ...payloadLength,       // Length
+    0x07,                   // Type
+    0x00,                   // Flags
+    0x00, 0x00, 0x00, 0x00, // Reserved + Stream Identifier
+  
+    // Frame Payload
+    0x00, 0x00, 0x00, 0x00, // Reserved + Last-Stream-ID
+    0x00, 0x00, 0x00, 0x00, // Error Code
+    ...additionalDebugData  // Additional Debug Data
+  ])
+  const socket = net.connect({ host: "localhost", port: 5000 });
+  socket.write(Buffer.concat([magic, emptySettingsFrame, goawayFrame]));
+  socket.on("data", console.log);
+  ```
+
+- client output
+
+  ```js
+  // SETTINGS frame + GOAWAY frame
+  <Buffer 00 00 00 04 00 00 00 00 00 00 00 1c 07 00 00 00 00 00 00 00 00 00 00 00 00 06 74 6f 6f 20 6c 61 72 67 65 20 66 72 61 6d 65 20 73 69 7a 65>
+  ```
+
+  | field                        | hex         | description                                           |
+  | ---------------------------- | ----------- | ----------------------------------------------------- |
+  | Length                       | 00 00 00    | frame payload has 0 bytes                             |
+  | Type                         | 04          | SETTINGS frame (type=0x04)                            |
+  | Flags                        | 00          | unset (0x00)                                          |
+  | Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
+
+  | field                                                | hex                                                             | description                                           |
+  | ---------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------- |
+  | Length                                               | 00 00 1c                                                        | frame payload has 28 bytes                            |
+  | Type                                                 | 07                                                              | GOAWAY frame (type=0x07)                              |
+  | Flags                                                | 00                                                              | unset (0x00)                                          |
+  | Reserved + Stream Identifier                         | 00 00 00 00                                                     | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
+  | Reserved + Last-Stream-ID                            | 00 00 00 00                                                     | Reserved: 1-bit (0)<br/>Last-Stream-ID: 31-bit (0)    |
+  | [Error Code](../http/http-2-errors.md#7-error-codes) | 00 00 00 06                                                     | FRAME_SIZE_ERROR (0x06)                               |
+  | Additional Debug Data                                | 74 6f 6f 20 6c 61 72 67 65 20<br/>66 72 61 6d 65 20 73 69 7a 65 | too large frame size                                  |
 
 <!-- ## strictSingleValueFields -->
 
