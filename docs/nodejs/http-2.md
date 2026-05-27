@@ -1454,10 +1454,125 @@ clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
   | [Error Code](../http/http-2-errors.md#7-error-codes) | 00 00 00 06                                                     | FRAME_SIZE_ERROR (0x06)                               |
   | Additional Debug Data                                | 74 6f 6f 20 6c 61 72 67 65 20<br/>66 72 61 6d 65 20 73 69 7a 65 | too large frame size                                  |
 
+## maxSessionInvalidFrames
+
+**Sets the maximum number of invalid frames that will be tolerated before the session is closed**
+
+- server
+
+  ```js
+  const http2Server = http2.createServer({ maxSessionInvalidFrames: 1 });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream) => stream.on("error", console.log));
+
+  // Prints
+  // Error [ERR_HTTP2_TOO_MANY_INVALID_FRAMES]: Too many invalid HTTP/2 frames
+  //     at Http2Session.onSessionInternalError (node:internal/http2/core:874:26) {
+  //   code: 'ERR_HTTP2_TOO_MANY_INVALID_FRAMES',
+  //   errno: -902
+  // }
+  ```
+
+- client（connection preface）
+
+  ```js
+  const socket = net.connect({ host: "localhost", port: 5000 });
+  socket.write(Buffer.concat([magic, emptySettingsFrame]));
+  await waitForSettingsFrameAndAckBack(socket);
+  ```
+
+- client（send HEADERS frame）
+
+  ```js
+  const pathToDeflatehd = "/path-to-your/nghttp2-1.69.0/src/deflatehd";
+  const spawnSyncReturns = spawnSync(pathToDeflatehd, ["-t"], {
+    input: [
+      ":method: POST",
+      ":scheme: http",
+      ":path: /",
+      ":authority: localhost:5000",
+      "",
+      "",
+    ].join("\n"),
+    encoding: "utf8",
+  });
+  const { wire, output_length } = JSON.parse(spawnSyncReturns.stdout).cases[0];
+  const headersFramePayloadLength = byteLengthTo3BytesBuffer(output_length);
+  // prettier-ignore
+  const headersFrame = Buffer.from([
+    ...headersFramePayloadLength, // Length
+    0x01,                         // Type
+    0x04,                         // Flags (END_HEADERS)
+    0x00, 0x00, 0x00, 0x01,       // Reserved + Stream Identifier
+    ...Buffer.from(wire, "hex"),  // Payload
+  ]);
+  socket.write(headersFrame);
+  ```
+
+- client（send 3 empty DATA frame without "END_STREAM" flag）
+
+  ```js
+  // prettier-ignore
+  const emptyDataFrame = Buffer.from([
+    0x00, 0x00, 0x00,       // Length
+    0x00,                   // Type
+    0x00,                   // Flags
+    0x00, 0x00, 0x00, 0x01, // Reserved + Stream Identifier
+  ]);
+  socket.write(emptyDataFrame); // count 0 > 1 = false
+  socket.write(emptyDataFrame); // count 1 > 1 = false
+  socket.write(emptyDataFrame); // count 2 > 1 = true
+  socket.on("data", console.log);
+  ```
+
+- client output
+
+  ```js
+  <Buffer 00 00 08 07 00 00 00 00 00 00 00 00 01 00 00 00 02>
+  ```
+
+  | field                                                | hex         | description                                           |
+  | ---------------------------------------------------- | ----------- | ----------------------------------------------------- |
+  | Length                                               | 00 00 08    | frame payload has 8 bytes                             |
+  | Type                                                 | 07          | GOAWAY frame (type=0x07)                              |
+  | Flags                                                | 00          | unset (0x00)                                          |
+  | Reserved + Stream Identifier                         | 00 00 00 00 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
+  | Reserved + Last-Stream-ID                            | 00 00 00 01 | Reserved: 1-bit (0)<br/>Last-Stream-ID: 31-bit (1)    |
+  | [Error Code](../http/http-2-errors.md#7-error-codes) | 00 00 00 02 | INTERNAL_ERROR (0x02)                                 |
+
+- wireshark 抓包
+
+  ![goaway-after-max-session-invalid-frames](../../static/img/goaway-after-max-session-invalid-frames.jpg)
+
+**結論：超出 maxSessionInvalidFrames 之後，receiver 會發送 GOAWAY frame 並且立即關閉 TCP 連線**
+
+## peerMaxConcurrentStreams
+
+**在收到對方的 SETTINGS frame 之前，先幫對方預設 maxConcurrentStreams，必免我方一次開太多 concurrentStreams 導致對方 DoS**
+
+- server（使用 `net.createServer`，避免 `http2Server` 自動發送 SETTINGS frame）
+  ```js
+  const tcpServer = net.createServer();
+  tcpServer.listen(5000);
+  ```
+- client
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000", {
+    peerMaxConcurrentStreams: 100,
+  });
+  Array(1000)
+    .fill(0)
+    .forEach((_, idx) => clientHttp2Session.request({ ":path": `/${idx}` }));
+  ```
+- wireshark 抓包（client 有遵守 `peerMaxConcurrentStreams: 100`，只先開啟 100 個 streams）
+  ![peer-max-concurrent-streams](../../static/img/peer-max-concurrent-streams.png)
+
+<!-- todo-yus 之後送 settings -->
 <!-- ## strictSingleValueFields -->
 
 <!-- ## SETTINGS
-maxSessionInvalidFrames
+streamResetBurst
+streamResetRate
 maxSessionRejectedStreams
 peerMaxConcurrentStreams
 
