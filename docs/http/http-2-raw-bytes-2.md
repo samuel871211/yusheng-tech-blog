@@ -358,7 +358,7 @@ sequenceDiagram
   c ->> s: SETTINGS[0] (ACK)
 ```
 
-### 解析 RST_STREAM raw bytes
+### 解析 GOAWAY raw bytes
 
 server 會送以下 bytes (hex)
 
@@ -374,7 +374,7 @@ server 會送以下 bytes (hex)
   | Length                       | 00 00 1d    | frame payload has 29 bytes                            |
   | Type                         | 07          | GOAWAY frame (type=0x07)                              |
   | Flags                        | 00          | unset (0x00)                                          |
-  | Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
+  | Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
 
 - frame payload
 
