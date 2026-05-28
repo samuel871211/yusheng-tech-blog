@@ -1548,24 +1548,27 @@ clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
 
 ## peerMaxConcurrentStreams
 
-**在收到對方的 SETTINGS frame 之前，先幫對方預設 maxConcurrentStreams，必免我方一次開太多 concurrentStreams 導致對方 DoS**
+**在收到對方的 SETTINGS frame 之前，先幫對方預設 maxConcurrentStreams，必免我方一次送出太多 streams 導致對方 DoS**
 
-- server（使用 `net.createServer`，避免 `http2Server` 自動發送 SETTINGS frame）
+- server（使用 `net.createServer` 來控制 SETTINGS frame 的發送時機）
   ```js
-  const tcpServer = net.createServer();
-  tcpServer.listen(5000);
-  ```
-- client
-  ```js
-  const clientHttp2Session = http2.connect("http://localhost:5000", {
-    peerMaxConcurrentStreams: 100,
+  tcpServer.on("connection", (socket) => {
+    console.log("socket");
+    setTimeout(() => socket.write(emptySettingsFrame), 1000);
   });
-  Array(1000)
-    .fill(0)
-    .forEach((_, idx) => clientHttp2Session.request({ ":path": `/${idx}` }));
   ```
-- wireshark 抓包（client 有遵守 `peerMaxConcurrentStreams: 100`，只先開啟 100 個 streams）
-  ![peer-max-concurrent-streams](../../static/img/peer-max-concurrent-streams.png)
+- client（預設 `peerMaxConcurrentStreams` = 100）
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const arr1000 = Array(1000).fill(0);
+  arr1000.forEach((_, idx) =>
+    clientHttp2Session.request({ ":path": `/${idx}` }),
+  );
+  ```
+- wireshark 抓包
+  - client 有遵守 `peerMaxConcurrentStreams`，先送出 100 個 streams
+  - 收到對方的 SETTINGS frame（[SETTINGS_MAX_CONCURRENT_STREAMS](https://datatracker.ietf.org/doc/html/rfc9113#SETTINGS_MAX_CONCURRENT_STREAMS)）之後，才把剩下的 900 個 streams 一次送出
+    ![peer-max-concurrent-streams](../../static/img/peer-max-concurrent-streams.jpg)
 
 <!-- todo-yus 之後送 settings -->
 <!-- ## strictSingleValueFields -->
