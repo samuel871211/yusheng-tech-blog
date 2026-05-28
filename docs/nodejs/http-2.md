@@ -2,7 +2,7 @@
 title: Node.js http2 模組 API 介紹
 description: 將 Node.js http2 模組所有的 API 都使用過一輪（包含一般開發者平常用不到的 API）
 last_update:
-  date: "2026-05-21T08:00:00+08:00"
+  date: "2026-05-28T08:00:00+08:00"
 ---
 
 ## 前言
@@ -1570,10 +1570,114 @@ clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
   - 收到對方的 SETTINGS frame（[SETTINGS_MAX_CONCURRENT_STREAMS](https://datatracker.ietf.org/doc/html/rfc9113#SETTINGS_MAX_CONCURRENT_STREAMS)）之後，才把剩下的 900 個 streams 一次送出
     ![peer-max-concurrent-streams](../../static/img/peer-max-concurrent-streams.jpg)
 
-<!-- todo-yus 之後送 settings -->
 <!-- ## strictSingleValueFields -->
 
 ## maxSessionRejectedStreams
+
+Node.js v24.16.0 官方文件
+
+```
+Sets the maximum number of rejected upon creation streams that will be tolerated before the session is closed. Each rejection is associated with an NGHTTP2_ENHANCE_YOUR_CALM error
+```
+
+對應的 Node.js C++ 程式碼（src/node_http2.cc）
+
+```cpp
+nghttp2_submit_rst_stream(
+  session->session(),
+  NGHTTP2_FLAG_NONE,
+  id,
+  NGHTTP2_ENHANCE_YOUR_CALM
+);
+```
+
+但實際上走到這條路的條件非常嚴苛，nghttp2 通常會先幫回
+
+**Case 1: client 不等 server 的 SETTINGS，直接開多個 streams，頂到 server 的 [SETTINGS_MAX_CONCURRENT_STREAMS](https://datatracker.ietf.org/doc/html/rfc9113#SETTINGS_MAX_CONCURRENT_STREAMS)**
+
+- server
+  ```js
+  const http2Server = http2.createServer({
+    maxSessionRejectedStreams: 1,
+    settings: { maxConcurrentStreams: 1 },
+  });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flags, rawHeaders) => {
+    console.log({ id: stream.id }); // { id: 1 }
+  });
+  ```
+- client
+  ```js
+  const socket = net.connect({ host: "localhost", port: 5000 });
+  const data = Buffer.concat([
+    magic,
+    emptySettingsFrame,
+    getHeadersFrame(1),
+    getHeadersFrame(3),
+    getHeadersFrame(5),
+  ]);
+  socket.write(data);
+  ```
+- 對應 nghttp2 原始碼（lib/nghttp2_session.c）
+  ```cpp
+  int nghttp2_session_on_request_headers_received(nghttp2_session *session, nghttp2_frame *frame) {
+    if (session_is_incoming_concurrent_streams_pending_max(session)) {
+      return session_inflate_handle_invalid_stream(session, frame, NGHTTP2_ERR_REFUSED_STREAM);
+    }
+  }
+  ```
+- wireshark 抓包
+  - 由於 server 尚未發送 SETTINGS frame，client 還不知道 server 的 [SETTINGS_MAX_CONCURRENT_STREAMS](https://datatracker.ietf.org/doc/html/rfc9113#SETTINGS_MAX_CONCURRENT_STREAMS)
+  - 超出上限的 stream 3,5 會直接回傳 RST_STREAM (REFUSED_STREAM)，並且 Node.js 不會觸發 `on("stream")`
+    ![max-concurrent-streams-before-settings](../../static/img/max-concurrent-streams-before-settings.jpg)
+
+**Case 2: client 等 server 的 SETTINGS 送達後，再開多個 streams，頂到 server 的 [SETTINGS_MAX_CONCURRENT_STREAMS](https://datatracker.ietf.org/doc/html/rfc9113#SETTINGS_MAX_CONCURRENT_STREAMS)**
+
+- server
+  ```js
+  const http2Server = http2.createServer({
+    maxSessionRejectedStreams: 1,
+    settings: { maxConcurrentStreams: 1 },
+  });
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers, flags, rawHeaders) => {
+    console.log({ id: stream.id }); // { id: 1 }
+    stream.on("error", console.log);
+  });
+  ```
+- client
+  ```js
+  const socket = net.connect({ host: "localhost", port: 5000 });
+  socket.write(Buffer.concat([magic, emptySettingsFrame]));
+  await waitForSettingsFrameAndAckBack(socket);
+  await waitForSettingsACKFrame(socket);
+  socket.write(
+    Buffer.concat([getHeadersFrame(1), getHeadersFrame(3), getHeadersFrame(5)]),
+  );
+  ```
+- server output
+  ```js
+  Error [ERR_HTTP2_ERROR]: Protocol error
+      at Http2Session.onSessionInternalError (node:internal/http2/core:874:26) {
+    code: 'ERR_HTTP2_ERROR',
+    errno: -505
+  }
+  ```
+- 對應 nghttp2 原始碼（lib/nghttp2_session.c）
+  ```cpp
+  int nghttp2_session_on_request_headers_received(nghttp2_session *session, nghttp2_frame *frame) {
+    if (session_is_incoming_concurrent_streams_max(session)) {
+      return session_inflate_handle_invalid_connection(
+        session,
+        frame,
+        NGHTTP2_ERR_PROTO,
+        "request HEADERS: max concurrent streams exceeded"
+      );
+    }
+  }
+  ```
+- wireshark 抓包（直接觸發 GOAWAY (INTERNAL_ERROR)，並且 server 主動關閉 TCP 連線）
+  ![max-concurrent-streams-after-settings](../../static/img/max-concurrent-streams-after-settings.jpg)
 
 <!-- ## SETTINGS
 streamResetBurst
