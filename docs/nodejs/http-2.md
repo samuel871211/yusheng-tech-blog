@@ -1570,11 +1570,11 @@ clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
 <!-- todo-yus 之後送 settings -->
 <!-- ## strictSingleValueFields -->
 
+## maxSessionRejectedStreams
+
 <!-- ## SETTINGS
 streamResetBurst
 streamResetRate
-maxSessionRejectedStreams
-peerMaxConcurrentStreams
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
   -->
