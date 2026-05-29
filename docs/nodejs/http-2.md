@@ -1741,9 +1741,9 @@ nghttp2_submit_rst_stream(
   }
   ```
 
+## streamResetBurst, streamResetRate
+
 <!-- ## SETTINGS
-streamResetBurst
-streamResetRate
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
   -->
