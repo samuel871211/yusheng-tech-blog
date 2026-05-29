@@ -1570,8 +1570,6 @@ clientHttp2Session3.on('remoteSettings', (settings: Settings) => {
   - 收到對方的 SETTINGS frame（[SETTINGS_MAX_CONCURRENT_STREAMS](https://datatracker.ietf.org/doc/html/rfc9113#SETTINGS_MAX_CONCURRENT_STREAMS)）之後，才把剩下的 900 個 streams 一次送出
     ![peer-max-concurrent-streams](../../static/img/peer-max-concurrent-streams.jpg)
 
-<!-- ## strictSingleValueFields -->
-
 ## maxSessionRejectedStreams
 
 Node.js v24.16.0 官方文件
@@ -1678,6 +1676,70 @@ nghttp2_submit_rst_stream(
   ```
 - wireshark 抓包（直接觸發 GOAWAY (INTERNAL_ERROR)，並且 server 主動關閉 TCP 連線）
   ![max-concurrent-streams-after-settings](../../static/img/max-concurrent-streams-after-settings.jpg)
+
+## strictSingleValueFields
+
+**strictSingleValueFields = true**
+
+- server
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  ```
+- client
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000", {
+    strictSingleValueFields: true,
+  });
+  const clientHttp2Stream = clientHttp2Session.request({
+    ":method": "GET",
+    ":path": ["/1", "/2"],
+  });
+  ```
+- client output
+
+  ```js
+  node:internal/http2/util:792
+            throw new ERR_HTTP2_HEADER_SINGLE_VALUE(key);
+                  ^
+
+  TypeError [ERR_HTTP2_HEADER_SINGLE_VALUE]: Header field ":path" must only have a single value
+      at processHeader (node:internal/http2/util:792:19)
+      at buildNgHeaderString (node:internal/http2/util:846:7)
+      at prepareRequestHeadersObject (node:internal/http2/util:736:23)
+      at ClientHttp2Session.request (node:internal/http2/core:1842:11) {
+    code: 'ERR_HTTP2_HEADER_SINGLE_VALUE'
+  }
+  ```
+
+**strictSingleValueFields = false**
+
+- server
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.listen(5000);
+  http2Server.on("stream", (stream, headers) => console.log(headers));
+  ```
+- client
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000", {
+    strictSingleValueFields: false,
+  });
+  const clientHttp2Stream = clientHttp2Session.request({
+    ":method": "GET",
+    ":path": ["/1", "/2"],
+  });
+  ```
+- server output
+  ```js
+  [Object: null prototype] {
+    ':method': 'GET',
+    ':path': '/1,/2',
+    ':authority': 'localhost:5000',
+    ':scheme': 'http',
+    Symbol(sensitiveHeaders): []
+  }
+  ```
 
 <!-- ## SETTINGS
 streamResetBurst
