@@ -2,7 +2,7 @@
 title: Node.js http2 模組 API 介紹
 description: 將 Node.js http2 模組所有的 API 都使用過一輪（包含一般開發者平常用不到的 API）
 last_update:
-  date: "2026-05-28T08:00:00+08:00"
+  date: "2026-05-29T08:00:00+08:00"
 ---
 
 ## 前言
@@ -1742,6 +1742,55 @@ nghttp2_submit_rst_stream(
   ```
 
 ## streamResetBurst, streamResetRate
+
+**概念比喻**
+
+- `streamResetBurst` = 游泳池裡面有多少單位的水
+- `streamResetRate` = 游泳池每秒會回補多少單位的水
+- client 每送一個 [RST_STREAM](../http/http-2-raw-bytes-2.md#rst_stream-frame)，會消耗游泳池一個單位的水
+- 游泳池若沒水，就不讓遊客入場（等同於 server 透過 [GOAWAY](../http/http-2-raw-bytes-2.md#goaway-frame) 把連線關閉）
+
+:::info
+這兩個參數，是針對 [CVE-2023-44487](https://github.com/nghttp2/nghttp2/security/advisories/GHSA-vx74-f528-fxqg) HTTP/2 Rapid Reset 的修補
+:::
+
+**範例**
+
+- server（設定上限 10）
+  ```js
+  const http2Server = http2.createServer({
+    streamResetBurst: 10,
+    streamResetRate: 1,
+  });
+  http2Server.listen(5000);
+  ```
+- client（一次開啟多個 streams，並且立即 RST_STREAM）
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  clientHttp2Session.on("goaway", (errorCode: number, lastStreamID: number, opaqueData: Buffer) => {
+    console.log({ errorCode, lastStreamID, opaqueData });
+  });
+  clientHttp2Session.on("error", console.log);
+  for (let i = 1; i <= 11; i++) {
+    const clientHttp2Stream = clientHttp2Session.request({ ":path": `/${i}` });
+    clientHttp2Stream.end(() => clientHttp2Stream.destroy());
+  }
+  ```
+- client output
+  ```js
+  { errorCode: 2, lastStreamID: 21, opaqueData: undefined }
+  Error [ERR_HTTP2_SESSION_ERROR]: Session closed with error code 2
+      at Http2Session.onGoawayData (node:internal/http2/core:760:21) {
+    code: 'ERR_HTTP2_SESSION_ERROR'
+  }
+  ```
+
+**結論：HTTP/2 Rapid Reset 的原理很簡單，開啟大量 streams，然後再立即 RST_STREAM，把 server 的資源消耗完，造成 DoS**
+
+<!-- ## SETTINGS
+
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
+  -->
 
 <!-- ### Compatibility API
 
