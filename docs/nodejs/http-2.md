@@ -1787,11 +1787,6 @@ nghttp2_submit_rst_stream(
 
 **結論：HTTP/2 Rapid Reset 的原理很簡單，開啟大量 streams，然後再立即 RST_STREAM，把 server 的資源消耗完，造成 DoS**
 
-<!-- ## SETTINGS
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#http2sessionsetlocalwindowsizewindowsize
-  -->
-
 <!-- ### Compatibility API
 
 - https://nodejs.org/docs/latest-v24.x/api/http2.html#event-request
