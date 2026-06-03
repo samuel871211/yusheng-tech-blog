@@ -2,29 +2,12 @@
 title: HTTP/2 overview
 description: HTTP/2 overview
 last_update:
-  date: "2026-04-16T08:00:00+08:00"
+  date: "2026-06-03T08:00:00+08:00"
 ---
 
 ## 前言
 
 2025 iThome 鐵人賽，我發表了 30 篇 [Learn HTTP With JS](https://ithelp.ithome.com.tw/users/20155705/ironman/8162) 系列文。時隔兩個月，為了打 PortSwigger [Race conditions](https://portswigger.net/web-security/all-labs#race-conditions) 跟 [HTTP request smuggling](https://portswigger.net/web-security/all-labs#http-request-smuggling) 的 Labs，我打算先把 HTTP2 的基本知識補齊，所以又開始寫 HTTP 系列文啦～
-
-## Node.js http2.createServer
-
-如果細看 Node.js http2 Module 的話，可以發現主流瀏覽器都不支援 HTTP/2 Over HTTP
-
-```js
-/**
- * Returns a `net.Server` instance that creates and manages `Http2Session` instances.
- *
- * Since there are no browsers known that support [unencrypted HTTP/2](https://http2.github.io/faq/#does-http2-require-encryption), the use of {@link createSecureServer} is necessary when
- * communicating
- * with browser clients.
- */
-export function createServer(
-    onRequestHandler?: (request: Http2ServerRequest, response: Http2ServerResponse) => void,
-): Http2Server;
-```
 
 ## Starting HTTP/2 for "http" URIs
 
@@ -228,7 +211,7 @@ https2Server.listen(5002);
 
 根據 [RFC 9113 #section-8.3.2](https://datatracker.ietf.org/doc/html/rfc9113#section-8.3.2) 的定義，目前 Response Pseudo-header 只有 `:status`
 
-curl 讀出來的 Response Headers 感覺有經過整理，符合我們平常愛看的 HTTP/1.1 格式
+curl 讀出來的 Response Headers 有經過整理，符合我們平常愛看的 HTTP/1.1 格式
 
 ```
 curl --http2-prior-knowledge -i "http://localhost:5001/hello/world?test=123"
@@ -264,7 +247,7 @@ server 會看到
 
 ## `:authority` vs `host`
 
-HTTP/1.1，完整的 URI 其實被分散在 startline 跟 headers
+HTTP/1.1 Message 的設計，完整的 URI 被分散在 startline 跟 headers
 
 ```
 GET /hello/world?test=123
@@ -317,22 +300,6 @@ clientHttp2Server
 2. HTTP/2 server => HTTP/1.1 Internal API 這段 downgrade 的過程沒有遵守規範，將 `host: 'malicious.host'` 傳遞下去
 
 就有機會達成 [HTTP Request Smuggling](../port-swigger/http-request-smuggling.md) 或是 [HTTP Host Header Attacks](../port-swigger/http-host-header-attacks.md)
-
-## Compatibility API
-
-在使用 Node.js http2 模組實作時，我發現其 API 跟 http 模組（也就是 HTTP/1.1）幾乎相同，開發起來完全沒有難度(?)後來翻了官方文件，才發現原來這是開發團隊很暖心的設計
-
-[Event: `'request'`](https://nodejs.org/api/http2.html#event-request)
-
-```
-Emitted each time there is a request. There may be multiple requests per session.
-```
-
-[Compatibility API](https://nodejs.org/api/http2.html#compatibility-api)
-
-```
-The Compatibility API has the goal of providing a similar developer experience of HTTP/1 when using HTTP/2, making it possible to develop applications that support both HTTP/1 and HTTP/2.
-```
 
 ## Node.js http2 classDiagram
 
@@ -387,7 +354,7 @@ classDiagram
 - HTTP/2 允許 TE 出現在 request headers，且唯一能出現的組合是 `TE: trailers`
 - 若 HTTP/2 server 允許 Transfer-Encoding，則可能會有 [H2.TE vulnerabilities](../port-swigger/http-request-smuggling.md#h2te-vulnerabilities)
 
-## Node.js malformed HTTP/2 response with connection header
+## Node.js drop "connection" header
 
 我們構造一個 malformed HTTP/2 response
 
@@ -406,11 +373,11 @@ http2Server.listen(5001);
 (node:6224) UnsupportedWarning: The provided connection header is not valid, the value will be dropped from the header and will never be in use.
 ```
 
-<!-- 參考 [RFC 9113 #section-9.1](https://datatracker.ietf.org/doc/html/rfc9113#section-9.1) 的描述
+根據 [RFC 9113 Section 8.2.2. Connection-Specific Header Fields](https://datatracker.ietf.org/doc/html/rfc9113#section-8.2.2) 的描述
 
 ```
-HTTP/2 connections are persistent. For best performance, it is expected that clients will not close connections until it is determined that no further communication with a server is necessary (for example, when a user navigates away from a particular web page) or until the server closes the connection.
-``` -->
+An endpoint MUST NOT generate an HTTP/2 message containing connection-specific header fields.
+```
 
 ## Node.js HTTP/1.1 client API vs HTTP/2 client API
 
@@ -420,14 +387,14 @@ HTTP/1.1
 
 ```ts
 import http from "http";
-http.request("URL");
+http.request("http://localhost:5000/path/to/resource");
 ```
 
 HTTP/2
 
 ```ts
 import http2 from "http2";
-const clientHttp2Session = http2.connect("Origin");
+const clientHttp2Session = http2.connect("http://localhost:5000");
 clientHttp2Session.request({ ":path": "/path/to/resource" });
 ```
 
@@ -480,7 +447,7 @@ socket created
 session created
 ```
 
-## Http2Session
+<!-- ## Http2Session
 
 Node.js 的 [Http2Session](https://nodejs.org/api/http2.html#class-http2session) 在 Layer 4 對應的是一個 TCP Connection，官方描述如下
 
@@ -488,7 +455,7 @@ Node.js 的 [Http2Session](https://nodejs.org/api/http2.html#class-http2session)
 Instances of the http2.Http2Session class represent an active communications session between an HTTP/2 client and server.
 
 Every Http2Session instance is associated with exactly one net.Socket or tls.TLSSocket when it is created.
-```
+``` -->
 
 ## Restrict maxHttp2Sessions for Http2Server
 
@@ -564,7 +531,7 @@ export interface ClientHttp2Session extends Http2Session {
 
 導致型別推導不完全，這問題其實我每次在寫 Node.js 的時候都覺得很不方便，但畢竟 [@types/node](https://www.npmjs.com/package/@types/node) 跟 Node.js 本身是分開維護的，建議還是看 [Node.js 官方文件](https://nodejs.org/docs/latest/api/)，查詢對應 Node.js Major Version 會比較準確 -->
 
-## Http2Stream
+<!-- ## Http2Stream
 
 了解 [Http2Session](#http2session) 的概念之後，接下來要來談 [Http2Stream](https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2stream)，對應到 [RFC 9113 #section-5](https://datatracker.ietf.org/doc/html/rfc9113#section-5)
 
@@ -578,9 +545,9 @@ RFC 9113
 
 ```
 A "stream" is an independent, bidirectional sequence of frames exchanged between the client and server within an HTTP/2 connection.
-```
+``` -->
 
-## Node.js maxConcurrentStreams
+<!-- ## Node.js maxConcurrentStreams
 
 承接 [HTTP/2 solves HTTP/1.1 HOL Blocking](#http2-solves-http11-hol-blocking)，一個 HTTP/2 的連線，到底可以同時發多少請求？
 
@@ -592,7 +559,7 @@ maxConcurrentStreams
 Specifies the maximum number of concurrent streams permitted on an `Http2Session`. Default: `4294967295`.
 ```
 
-剛好對應到 RFC 9113 的 [SETTINGS_MAX_CONCURRENT_STREAMS](#http2-settings)
+剛好對應到 RFC 9113 的 [SETTINGS_MAX_CONCURRENT_STREAMS](#http2-settings) -->
 
 ## Content-Length
 
@@ -603,6 +570,39 @@ A request or response that includes message content can include a content-length
 ```
 
 若 HTTP/2 的實作沒有遵守 RFC 的 "MUST" 規範，則可能導致 [H2.CL request smuggling](../port-swigger/http-request-smuggling.md#lab-h2cl-request-smuggling)
+
+<!-- ## Node.js http2.createServer
+
+如果細看 Node.js http2 Module 的話，可以發現主流瀏覽器都不支援 HTTP/2 Over HTTP
+
+```js
+/**
+ * Returns a `net.Server` instance that creates and manages `Http2Session` instances.
+ *
+ * Since there are no browsers known that support [unencrypted HTTP/2](https://http2.github.io/faq/#does-http2-require-encryption), the use of {@link createSecureServer} is necessary when
+ * communicating
+ * with browser clients.
+ */
+export function createServer(
+    onRequestHandler?: (request: Http2ServerRequest, response: Http2ServerResponse) => void,
+): Http2Server;
+``` -->
+
+<!-- ## Compatibility API
+
+在使用 Node.js http2 模組實作時，我發現其 API 跟 http 模組（也就是 HTTP/1.1）幾乎相同，開發起來完全沒有難度(?)後來翻了官方文件，才發現原來這是開發團隊很暖心的設計
+
+[Event: `'request'`](https://nodejs.org/api/http2.html#event-request)
+
+```
+Emitted each time there is a request. There may be multiple requests per session.
+```
+
+[Compatibility API](https://nodejs.org/api/http2.html#compatibility-api)
+
+```
+The Compatibility API has the goal of providing a similar developer experience of HTTP/1 when using HTTP/2, making it possible to develop applications that support both HTTP/1 and HTTP/2.
+``` -->
 
 ## 參考資料
 
