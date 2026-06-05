@@ -192,6 +192,103 @@ https://xn--tj3a.xn--tj3a.xn--tj3a.test:5000
   });
   ```
 
+## ALTSVC
+
+**概念：大部分的情境是 HTTP/2 連線要升級到 HTTP/3，server 會告知 client 其 "Alternative Services"**
+
+**傳輸方式：可以透過 HTTP/2 ALTSVC frame 傳輸，也可以透過 response header "Alt-Svc" 傳輸**
+
+| 傳輸方式         | streamID 狀態   | 發送時間點限制               | 核心優勢與設計目的                                |
+| ---------------- | --------------- | ---------------------------- | ------------------------------------------------- |
+| "Alt-Svc" header | -               | 跟著 response header 一起    | 簡單直覺，相容 HTTP/1.1                           |
+| ALTSVC frame     | `streamID != 0` | 該 stream 關閉前的任何時間點 | proxy 可在中途自由插播，不影響業務邏輯            |
+| ALTSVC frame     | `streamID = 0`  | 隨時                         | 連線建立後，server 不需等待任何請求，即可主動推播 |
+
+**透過 "Alt-Svc" header 傳輸**
+
+```mermaid
+sequenceDiagram
+  participant c as client
+  participant s as server
+
+  Note over c,s: TCP/TLS 連線建立
+
+  c ->> s: (request headers)<br/><br/>:method=GET<br/>:scheme=https<br/>:path=/<br/>:authority=localhost:5000
+  s ->> c: （response headers）<br/><br/>Alt-Svc: h3="localhost:5000"
+```
+
+**透過 ALTSVC frame (streamID = 0) 傳輸**
+
+```mermaid
+sequenceDiagram
+  participant c as client
+  participant s as server
+
+  Note over c,s: TCP/TLS 連線建立
+
+  s ->> c: ALTSVC[0]<br/>Origin=https://localhost:5000<br/>h3="localhost:5000"
+```
+
+:::info
+streamID = 0 的情境，需要在 ALTSVC frame 宣告 Origin，原因如同我們在 [ORIGIN frame](#origin-frame) 提到的
+
+customer-A.com 跟 customer-B.com 若使用同一個 CDN 服務商，共用一個 certificate，則需要宣告兩個 ALTSVC frame
+
+1. ALTSVC[0] Origin=https://customer-A.com h3="customer-A.com:443"
+2. ALTSVC[0] Origin=https://customer-B.com h3="customer-A.com:443"
+
+避免使用者訪問 customer-A.com 的時候，卻連線到 customer-B.com，反之亦然
+:::
+
+**透過 ALTSVC frame (streamID != 0) 傳輸**
+
+```mermaid
+sequenceDiagram
+  participant c as client
+  participant s as server
+
+  Note over c,s: TCP/TLS 連線建立
+
+  c ->> s: (HEADERS frame)<br/><br/>:method=GET<br/>:scheme=https<br/>:path=/<br/>:authority=localhost:5000
+  s ->> c: ALTSVC[0]<br/>h3="localhost:5000"
+```
+
+**程式範例**
+
+- server
+  ```js
+  const http2Server = http2.createServer();
+  http2Server.on("session", (session) => {
+    // 如果 client 連到的是 http://localhost:5000 的話，server 有 h3="localhost:5000" 可以連！
+    session.altsvc('h3="localhost:5000"', "http://localhost:5000");
+  });
+  http2Server.on("stream", (stream, headers) => {
+    assert(stream.session);
+    // 如果 client 連到的是 http://yus.http2.origin.test:5000 的話，server 有 h3="yus.http2.origin.test:5000" 可以連！
+    stream.session.altsvc(`h3="${headers[":authority"]}"`, stream.id);
+  });
+  http2Server.listen(5000);
+  ```
+- client
+  ```js
+  const clientHttp2Session = http2.connect("http://localhost:5000");
+  const clientHttp2Stream = clientHttp2Session.request({
+    ":authority": "yus.http2.origin.test:5000",
+  });
+  clientHttp2Session.on("altsvc", (alt, origin, stream) =>
+    console.log({ alt, origin, stream }),
+  );
+  ```
+- client output
+  ```js
+  {
+    alt: 'h3="localhost:5000"',
+    origin: 'http://localhost:5000',
+    stream: 0
+  }
+  { alt: 'h3="yus.http2.origin.test:5000"', origin: '', stream: 1 }
+  ```
+
 ## PADDING
 
 **使用情境：隱藏真實 HEADERS, DATA, PUSH_PROMISE frame 的 payload length，故添加 PADDING 來混淆**
@@ -269,11 +366,6 @@ client 會送以下 bytes (hex)
 
 - Pad Length 佔 1 byte (0 ~ 255)，代表 Padding 的區間是 0 ~ 255 bytes
 - Pad Length 跟 Padding 都算 frame payload，在計算 payload length 的時候要注意
-
-<!-- ### ALTSVC
-
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#serverhttp2sessionaltsvcalt-originorstream
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#event-altsvc -->
 
 <!-- ## CONNECT
 
