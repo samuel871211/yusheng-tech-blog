@@ -196,7 +196,7 @@ https://xn--tj3a.xn--tj3a.xn--tj3a.test:5000
 
 **概念：大部分的情境是 HTTP/2 連線要升級到 HTTP/3，server 會告知 client 其 "Alternative Services"**
 
-**傳輸方式：可以透過 HTTP/2 ALTSVC frame 傳輸，也可以透過 response header "Alt-Svc" 傳輸**
+**傳輸方式：可以透過 HTTP/2 ALTSVC frame 傳輸，也可以透過 "Alt-Svc" response header 傳輸**
 
 | 傳輸方式         | streamID 狀態   | 發送時間點限制               | 核心優勢與設計目的                                |
 | ---------------- | --------------- | ---------------------------- | ------------------------------------------------- |
@@ -213,8 +213,8 @@ sequenceDiagram
 
   Note over c,s: TCP/TLS 連線建立
 
-  c ->> s: (request headers)<br/><br/>:method=GET<br/>:scheme=https<br/>:path=/<br/>:authority=localhost:5000
-  s ->> c: （response headers）<br/><br/>Alt-Svc: h3="localhost:5000"
+  c ->> s: (request headers)<br/><br/>method=GET<br/>:cheme=https<br/>path=/<br/>authority=localhost:5000
+  s ->> c:（response headers）<br/><br/>Alt-Svc: h3="localhost:5000"
 ```
 
 **透過 ALTSVC frame (streamID = 0) 傳輸**
@@ -232,7 +232,7 @@ sequenceDiagram
 :::info
 streamID = 0 的情境，需要在 ALTSVC frame 宣告 Origin，原因如同我們在 [ORIGIN frame](#origin-frame) 提到的
 
-customer-A.com 跟 customer-B.com 若使用同一個 CDN 服務商，共用一個 certificate，則需要宣告兩個 ALTSVC frame
+customer-A.com 跟 customer-B.com 若使用同一個 CDN 服務商（共用一個 certificate）則需要宣告兩個 ALTSVC frame
 
 1. ALTSVC[0] Origin=https://customer-A.com h3="customer-A.com:443"
 2. ALTSVC[0] Origin=https://customer-B.com h3="customer-A.com:443"
@@ -253,18 +253,26 @@ sequenceDiagram
   s ->> c: ALTSVC[0]<br/>h3="localhost:5000"
 ```
 
-**程式範例**
+:::info
+比起透過 "Alt-Svc" header 傳輸，透過 ALTSVC frame 傳輸的好處是：
+
+**可以由中間層（CDN, proxy）先回，不需要等待 Origin Server 的 HEADERS frame**
+:::
+
+**程式範例（Node.js 語法展示 + 解析 raw bytes）**
 
 - server
   ```js
   const http2Server = http2.createServer();
   http2Server.on("session", (session) => {
-    // 如果 client 連到的是 http://localhost:5000 的話，server 有 h3="localhost:5000" 可以連！
+    // 如果 client 連到的是 http://localhost:5000 的話
+    // server 有 h3="localhost:5000" 可以連！
     session.altsvc('h3="localhost:5000"', "http://localhost:5000");
   });
   http2Server.on("stream", (stream, headers) => {
     assert(stream.session);
-    // 如果 client 連到的是 http://yus.http2.origin.test:5000 的話，server 有 h3="yus.http2.origin.test:5000" 可以連！
+    // 如果 client 連到的是 http://yus.http2.origin.test:5000 的話
+    // server 有 h3="yus.http2.origin.test:5000" 可以連！
     stream.session.altsvc(`h3="${headers[":authority"]}"`, stream.id);
   });
   http2Server.listen(5000);
@@ -289,11 +297,105 @@ sequenceDiagram
   { alt: 'h3="yus.http2.origin.test:5000"', origin: '', stream: 1 }
   ```
 
+**wireshark 抓 ALTSVC[0] frame**
+
+```
+00 00 2a 0a 00 00 00 00 00                                     // frame header
+
+// frame payload
+00 15                                                          // Origin-Len
+68 74 74 70 3a 2f 2f 6c 6f 63 61 6c 68 6f 73 74 3a 35 30 30 30 // Origin
+68 33 3d 22 6c 6f 63 61 6c 68 6f 73 74 3a 35 30 30 30 22       // Alt-Svc-Field-Value
+```
+
+- frame header
+
+  | field                        | hex         | description                                           |
+  | ---------------------------- | ----------- | ----------------------------------------------------- |
+  | Length                       | 00 00 2a    | frame payload has 42 bytes                            |
+  | Type                         | 0a          | ALTSVC frame (type=0x0a)                              |
+  | Flags                        | 00          | unset (0x00)                                          |
+  | Reserved + Stream Identifier | 00 00 00 00 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (0) |
+
+- frame payload
+
+  | field               | hex             | Description           |
+  | ------------------- | --------------- | --------------------- |
+  | Origin-Len          | 00 15           | Origin has 21 bytes   |
+  | Origin              | 68 74 ... 30 30 | http://localhost:5000 |
+  | Alt-Svc-Field-Value | 68 33 ... 30 22 | h3="localhost:5000"   |
+
+**wireshark 抓 ALTSVC[1] frame**
+
+```
+00 00 21 0a 00 00 00 00 01 // frame header
+
+// frame payload
+00 00                                                                                        // Origin-Len
+68 33 3d 22 79 75 73 2e 68 74 74 70 32 2e 6f 72 69 67 69 6e 2e 74 65 73 74 3a 35 30 30 30 22 // Alt-Svc-Field-Value
+```
+
+- frame header
+
+  | field                        | hex         | description                                           |
+  | ---------------------------- | ----------- | ----------------------------------------------------- |
+  | Length                       | 00 00 21    | frame payload has 33 bytes                            |
+  | Type                         | 0a          | ALTSVC frame (type=0x0a)                              |
+  | Flags                        | 00          | unset (0x00)                                          |
+  | Reserved + Stream Identifier | 00 00 00 01 | Reserved: 1-bit (0)<br/>Stream Identifier: 31-bit (1) |
+
+- frame payload
+
+  | field               | hex             | Description                     |
+  | ------------------- | --------------- | ------------------------------- |
+  | Origin-Len          | 00 00           | Origin has 0 byte               |
+  | Origin              | -               | -                               |
+  | Alt-Svc-Field-Value | 68 33 ... 30 22 | h3="yus.http2.origin.test:5000" |
+
+**程式範例（實測 firefox 真的會用 UDP 開啟 h3 連線）**
+
+- https server
+  ```js
+  const http2Server = http2.createSecureServer({
+    // 沿用在 ORIGIN frame 那邊建立好的憑證
+    key: readFileSync(join(import.meta.dirname, "private-key.pem")),
+    cert: readFileSync(join(import.meta.dirname, "cert.pem")),
+  });
+  http2Server.on("session", (session) => {
+    // 如果 client 連到的是 https://localhost:5000 的話
+    // server 有 h3="localhost:5000" 可以連！
+    session.altsvc('h3="localhost:5000"; ma=1', "https://localhost:5000");
+  });
+  http2Server.on("stream", (stream, headers) => {
+    stream.end(headers[":authority"]);
+  });
+  ```
+- udp dummy server
+  ```js
+  const udpServer = dgram.createSocket("udp4");
+  udpServer.on("message", (msg, rinfo) => console.log({ msg, rinfo }));
+  udpServer.bind(5000);
+  ```
+- firefox 瀏覽器訪問 https://localhost:5000
+- udp dummy server output
+  ```js
+  {
+    msg: <Buffer c8 00 00 ...>,
+    rinfo: { address: '127.0.0.1', family: 'IPv4', port: 53698, size: 1252 }
+  }
+  ```
+
+:::info
+Chrome 在本機 rootCA 的限制比較嚴格，不一定會真的去連 h3="localhost:5000"
+
+實測 Firefox 151.0.3 沒有這麼嚴格的限制，可以真的去連 h3="localhost:5000"
+:::
+
 ## PADDING
 
 **使用情境：隱藏真實 HEADERS, DATA, PUSH_PROMISE frame 的 payload length，故添加 PADDING 來混淆**
 
-**測試方法**
+**實測（以 client 發送 HEADERS frame 為範例）**
 
 - server
 
