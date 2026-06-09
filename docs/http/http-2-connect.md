@@ -1,11 +1,11 @@
 ---
-title: 深入瞭解 HTTP/1.1 跟 HTTP/2 處理 CONNECT method 的差異
-description: 深入瞭解 HTTP/1.1 跟 HTTP/2 處理 CONNECT method 的差異
+title: 深入瞭解 HTTP/1.1 跟 HTTP/2 處理 CONNECT 的差異
+description: 深入瞭解 HTTP/1.1 跟 HTTP/2 處理 CONNECT 的差異
 last_update:
   date: "2026-06-09T08:00:00+08:00"
 ---
 
-## HTTP/2 跟 HTTP/1.1 處理 CONNECT method 的差異
+## HTTP/2 跟 HTTP/1.1 處理 CONNECT 的差異
 
 |                          | HTTP/1.1<br/>CONNECT                                       | HTTP/1.1<br/>WebSocket                                        | HTTP/2<br/>CONNECT                               | HTTP/2<br/>WebSocket                                                      |
 | ------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
@@ -69,7 +69,7 @@ sequenceDiagram
   p ->> c: HEADERS[3]<br/>:status: 200<br/>Content-Type: text/html
 ```
 
-## HTTP/2 Extended CONNECT (WebSocket) 時序圖
+## HTTP/2 WebSocket 時序圖
 
 ```mermaid
 sequenceDiagram
@@ -131,8 +131,11 @@ sequenceDiagram
   curl --proxy-http2 --proxy https://localhost:5000 https://localhost:5001
   ```
 - wireshark 抓 client => proxy 的第一包 DATA frame
+
   ![wireshark-connect-data-frame](../../static/img/wireshark-connect-data-frame.png)
+
 - wireshark 抓 proxy => server 的 Client Hello
+
   ![wireshark-connect-client-hello](../../static/img/wireshark-connect-client-hello.png)
 
 比對 raw bytes 皆為 16 03 01 06 ......，可以得到以下結論
@@ -140,9 +143,43 @@ sequenceDiagram
 - client 會把所有 TCP payload 包裝成 HTTP/2 DATA frame 傳輸，包含 TLS handshake 的 Client Hello
 - proxy 會把 client 傳來的 HTTP/2 DATA frame 拆包，再轉發給 server，透過 `stream.pipe(socket)`
 
-## HTTP/2 Extended CONNECT (WebSocket) 程式範例
+## HTTP/2 WebSocket 程式範例
 
-<!-- ## CONNECT
+- server
+  ```js
+  const server = http2.createSecureServer({
+    settings: { enableConnectProtocol: true },
+    key: readFileSync(join(import.meta.dirname, "private-key.pem")),
+    cert: readFileSync(join(import.meta.dirname, "cert.pem")),
+  });
+  server.listen(5000);
+  server.on("stream", (stream, headers) => {
+    const method = headers[":method"];
+    const protocol = headers[":protocol"];
+    if (method === "CONNECT" && protocol === "websocket") {
+      stream.respond({ ":status": 200 });
+      stream.on("data", console.log);
+      return;
+      // todo: connect to websocket server
+    }
+    stream.end("ok");
+  });
+  ```
+- client（瀏覽器打開 https://localhost:5000 ，F12 > Console 輸入）
+  ```js
+  const ws = new WebSocket("wss://localhost:5000");
+  ws.send("123");
+  ```
+- server output
+  ```js
+  <Buffer 81 83 eb 14 bb d7 da 26 88>
+  ```
+- wireshark 抓 `ws.send("123")` 對應的 DATA frame，發現其 payload 與 server output 一樣
+
+  ![wireshark-websocket-connect-data-frame](../../static/img/wireshark-websocket-connect-data-frame.png)
+
+## 參考資料
 
 - https://datatracker.ietf.org/doc/html/rfc8441
-- https://nodejs.org/docs/latest-v24.x/api/http2.html#the-extended-connect-protocol -->
+- https://datatracker.ietf.org/doc/html/rfc9113
+- https://nodejs.org/docs/latest-v24.x/api/http2.html#the-extended-connect-protocol
