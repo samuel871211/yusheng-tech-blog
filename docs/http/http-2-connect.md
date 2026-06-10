@@ -2,7 +2,7 @@
 title: 深入瞭解 HTTP/1.1 跟 HTTP/2 處理 CONNECT 的差異
 description: 深入瞭解 HTTP/1.1 跟 HTTP/2 處理 CONNECT 的差異
 last_update:
-  date: "2026-06-09T08:00:00+08:00"
+  date: "2026-06-10T08:00:00+08:00"
 ---
 
 ## HTTP/2 跟 HTTP/1.1 處理 CONNECT 的差異
@@ -177,6 +177,14 @@ sequenceDiagram
 - wireshark 抓 `ws.send("123")` 對應的 DATA frame，發現其 payload 與 server output 一樣
 
   ![wireshark-websocket-connect-data-frame](../../static/img/wireshark-websocket-connect-data-frame.png)
+
+## 小結
+
+回顧 HTTP/1.1 的時代，不論是 CONNECT 還是 WebSocket，它們在接通後的本質都是一種「流氓行為」——直接強行綁架（Hijack）整條 TCP 連線，導致常規的 HTTP Parser 必須當場下班，且整條連線無法再做其他網頁請求。
+
+而到了 HTTP/2，規格制定者展現了極致的抽象思維。他們引入了 Framing Layer（分幀層），把原本會綁架連線的盲轉隧道和 WebSocket，溫柔地「關進了 Stream 的籠子裡」。
+
+透過本篇 Wireshark 的二進位比對可以發現，不管是 TLS Client Hello 還是 WebSocket Frame，在外層 H2 眼中通通都只是 DATA frame 的 payload。這種設計既維護了單一 TCP 連線上的多路復用（Multiplexing），又讓 L4 盲轉與 L7 長連線隧道能以逸待勞地跑在同一條公路上。
 
 ## 參考資料
 
