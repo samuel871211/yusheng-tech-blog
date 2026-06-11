@@ -77,7 +77,7 @@ const sidebars: SidebarsConfig = {
         "http/http-2-padding",
         "http/http-2-connect",
         "http/http-2-errors",
-        // "http/http-2-HAPCK-header-compression",
+        "http/http-2-HAPCK-header-compression",
 
         // "http/service-worker-allowed",
         // "http/http-caching-4", // ing
