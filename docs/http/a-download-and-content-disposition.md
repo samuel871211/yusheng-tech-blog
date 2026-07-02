@@ -44,23 +44,39 @@ download only works for same-origin URLs, or the blob: and data: schemes.
 
 在前端打滾了 4 ~ 5 年的的我，竟然不知道瀏覽器在 `<a download>` 有這個安全性機制；我第一時間想到的是 [Content-Disposition](./content-type-and-mime-type.md#content-disposition)，但之前並沒有深入研究 `Content-Disposition` 跟 `<a download>` 的交乘情境，所以就趁這個機會來實測看看吧！
 
+## `<a>` vs `Content-Disposition`
+
+- `<a>` 決定的是「使用者點擊連結時的行為」
+- `Content-Disposition` 決定的是「HTTP response 本身該如何被呈現」
+- 兩者分屬前端與後端不同維度的設定，實際交織起來會產生多種情境，下面矩陣只是最單純的示意：
+
+|                       | download as file                  | display result in browser     |
+| --------------------- | --------------------------------- | ----------------------------- |
+| `<a>`                 | `<a download href="URL">`         | `<a href="URL">`              |
+| `Content-Disposition` | `Content-Disposition: attachment` | `Content-Disposition: inline` |
+
 ## cross-origin + no CD + `<a download>`
 
-這是我同事遇到的情況 => 用 `<a download>` 下載一張 cross-origin 的圖片；圖片本身的 HTTP Response Header 沒有設定 `Content-Disposition`，預設值是 `inline`
+這是我同事遇到的情況：
 
-寫個 NodeJS http 的 PoC
+- 用 `<a download>` 下載一張 cross-origin 的圖片
+- 圖片本身的 HTTP response header 沒有設定 `Content-Disposition`，故使用預設值 `inline`
+- 按照[上面的矩陣](#a-vs-content-disposition)，這是一個互斥的情境
+
+寫個 Node.js http 的 PoC
 
 ```ts
-import httpServer from "../httpServer";
-httpServer.on("request", function requestListener(req, res) {
+import http from "http";
+
+const imageURL = "https://randomuser.me/api/portraits/men/71.jpg";
+const httpServer = http.createServer((req, res) => {
   if (req.url === "/") {
     res.setHeader("Content-Type", "text/html");
-    res.end(
-      '<a href="https://randomuser.me/api/portraits/men/71.jpg" download>download</a>',
-    );
+    res.end(`<a href="${imageURL}" download>download</a>`);
     return;
   }
 });
+httpServer.listen(5000);
 ```
 
 Chrome V142 實測後，確實沒有下載，而是直接原頁導轉
@@ -68,16 +84,16 @@ Chrome V142 實測後，確實沒有下載，而是直接原頁導轉
 
 ## same-origin + no CD + `<a download>`
 
-若改成 same-origin，就可以下載了嗎？寫個 PoC 實測看看
+承上題，若改成 same-origin，就可以下載了嗎？寫個 PoC 實測看看
 
 ```ts
-import httpServer from "../httpServer";
+import http from "http";
 import { readFileSync } from "fs";
 import { join } from "path";
 
 const image = readFileSync(join(__dirname, "image.jpg"));
 
-httpServer.on("request", function requestListener(req, res) {
+const httpServer = http.createServer((req, res) => {
   if (req.url === "/image") {
     res.setHeader("Content-Type", "image/jpeg");
     res.end(image);
@@ -85,14 +101,19 @@ httpServer.on("request", function requestListener(req, res) {
   }
 
   if (req.url === "/") {
+    res.setHeader("Content-Type", "text/html");
     res.end('<a href="/image" download>download</a>');
     return;
   }
 });
+httpServer.listen(5000);
 ```
 
-成功下載，不過 F12 > Network 並沒有顯示 HTTP Request
-![a-download-same-origin-no-cd](../../static/img/a-download-same-origin-no-cd.png)
+點擊 "download" 成功下載，跟 MDN 的 Note 描述一致
+
+```
+download only works for same-origin URLs
+```
 
 ## 矛盾大對決1: same-origin + inline vs `<a download>`
 
@@ -132,7 +153,7 @@ httpServer.on("request", function requestListener(req, res) {
 <!-- todo-yus 為何矛盾 -->
 <!-- 跨瀏覽器的行為是否不同 (?) -->
 
-我們需要啟動兩個 http server，才能達成 cross-origin
+我們需要啟動兩個 HTTP server，才能達成 cross-origin
 
 PoC
 
@@ -162,14 +183,14 @@ http5001Server.on("request", (req, res) => {
 });
 ```
 
-瀏覽器打開 http://localhost:5001/ ，點選 download 後，成功下載，並且 F12 > Network 有顯示 HTTP Request
+瀏覽器打開 http://localhost:5001/ ，點選 download 後，成功下載，並且 F12 > Network 有顯示 HTTP request
 ![a-download-cross-origin-cd-attachment](../../static/img/a-download-cross-origin-cd-attachment.png)
 
 ## edge case1: cross-origin + attachment + Larger CL + `<a download>`
 
 <!-- 為何是 edge case，要說明 -->
 
-通常各種 HTTP Agent 都會自動計算 HTTP Request / Response 的 `Content-Length`，如果我們刻意設定一個 Larger CL，瀏覽器會怎麼處理呢？
+通常各種 HTTP Agent 都會自動計算 HTTP request / Response 的 `Content-Length`，如果我們刻意設定一個 Larger CL，瀏覽器會怎麼處理呢？
 
 PoC
 
@@ -202,7 +223,7 @@ http5001Server.on("request", (req, res) => {
 瀏覽器打開 http://localhost:5001/ ，點選 download 後，會顯示 "無法完成下載作業"
 ![a-download-cross-origin-cd-attachment-larger-cl](../../static/img/a-download-cross-origin-cd-attachment-larger-cl.png)
 
-並且 Chrome 瀏覽器會自動 retry，看 NodeJS log 的話，會發現總共 retry 5 次
+並且 Chrome 瀏覽器會自動 retry，看 Node.js log 的話，會發現總共 retry 5 次
 
 ```
 /test
@@ -289,7 +310,7 @@ res.end(image);
 return;
 ```
 
-瀏覽器打開 http://localhost:5001/ ，點選 download 後，會顯示 "ERR_CONNECTION_REFUSED"，查看 NodeJS log
+瀏覽器打開 http://localhost:5001/ ，點選 download 後，會顯示 "ERR_CONNECTION_REFUSED"，查看 Node.js log
 
 ```
 TypeError: Invalid character in header content ["Content-Disposition"]
@@ -303,7 +324,7 @@ TypeError: Invalid character in header content ["Content-Disposition"]
 }
 ```
 
-看來 NodeJS http 模組有遵守某個 RFC 規範 (?)有時候想要測試 malformed HTTP Request / Response，用各個程式語言封裝好的 http 模組，都會被限制，這時候就得用底層一點的模組來控制；以 NodeJS 為例，可以使用 [net.Socket](https://nodejs.org/api/net.html#class-netsocket) 來控制 raw HTTP Response，如果還不熟悉的夥伴們，可以參考我去年寫過的
+看來 Node.js http 模組有遵守某個 RFC 規範 (?)有時候想要測試 malformed HTTP request / response，用各個程式語言封裝好的 http 模組，都會被限制，這時候就得用底層一點的模組來控制；以 Node.js 為例，可以使用 [net.Socket](https://nodejs.org/api/net.html#class-netsocket) 來控制 raw HTTP Response，如果還不熟悉的夥伴們，可以參考我去年寫過的
 
 - [深入解說 HTTP message](./anatomy-of-an-http-message.md)
 - [Transfer-Encoding - 使用 Socket.write 自行處理資料格式](./transfer-encoding.md#使用-socketwrite-自行處理資料格式)

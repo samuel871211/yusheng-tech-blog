@@ -15,6 +15,8 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 - HTTP range requests
 - HTTP caching
 - HTTP header
+- HTTP request
+- HTTP response
 - header(s)
 - body
 - TCP connection
