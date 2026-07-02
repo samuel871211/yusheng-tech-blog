@@ -9,7 +9,7 @@
   },
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start -p 3002",
+    "dev": "docusaurus start -p 3002",
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
@@ -22,7 +22,7 @@
   },
   "scriptComments": {
     "docusaurus": "See https://docusaurus.io/docs/cli",
-    "start": "Run the development server. See https://docusaurus.io/docs/installation#running-the-development-server",
+    "dev": "Run the development server. See https://docusaurus.io/docs/installation#running-the-development-server",
     "build": "Build the static files of your website for production. See https://docusaurus.io/docs/deployment",
     "swizzle": "https://docusaurus.io/docs/swizzling",
     "deploy": "Deploy your site to GitHub Pages. See https://docusaurus.io/docs/deployment#deploy",
