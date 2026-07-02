@@ -306,7 +306,7 @@ char greeting[] = "Hello"; // Compiler automatically adds '\0'
 ```
 
 :::info
-這個概念在 exploit path traversal 的時候，可以當作一個技巧，可參考 [portSwigger - path traversal](https://portswigger.net/web-security/file-path-traversal#common-obstacles-to-exploiting-path-traversal-vulnerabilities) 的教學
+這個概念在 exploit path traversal 的時候，可以當作一個技巧，可參考 [PortSwigger - path traversal](https://portswigger.net/web-security/file-path-traversal#common-obstacles-to-exploiting-path-traversal-vulnerabilities) 的教學
 :::
 
 因為 Node.js 底層也是 C，所以我猜測 `this.push(null)` 這個設計模式也是借鑑 C

@@ -98,7 +98,7 @@ function lab1() {
 lab1();
 ```
 
-### portSwigger solution
+### PortSwigger solution
 
 後來模仿答案的 PoC，修改了我的程式碼，第一次的結尾多傳一個 `G`，第二次則是構造完整的 POST 請求，合併起來就是 GPOST
 
@@ -2425,7 +2425,7 @@ Response
 - `/?search=123` 的 CL 是 3295
   :::
 
-<!-- 最後就是把 `/admin` 改成 `/admin/delete?username=carlos`，portSwigger 一貫的手法，成功通關～
+<!-- 最後就是把 `/admin` 改成 `/admin/delete?username=carlos`，PortSwigger 一貫的手法，成功通關～
 
 但這題第一次解，都是直接看 Solution，EXPERT 等級的題目，真的需要融會貫通，通常不是範例給的 PoC 就能直接通關，且題目敘述要認真看啊QQ -->
 

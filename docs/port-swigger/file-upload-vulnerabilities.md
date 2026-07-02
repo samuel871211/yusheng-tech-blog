@@ -192,7 +192,7 @@ fetch(`${location.origin}/my-account/avatar`, {
 | Document  | https://portswigger.net/web-security/file-upload#flawed-validation-of-the-file-s-contents                            |
 | Lab       | https://portswigger.net/web-security/file-upload/lab-file-upload-remote-code-execution-via-polyglot-web-shell-upload |
 
-這題使用 portSwigger 建議的工具 exiftool，並且在桌面準備好一個真實的 image.jpg
+這題使用 PortSwigger 建議的工具 exiftool，並且在桌面準備好一個真實的 image.jpg
 
 ```
 brew install exiftool

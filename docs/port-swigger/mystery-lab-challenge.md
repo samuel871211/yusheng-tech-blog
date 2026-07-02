@@ -88,7 +88,7 @@ last_update:
 
 ## 中場休息
 
-感覺這樣刷 mystery-lab 沒有意義，我需要建立一個決策樹，系統化的增進我的 recon 技巧，把我在 portSwigger 學到的所有技巧都用上
+感覺這樣刷 mystery-lab 沒有意義，我需要建立一個決策樹，系統化的增進我的 recon 技巧，把我在 PortSwigger 學到的所有技巧都用上
 
 ## 參考連結
 

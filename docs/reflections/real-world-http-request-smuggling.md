@@ -9,7 +9,7 @@ last_update:
 
 在 2025/03，我開啟了 [Learn HTTP With JS](https://ithelp.ithome.com.tw/users/20155705/ironman/8162) 的挑戰，當時學到了 [CRLF Injection](../http/anatomy-of-an-http-message.md#crlf-injection) 這個漏洞，覺得 HTTP 的世界真有趣！
 
-2025/11，我正式將 [portSwigger](https://portswigger.net/web-security) 的最後一個主題 [HTTP Request Smuggling](https://portswigger.net/web-security/request-smuggling) 刷完，我興高采烈的到真實世界嘗試那些學到的技巧，結果被打得滿頭包XD
+2025/11，我正式將 [PortSwigger](https://portswigger.net/web-security) 的最後一個主題 [HTTP Request Smuggling](https://portswigger.net/web-security/request-smuggling) 刷完，我興高采烈的到真實世界嘗試那些學到的技巧，結果被打得滿頭包XD
 
 ## HTTP Request Smuggling or HTTP/1.1 pipelining ?
 
@@ -23,7 +23,7 @@ last_update:
 - ✅ 1 TCP Connection (Keep-Alive)
 - ✅ 沒有像 [TE.CL](../port-swigger/http-request-smuggling.md#lab-confirming-a-tecl-vulnerability-via-differential-responses) 要計算 Bytes 長度的複雜場景
 
-根據 [portSwigger](https://portswigger.net/web-security/request-smuggling/browser/cl-0#testing-for-cl-0-vulnerabilities) 的描述
+根據 [PortSwigger](https://portswigger.net/web-security/request-smuggling/browser/cl-0#testing-for-cl-0-vulnerabilities) 的描述
 
 - Endpoints that trigger server-level redirects and requests for static files are prime candidates.
 - When a request's headers trigger a server error, some servers issue an error response without consuming the request body off the socket. If they don't close the connection afterwards, this can provide an alternative CL.0 desync vector.

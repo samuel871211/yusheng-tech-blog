@@ -425,7 +425,7 @@ console.log(decodeResult);
 
 之後把 token 塞回 cookie，成功解題～
 
-<!-- todo-yus 不懂為啥 portSwigger 要八個步驟 -->
+<!-- todo-yus 不懂為啥 PortSwigger 要八個步驟 -->
 
 ## Lab: JWT authentication bypass via algorithm confusion with no exposed key
 

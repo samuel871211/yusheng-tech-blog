@@ -7,7 +7,7 @@ last_update:
 
 ## 前言
 
-打完 [portSwigger 的 HTTP Request Smuggling](https://portswigger.net/web-security/request-smuggling) 之後，我開始在真實世界研究這種技巧，結果卻不小心踩到 HTTP/1.1 pipelining 的坑，想說趁此機會來研究這個機制，於是這篇文章就誕生了
+打完 [PortSwigger 的 HTTP Request Smuggling](https://portswigger.net/web-security/request-smuggling) 之後，我開始在真實世界研究這種技巧，結果卻不小心踩到 HTTP/1.1 pipelining 的坑，想說趁此機會來研究這個機制，於是這篇文章就誕生了
 
 ## Why pipelining ?
 
@@ -491,7 +491,7 @@ http server 之所以會在這裡
 
 ## 小結
 
-這篇文章是在我完成 [Learn HTTP With JS: 2025 iThome 鐵人賽](https://ithelp.ithome.com.tw/users/20155705/ironman/8162) 以及 [portSwigger HTTP Request Smuggling](../port-swigger/http-request-smuggling.md) 之後寫的，我原本以為我對於 HTTP/1.1 已經算熟悉了，沒想到在真實世界踩坑以後，回來補齊新知識，才意識到 HTTP/1.1 的世界真的是博大精深啊～
+這篇文章是在我完成 [Learn HTTP With JS: 2025 iThome 鐵人賽](https://ithelp.ithome.com.tw/users/20155705/ironman/8162) 以及 [PortSwigger HTTP Request Smuggling](../port-swigger/http-request-smuggling.md) 之後寫的，我原本以為我對於 HTTP/1.1 已經算熟悉了，沒想到在真實世界踩坑以後，回來補齊新知識，才意識到 HTTP/1.1 的世界真的是博大精深啊～
 
 HTTP/1.1 pipeline 我認為大部分的前端/後端工程師不會特別接觸到這塊，畢竟在瀏覽器禁用，加上平常用的 HTTP Agent（fetch, axios, XMLHttpRequest...）都是封裝過後的 API，除非是有興趣理解底層原理的人，不然實務上根本不會碰到XD
 

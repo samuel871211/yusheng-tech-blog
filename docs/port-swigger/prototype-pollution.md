@@ -7,7 +7,7 @@ last_update:
 
 ## 前言
 
-沒想到 portSwigger 竟然有專門出 Prototype Pollution 的 Lab，我覺得這個跟 [XSS](./cross-site-scripting.md) 還有 [DOM-based vulnerabilities](./dom-based-vulnerabilities.md) 都有關聯，本質上都需要對前端的 HTML, JS 有基礎的了解，其中 XSS 跟 DOM-based vulnerabilities 我都已經解過了，想說就趕快把 Prototype Pollution 也一起解掉吧！
+沒想到 PortSwigger 竟然有專門出 Prototype Pollution 的 Lab，我覺得這個跟 [XSS](./cross-site-scripting.md) 還有 [DOM-based vulnerabilities](./dom-based-vulnerabilities.md) 都有關聯，本質上都需要對前端的 HTML, JS 有基礎的了解，其中 XSS 跟 DOM-based vulnerabilities 我都已經解過了，想說就趕快把 Prototype Pollution 也一起解掉吧！
 
 ## Lab: DOM XSS via client-side prototype pollution
 
@@ -203,7 +203,7 @@ if (config.transport_url) {
 }
 ```
 
-嘗試一番後，我發現要去理解 `deparam` 的實作真的太難（Code 真的很髒），所以我直接用 portSwigger 教的方法 [Finding client-side prototype pollution sources manually](https://portswigger.net/web-security/prototype-pollution/client-side#finding-client-side-prototype-pollution-sources-manually)
+嘗試一番後，我發現要去理解 `deparam` 的實作真的太難（Code 真的很髒），所以我直接用 PortSwigger 教的方法 [Finding client-side prototype pollution sources manually](https://portswigger.net/web-security/prototype-pollution/client-side#finding-client-side-prototype-pollution-sources-manually)
 
 PoC
 
@@ -259,7 +259,7 @@ Content-Type: text/javascript
 alert(1);
 ```
 
-結論：portSwigger 的介紹真的要認真看，通常 Lab 都會用到介紹到的 PoC，也證實了 => 看過一次不等於融會貫通，實際打 Lab 才算是有吸收進去
+結論：PortSwigger 的介紹真的要認真看，通常 Lab 都會用到介紹到的 PoC，也證實了 => 看過一次不等於融會貫通，實際打 Lab 才算是有吸收進去
 
 ## Lab: DOM XSS via an alternative prototype pollution vector
 
