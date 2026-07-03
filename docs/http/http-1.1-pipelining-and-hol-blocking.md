@@ -2,7 +2,7 @@
 title: HTTP/1.1 pipelining and HOL Blocking
 description: HTTP/1.1 pipelining and HOL Blocking
 last_update:
-  date: "2025-12-05T08:00:00+08:00"
+  date: "2026-07-03T08:00:00+08:00"
 ---
 
 ## 前言
@@ -15,15 +15,15 @@ last_update:
 
 ```mermaid
 sequenceDiagram
-  participant Browser
-  participant HTTP/1.1 server
+  participant b as browser
+  participant s as HTTP/1.1 server
 
-  Browser ->> HTTP/1.1 server: GET /style.css
-  Browser ->> HTTP/1.1 server: GET /script.js
-  Browser ->> HTTP/1.1 server: GET /image.jpg
-  Browser ->> HTTP/1.1 server: GET /video.mp4
-  Browser ->> HTTP/1.1 server: GET /translate.json
-  Browser ->> HTTP/1.1 server: GET /user/me
+  b ->> s: GET /style.css
+  b ->> s: GET /script.js
+  b ->> s: GET /image.jpg
+  b ->> s: GET /video.mp4
+  b ->> s: GET /translate.json
+  b ->> s: GET /user/me
 ```
 
 雖然有 [Keep-Alive](./keep-alive-and-connection.md) 的機制可以讓 TCP connection 複用，但每條 TCP connection 同時只能發送一個 HTTP request，現代前端網站架構複雜，框架 bundle 完，動輒十幾個 js, css, img 要載入，從第 7 個 HTTP request 開始就要等待，導致效能不佳
@@ -36,7 +36,7 @@ HTTP/1.1 曾提出了 pipelining 來解決上述問題，根據 [RFC 9112 sectio
 A client that supports persistent connections MAY "pipeline" its requests (i.e., send multiple requests without waiting for each response).
 ```
 
-簡單來說，就是在一個 TCP connection 發送
+簡單來說，就是在一個 TCP connection 同時發送多個 HTTP request
 
 <div className="httpRawRequest">
   <div className="blue">GET /style.css HTTP/1.1</div>
@@ -110,9 +110,9 @@ it MUST send the corresponding responses in the same order that the requests wer
 <span style={{"color": "#2196F3"}}>request B</span>
 完成，才能回傳
 
-為什麼呢？因為 response 並沒有標記這是屬於哪個 Request，所以回傳的時候一定要按照順序！
+為什麼呢？因為 response 並沒有標記這是屬於哪個 request，所以回傳的時候一定要按照順序！
 
-這個現象，有個專有名詞叫做 Head-of-line blocking (HOL Blocking)，來看看 [MDN 文件](https://developer.mozilla.org/en-US/docs/Glossary/Head_of_line_blocking) 的解說:
+這個現象，有個專有名詞叫做 Head-of-line blocking (HOL Blocking)，來看看 [MDN 文件](https://developer.mozilla.org/en-US/docs/Glossary/Head_of_line_blocking) 的解說：
 
 ```
 Unfortunately the design of HTTP/1.1 means that responses must be returned in the same order as the requests were received, so HOL blocking can still occur if a request takes a long time to complete.
@@ -134,13 +134,17 @@ Unfortunately the design of HTTP/1.1 means that responses must be returned in th
   <div className="orange"></div>
 </div>
 
-為了避免 race condition，client 得先 "新增使用者"，等收到 response 之後，才能繼續 pipeline "取得使用者列表"
+為了避免 race condition，client 得先 "新增使用者"，等收到 response 之後，才能繼續發送 "取得使用者列表"
+
+參考 [RFC 9112 Section 9.3.2](https://datatracker.ietf.org/doc/html/rfc9112#section-9.3.2) 的描述：
 
 ```
 A user agent SHOULD NOT pipeline requests after a non-idempotent method, until the final response status code for that method has been received
 ```
 
 另外，若 "新增使用者" 的時候 TCP 連線中斷，retry 可能造成重複新增使用者，所以 pipeline 的實作上就會變得很複雜
+
+參考 [RFC 9112 Section 9.3.2](https://datatracker.ietf.org/doc/html/rfc9112#section-9.3.2) 的描述：
 
 ```
 A client that pipelines requests SHOULD retry unanswered requests if the connection closes before it receives all of the corresponding responses.
@@ -155,7 +159,7 @@ A client that pipelines requests SHOULD retry unanswered requests if the connect
 - Request methods are considered "safe" if their defined semantics are essentially read-only
 - GET, HEAD, OPTIONS, and TRACE methods are defined to be safe.
 
-如果 client 發送的都是 Safe Methods，就可以平行處理，因為不會互相影響
+如果 client 發送的都是 Safe Methods，就可以 pipeline，因為不會互相影響
 
 ```
 A server MAY process a sequence of pipelined requests in parallel if they all have safe methods
@@ -230,7 +234,7 @@ Content-Length: 11
 sleepMs = 0
 ```
 
-我一開始看到 response，想說為何 `sleepMs = 0HTTP/1.1 200 OK` 字會黏在一起，但後來想想其實是正常的，因為每一個 response 的結構都是
+我一開始想說為何 `sleepMs = 0HTTP/1.1 200 OK` 字會黏在一起，但後來想想其實是正常的，因為每一個 response 的結構都是
 
 ```
 HTTP/1.1 200 OK
@@ -241,7 +245,7 @@ Content-Length: 11
 sleepMs = 0
 ```
 
-HTTP Parser 從 TCP 讀 bytes 的時候，看到 `Content-Length: 11`，就會從 body 讀取 11 bytes，剛好讀完 `sleepMs = 0`，接著就是下一個 response 的開頭 `HTTP/1.1 200 OK`，中間不會特別再用 `\r\n` 隔開了，所以視覺上看起來就會黏在一起
+HTTP Parser 看到 `Content-Length: 11`，就會往後讀取 11 bytes，剛好讀完 `sleepMs = 0`，接著就是下一個 response 的開頭 `HTTP/1.1 200 OK`，中間不會特別再用 `\r\n` 隔開了，所以視覺上看起來就會黏在一起
 
 ### Different Process Time
 
@@ -308,7 +312,7 @@ sleepMs = 2000
 
 ## HTTP Request Smuggling or HTTP/1.1 pipeline ?
 
-有了 [HTTP/1.1 pipeline](#pipelining) + [keepAlive](./keep-alive-and-connection.md) 的知識後，假設在同一個 TCP 連線按照順序發送以下 requests，會回傳什麼呢？
+有了前面的知識後，假設在同一個 TCP 連線按照順序發送以下 requests，會回傳什麼呢？
 
 request 1
 
@@ -390,7 +394,7 @@ HTTP server 之所以會在這裡
 - 或是剛好頂到 TCP Maximum Packet Size
 - [Nagle’s Algorithm 跟 TCP_NODELAY](../protocols/tcp.md) 的設定影響
 
-所以 HTTP server 實務上通常可以設定 timeout，超過 timeout 沒有收到完整的 HTTP request，就會把 "Incomplete HTTP request" 丟棄
+所以 HTTP server 通常可以設定 timeout，超過 timeout 沒有收到完整的 HTTP request，就會把 "Incomplete HTTP request" 丟棄
 
 ## 小結
 
@@ -398,13 +402,7 @@ HTTP server 之所以會在這裡
 
 HTTP/1.1 pipeline 我認為大部分的前端/後端工程師不會特別接觸到這塊，畢竟在瀏覽器禁用，加上平常用的 HTTP Agent（fetch, axios, XMLHttpRequest...）都是封裝過後的 API，除非是有興趣理解底層原理的人，不然實務上根本不會碰到XD
 
-但我相信，理解 HTTP 的底層原理，雖然對工作不會馬上有幫助，但未來的某一天，也許真的會用上，也希望各位讀者有學到新知識～
-
-<!-- ## nc instead of burp suite -->
-
-<!-- (echo -ne "GET /?sleepMs=0 HTTP/1.1\r\nHost: localhost\r\n\r\nGET /?sleepMs=5000 HTTP/1.1\r\nHost: localhost\r\n\r\nGET /?sleepMs=2000 HTTP/1.1\r\nHost: localhost\r\n\r\n"; sleep 10) | nc localhost 5000 -->
-
-<!-- burp suite not good -->
+但我相信，理解 HTTP 的底層原理，雖然對工作不會馬上有幫助，但未來的某一天，也許真的會用上！
 
 ## 參考資料
 
