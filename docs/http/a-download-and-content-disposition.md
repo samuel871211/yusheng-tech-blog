@@ -55,7 +55,7 @@ download only works for same-origin URLs, or the blob: and data: schemes.
 | `<a>`                 | `<a download href="URL">`         | `<a href="URL">`              |
 | `Content-Disposition` | `Content-Disposition: attachment` | `Content-Disposition: inline` |
 
-## cross-origin + no CD + `<a download>`
+## Case 1: cross-origin + `inline` + `<a download>`
 
 這是我同事遇到的情況：
 
@@ -82,7 +82,7 @@ httpServer.listen(5000);
 Chrome V142 實測後，確實沒有下載，而是直接原頁導轉
 ![a-download-cross-origin-no-cd](../../static/img/a-download-cross-origin-no-cd.jpg)
 
-## same-origin + no CD + `<a download>`
+## Case 2: same-origin + `inline` + `<a download>`
 
 承上題，若改成 same-origin，就可以下載了嗎？寫個 PoC 實測看看
 
@@ -115,58 +115,23 @@ httpServer.listen(5000);
 download only works for same-origin URLs
 ```
 
-## 矛盾大對決1: same-origin + inline vs `<a download>`
+## Case 3: cross-origin + `attachment` + `<a>`
 
-<!-- todo-yus 為何矛盾 -->
-<!-- 跨瀏覽器的行為是否不同 (?) -->
-
-PoC
-
-```ts
-import httpServer from "../httpServer";
-import { readFileSync } from "fs";
-import { join } from "path";
-import { faviconListener } from "../listeners/faviconListener";
-
-const image = readFileSync(join(__dirname, "image.jpg"));
-
-httpServer.on("request", function requestListener(req, res) {
-  if (req.url === "/image") {
-    res.setHeader("Content-Type", "image/jpeg");
-    res.setHeader("Content-Disposition", "inline");
-    res.end(image);
-    return;
-  }
-
-  if (req.url === "/") {
-    res.setHeader("Content-Type", "text/html");
-    res.end('<a href="/image" download>download</a>');
-    return;
-  }
-});
-```
-
-結果同 [same-origin + no CD + `<a download>`](#same-origin--no-cd--a-download)
-
-## 矛盾大對決2: cross-origin + attachment vs `<a>`
-
-<!-- todo-yus 為何矛盾 -->
-<!-- 跨瀏覽器的行為是否不同 (?) -->
-
-我們需要啟動兩個 HTTP server，才能達成 cross-origin
+- 用 `<a>` 轉導到 cross-origin 的圖片網址
+- 圖片本身的 HTTP response header 設定 `Content-Disposition: attachment`
+- 按照[上面的矩陣](#a-vs-content-disposition)，這是一個互斥的情境
 
 PoC
 
 ```ts
-import httpServer from "../httpServer";
+import http from "http";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { createServer } from "http";
-import { faviconListener } from "../listeners/faviconListener";
 
 const image = readFileSync(join(__dirname, "image.jpg"));
 
-httpServer.on("request", function requestListener(req, res) {
+// serve image
+const httpServer5000 = http.createServer((req, res) => {
   if (req.url === "/image") {
     res.setHeader("Content-Type", "image/jpeg");
     res.setHeader("Content-Disposition", "attachment; filename=image.jpg");
@@ -174,33 +139,37 @@ httpServer.on("request", function requestListener(req, res) {
     return;
   }
 });
+httpServer5000.listen(5000);
 
-const http5001Server = createServer().listen(5001);
-http5001Server.on("request", (req, res) => {
-  res.setHeader("content-type", "text/html");
-  res.end('<a href="http://localhost:5000/image" download>download</a>');
-  return;
+// serve html
+const httpServer5001 = http.createServer((req, res) => {
+  if (req.url === "/") {
+    res.setHeader("Content-Type", "text/html");
+    res.end('<a href="http://localhost:5000/image" download>download</a>');
+    return;
+  }
 });
+httpServer5001.listen(5001);
 ```
 
-瀏覽器打開 http://localhost:5001/ ，點選 download 後，成功下載，並且 F12 > Network 有顯示 HTTP request
+Chrome 打開 http://localhost:5001/ ，點擊 "download" 成功下載，並且 F12 > Network 有顯示 HTTP request
 ![a-download-cross-origin-cd-attachment](../../static/img/a-download-cross-origin-cd-attachment.png)
 
-## edge case1: cross-origin + attachment + Larger CL + `<a download>`
+## Edge Case 1: cross-origin + `attachment` + `<a download>` + Larger CL
 
-<!-- 為何是 edge case，要說明 -->
-
-通常各種 HTTP Agent 都會自動計算 HTTP request / Response 的 `Content-Length`，如果我們刻意設定一個 Larger CL，瀏覽器會怎麼處理呢？
+- 通常各種 HTTP Agent 都會自動計算 HTTP request / response 的 `Content-Length`
+- 如果我們刻意設定一個 Larger CL，瀏覽器會怎麼處理呢？
 
 PoC
 
 ```ts
-httpServer.on("request", function requestListener(req, res) {
-  console.log(req.url);
+import http from "http";
+
+const httpServer5000 = http.createServer((req, res) => {
   if (req.url === "/test") {
-    // attachment + Larger CL + `<a download>`
     res.setHeader("Content-Type", "text/html");
     res.setHeader("Content-Disposition", "attachment; filename=test.html");
+    // CL: 100, 實際 11 bytes
     res.setHeader("Content-Length", 100);
     res.end("Only11Chars");
     return;
@@ -212,18 +181,19 @@ httpServer.on("request", function requestListener(req, res) {
     return;
   }
 });
+httpServer5000.listen(5000);
 
-const http5001Server = createServer().listen(5001);
-http5001Server.on("request", (req, res) => {
+const httpServer5001 = http.createServer().listen(5001);
+httpServer5001.on("request", (req, res) => {
   res.setHeader("content-type", "text/html");
   res.end('<a href="http://localhost:5000/test" download>download</a>');
 });
 ```
 
-瀏覽器打開 http://localhost:5001/ ，點選 download 後，會顯示 "無法完成下載作業"
+Chrome 打開 http://localhost:5001/ ，點選 download 後，會顯示 "無法完成下載作業"
 ![a-download-cross-origin-cd-attachment-larger-cl](../../static/img/a-download-cross-origin-cd-attachment-larger-cl.png)
 
-並且 Chrome 瀏覽器會自動 retry，看 Node.js log 的話，會發現總共 retry 5 次
+並且 Chrome 會自動 retry，看 Node.js log 的話，會發現總共 retry 5 次
 
 ```
 /test
@@ -235,11 +205,9 @@ http5001Server.on("request", (req, res) => {
 /test
 ```
 
-## edge case2: cross-origin + attachment + Smaller CL + `<a download>`
+## Edge Case 2: cross-origin + `attachment` + `<a download>` + Smaller CL
 
-<!-- 為何是 edge case，要說明 -->
-
-承上述案例，如果設定一個 Smaller CL，那檔案內容會被截斷嗎？
+承上題，如果設定一個 Smaller CL，那檔案內容會被截斷嗎？
 
 PoC 與上面相同，只有改動這行
 
@@ -250,9 +218,7 @@ res.setHeader("Content-Length", 10);
 實測後，確實被截斷了
 ![a-download-cross-origin-cd-attachment-smaller-cl](../../static/img/a-download-cross-origin-cd-attachment-smaller-cl.png)
 
-## edge case3: cross-origin + attachment + 404 + `<a download>`
-
-<!-- 為何是 edge case，要說明 -->
+## Edge Case 3: cross-origin + `attachment` + `<a download>` + 404
 
 僅列出調整部分
 
@@ -266,8 +232,11 @@ if (req.url === "/test") {
 }
 ```
 
-實測後，Chrome 直接把 `Content-Length` 跟對應的 Response Body 都拔掉了
-![a-download-cross-origin-cd-attachment-404](../../static/img/a-download-cross-origin-cd-attachment-404.jpg)
+<!-- todo-yus 結論 -->
+<!-- 實測後，Chrome 直接把 `Content-Length` 跟對應的 response body 都拔掉了
+![a-download-cross-origin-cd-attachment-404](../../static/img/a-download-cross-origin-cd-attachment-404.jpg) -->
+
+<!-- todo-yus filename 額外拆一篇？ -->
 
 ## filename charset
 
@@ -310,7 +279,7 @@ res.end(image);
 return;
 ```
 
-瀏覽器打開 http://localhost:5001/ ，點選 download 後，會顯示 "ERR_CONNECTION_REFUSED"，查看 Node.js log
+Chrome 打開 http://localhost:5001/ ，點選 download 後，會顯示 "ERR_CONNECTION_REFUSED"，查看 Node.js log
 
 ```
 TypeError: Invalid character in header content ["Content-Disposition"]
@@ -324,7 +293,7 @@ TypeError: Invalid character in header content ["Content-Disposition"]
 }
 ```
 
-看來 Node.js http 模組有遵守某個 RFC 規範 (?)有時候想要測試 malformed HTTP request / response，用各個程式語言封裝好的 http 模組，都會被限制，這時候就得用底層一點的模組來控制；以 Node.js 為例，可以使用 [net.Socket](https://nodejs.org/api/net.html#class-netsocket) 來控制 raw HTTP Response，如果還不熟悉的夥伴們，可以參考我去年寫過的
+看來 Node.js http 模組有遵守某個 RFC 規範 (?)有時候想要測試 malformed HTTP request / response，用各個程式語言封裝好的 http 模組，都會被限制，這時候就得用底層一點的模組來控制；以 Node.js 為例，可以使用 [net.Socket](https://nodejs.org/api/net.html#class-netsocket) 來控制 raw HTTP response，如果還不熟悉的夥伴們，可以參考我去年寫過的
 
 - [深入解說 HTTP message](./anatomy-of-an-http-message.md)
 - [Transfer-Encoding - 使用 Socket.write 自行處理資料格式](./transfer-encoding.md#使用-socketwrite-自行處理資料格式)
@@ -379,7 +348,7 @@ if (req.url === "/ISO-8859-1") {
 }
 ```
 
-瀏覽器訪問 http://localhost:5000/ISO-8859-1 ，可以正確看到 `ä¸­æ–‡` 了～
+Chrome 訪問 http://localhost:5000/ISO-8859-1 ，可以正確看到 `ä¸­æ–‡` 了～
 ![iso-8859-1-html-poc](../../static/img/iso-8859-1-html-poc.jpg)
 
 P.S. 現在很多網站,工具預設都用 UTF-8，所以創建一個 `Content-Type: text/html; charset=iso-8859-1` 的網頁來測試，會比較準確

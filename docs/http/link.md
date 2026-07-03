@@ -9,11 +9,12 @@ last_update:
 
 在現代前端框架盛行的年代，很少會需要大量的手動設置 `<link>`，基本上 bundler 會處理好各種 JavaScript, CSS 的載入，只有少部分會需要在 `index.html` 設定；也因此顯少有機會深入研究 `<link>` 的各種 attribute。
 
-為何會在 HTTP 的系列文章提到 `<link>` 呢？因為 HTTP Response Header 也可以設定 [Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Link)！所以就趁這篇文章，也順便把 HTML 的 `<link>` 也介紹一遍吧～
+為何會在 HTTP 的系列文章提到 `<link>` 呢？因為 HTTP response header 也可以設定 [Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Link)！所以就趁這篇文章，也順便把 HTML 的 `<link>` 也介紹一遍吧～
 
-## Browser compatibility of HTTP Response Header `Link`
+## Browser compatibility of HTTP response header `Link`
 
-翻開 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Link#browser_compatibility) 的話，會發現其實各瀏覽器大約都在 2022 ~ 2023 年才開始支援在 HTTP Response Header 設定 `<Link>`，其實算是蠻新的功能。我自己也只有在 [hackerone](https://www.hackerone.com/) 看到有設定
+翻開 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Link#browser_compatibility) 的話，會發現其實各瀏覽器大約都在 2022 ~ 2023 年才開始支援在 HTTP response header 設定 `<Link>`，其實算是蠻新的功能。我自己也只有在 [hackerone](https://www.hackerone.com/) 看到有設定
+
 ![hackerone-link](../../static/img/hackerone-link.jpg)
 
 ## Basic Syntax of HTTP `Link`
@@ -30,9 +31,7 @@ last_update:
 <link href="/assets/static/main_css-ClkKLtaZ.css" rel="preload" as="style" />
 ```
 
-<!-- todo-yus -->
-
-至於 nopush 是什麼呢？恩...這會牽扯到 [HTTP/2](./http-2.md) 的 Server Push
+至於 nopush，會在未來的 [HTTP/2](./http-2.md) 介紹到
 
 ## Why use HTTP Link instead of HTML `<link>`?
 
@@ -41,7 +40,7 @@ last_update:
 - [深入解說 HTTP message](./anatomy-of-an-http-message.md#raw-http-介紹)
 - [Transfer-Encoding](./transfer-encoding.md)
 
-假設某網站的首頁回傳的 HTTP Response 為
+假設某網站的首頁回傳的 HTTP response 為
 
 ```
 HTTP/1.1 200 OK
@@ -56,15 +55,11 @@ a
 Backend 還在 Query DB，生成這一頁的資料...
 ```
 
-瀏覽器收到 Response Headers 的當下，就可以開始 preload 對應的資源，不用等 HTML 回傳！
-
-:::info
-在 HTTP/1.1 的世界，如果想要先回傳 Headers，但又不確定 Content-Length 是多少的話，可以用 `Transfer-Encoding: chunked` 達到分塊傳輸
-:::
+瀏覽器收到 response headers 的當下，就可以開始 preload 對應的資源，不用等 HTML 回傳！
 
 ## HTML `<link>` 前言
 
-現在我們知道 HTTP Response Header 設定的 Link 跟 HTML `<link>` 在觸發時機上的差異了
+現在我們知道 HTTP response header 設定的 Link 跟 HTML `<link>` 在觸發時機上的差異了
 
 接下來，我們來看看 HTML `<link>` 有哪些 attributes
 
@@ -73,6 +68,8 @@ Backend 還在 Query DB，生成這一頁的資料...
 rel = relationship
 
 接下來會介紹幾個比較常用的值
+
+<!-- todo-yus 很突兀 -->
 
 ### 瀏覽器載入資源的 Priority
 
@@ -118,7 +115,7 @@ canonical = 典範，在這邊代表的是 "preferred URL"
 - Response Header 需要設定正確的 Cache-Control，prefetch 的資源才可以存到 HTTP Cache，例如 [no-store](./http-caching-1.md#cache-control) 或是 [no-cache](./http-caching-1.md#cache-control) 則無法
 - Request Header 會有 `Sec-Purpose: prefetch`, `Sec-Fetch-Dest: empty`
 
-使用 NodeJS http 模組實作：
+使用 Node.js http 模組實作：
 
 index.ts，定義三個 route
 
@@ -326,7 +323,7 @@ Link: </style.css>; rel=preload; as=style; fetchpriority="high"
 
 ### preconnect via HTTP Link
 
-使用 NodeJS http 模組，測試是否真的有建立 TCP 連線
+使用 Node.js http 模組，測試是否真的有建立 TCP 連線
 
 index.ts
 
@@ -350,20 +347,20 @@ preconnect.html
 </html>
 ```
 
-瀏覽器訪問 http://localhost:5000/preconnect 的當下，就可以在 NodeJS Log 看到
+瀏覽器訪問 http://localhost:5000/preconnect 的當下，就可以在 Node.js Log 看到
 
 ```
 connection
 ```
 
-如果立即重整頁面，會發現沒有觸發 connection，我們看看 NodeJS http 模組的 [server.timeout](https://nodejs.org/api/http.html#servertimeout)
+如果立即重整頁面，會發現沒有觸發 connection，我們看看 Node.js http 模組的 [server.timeout](https://nodejs.org/api/http.html#servertimeout)
 
 ```
 Type: <number> Timeout in milliseconds. Default: 0 (no timeout)
 The number of milliseconds of inactivity before a socket is presumed to have timed out.
 ```
 
-嘗試將 NodeJS server.timeout 調成 5 秒
+嘗試將 Node.js server.timeout 調成 5 秒
 
 ```ts
 http5001Server.timeout = 5000;
@@ -388,7 +385,7 @@ connection: 5.015s
 
 <!-- todo-yus -->
 <!-- :::info
-關於 NodeJS http 模組的各種 timeout，我打算在未來專門寫一篇文章來探討 [NodeJS HTTP/1.1 timeout](./nodejs-http-1.1-timeout.md)
+關於 Node.js http 模組的各種 timeout，我打算在未來專門寫一篇文章來探討 [Node.js HTTP/1.1 timeout](./nodejs-http-1.1-timeout.md)
 ::: -->
 
 <!-- todo-yus timeout -->
@@ -414,7 +411,7 @@ connection: 1:26.201 (m:ss.mmm)
 
 ### preload via HTTP Link
 
-使用 NodeJS http 模組測試
+使用 Node.js http 模組測試
 
 localhost:5000
 

@@ -17,7 +17,10 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 - HTTP header
 - HTTP request
 - HTTP response
+- HTTP Request Smuggling
+- request header
 - header(s)
+- request body
 - body
 - TCP connection
 - request / response
