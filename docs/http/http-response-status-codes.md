@@ -17,7 +17,7 @@ last_update:
 
 ## 103 Early Hints
 
-參考 [link](../http/link.md) 跟 [http-uncommon-features](../nodejs/http-uncommon-features.md#103-early-hints) 這兩篇
+參考 [HTTP link](../http/link-http.md) 跟 [http-uncommon-features](../nodejs/http-uncommon-features.md#103-early-hints) 這兩篇
 
 ## 202 Accepted
 

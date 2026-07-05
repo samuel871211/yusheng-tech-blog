@@ -59,7 +59,8 @@ const sidebars: SidebarsConfig = {
         "http/http-1.1-pipelining-and-hol-blocking",
         "http/a-download-and-content-disposition",
         "http/a-download-filename-and-content-disposition-filename",
-        "http/link", // todo-yus 可拆
+        "http/link-html",
+        "http/link-http",
         "http/expect-100-continue",
         "http/nncoection-or-connection",
         "http/http-version-negotiation",
