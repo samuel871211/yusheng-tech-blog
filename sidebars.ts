@@ -57,7 +57,8 @@ const sidebars: SidebarsConfig = {
         // 以上是 2025 iThome 鐵人賽
 
         "http/http-1.1-pipelining-and-hol-blocking",
-        "http/a-download-and-content-disposition", // todo-yus 可拆
+        "http/a-download-and-content-disposition",
+        "http/a-download-filename-and-content-disposition-filename",
         "http/link", // todo-yus 可拆
         "http/expect-100-continue",
         "http/nncoection-or-connection",
