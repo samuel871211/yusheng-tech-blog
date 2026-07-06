@@ -247,7 +247,7 @@ myWritable.on("drain", () => {
 
 ## 效能優化：`cork`, `uncork` 與 `_writev`
 
-cork 的中文是軟木塞，它"塞住"了 `_write` 的執行，目的是為了優化多個 `write` 在短時間寫入造成的 [head-of-line blocking](../http/http-1.1-pipelining-and-hol-blocking.md#pipelining-限制-1-http11-hol-blocking)
+cork 的中文是軟木塞，它"塞住"了 `_write` 的執行，目的是為了優化多個 `write` 在短時間寫入造成的 [head-of-line blocking](../http/http-1.1-pipelining-hol-blocking-vs-request-smuggling.md#pipelining-限制-1-http11-hol-blocking)
 
 ❌ Bad Example
 

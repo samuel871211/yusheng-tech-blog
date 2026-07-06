@@ -341,7 +341,7 @@ classDiagram
 
 ## HTTP/2 discard connection-specific header fields
 
-根據 [RFC 9113 #section-8.2.2](https://datatracker.ietf.org/doc/html/rfc9113#section-8.2.2) 的描述，若 HTTP/2 message 包含以下 "Connection-Specific Header Fields"，則會被視為 [malformed](#malformed-messages)
+根據 [RFC 9113 #section-8.2.2](https://datatracker.ietf.org/doc/html/rfc9113#section-8.2.2) 的描述，若 HTTP/2 message 包含以下 "Connection-Specific Header Fields"，則會被視為 malformed
 
 - Connection
 - Proxy-Connection

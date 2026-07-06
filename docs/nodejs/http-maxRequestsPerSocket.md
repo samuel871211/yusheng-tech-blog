@@ -37,7 +37,7 @@ httpServer.on("request", (req, res) => {
 });
 ```
 
-用 [HTTP/1.1 pipeline](../http/http-1.1-pipelining-and-hol-blocking.md) 的概念，發送以下 raw HTTP Requests
+用 [HTTP/1.1 pipeline](../http/http-1.1-pipelining-hol-blocking-vs-request-smuggling.md) 的概念，發送以下 raw HTTP Requests
 
 ```ts
 GET /1 HTTP/1.1
