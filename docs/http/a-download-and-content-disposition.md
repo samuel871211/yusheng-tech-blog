@@ -1,6 +1,6 @@
 ---
 title: 深入解析 <a download> 與 Content-Disposition：從失敗案例到 Edge Case 實測
-description: 實測 <a download> 在 same-origin/cross-origin 下的行為差異，並探討與 Content-Disposition 交互時，Content-Length 不匹配、404 等 edge case 的瀏覽器實際表現
+description: 實測 <a download> 與 Content-Disposition 交互時，在 same-origin/cross-origin 下的行為差異
 last_update:
   date: "2026-07-04T08:00:00+08:00"
 ---
