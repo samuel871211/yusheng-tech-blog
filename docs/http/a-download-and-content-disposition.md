@@ -230,7 +230,7 @@ if (req.url === "/test") {
 
 ## 小結
 
-這個章節，我們學到了
+在這篇文章，我們學到了
 
 - `<a download>` 跟 `Content-Disposition` 的交互情境
 - "cross-origin" 跟 "same-origin" 如何影響 `<a download>` 的行為

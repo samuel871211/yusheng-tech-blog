@@ -256,7 +256,7 @@ Browsers may apply transformations to conform to the file system requirements, s
 
 ## 小結
 
-這個章節，我們學到了
+在這篇文章，我們學到了
 
 - `<a download>` 跟 `Content-Disposition` 同時設定 filename 時的優先順序
 - `Content-Disposition` 的 filename 跟 filename\* 參數的差異
