@@ -1,6 +1,6 @@
 ---
 title: <a download> vs Content-Disposition：檔名優先順序與編碼陷阱
-description: 解析 <a download> 與 Content-Disposition 同時設定檔名時的優先順序，並實測 filename 遇到中文、空白、CRLF 等特殊字元的處理方式
+description: 解析 <a download> 與 Content-Disposition 同時設定檔名時的優先順序，並實測遇到中文、空白、CRLF 等特殊字元的處理方式
 last_update:
   date: "2026-07-05T08:00:00+08:00"
 ---
