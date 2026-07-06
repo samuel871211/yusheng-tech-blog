@@ -1,6 +1,6 @@
 ---
 title: Nncoection or Connection ?
-description: 為什麼 response header 會出現 Nncoection 這個怪異拼法？從 TCP Checksum、HTTP/2 規範到 F5 BIG-IP 架構，一步步破解這個網路謎團
+description: 為何 response header 會出現 Nncoection 這個怪異拼法？從 TCP Checksum 到 F5 BIG-IP 架構，一步步破解
 last_update:
   date: "2026-07-06T08:00:00+08:00"
 ---
