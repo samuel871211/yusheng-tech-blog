@@ -8,8 +8,11 @@ last_update:
 ## 先備知識
 
 - [HTTP/1.1 Message](./anatomy-of-an-http-message.md)
+
   ![HTTP/1.1-Message](../../static/img/HTTP-1.1-Message.svg)
+
 - [HTTP/1.1 Keep-Alive, Connection](./keep-alive-and-connection.md)
+
   ![HTTP/1.1-Keep-Alive-Connection](../../static/img/HTTP-1.1-Keep-Alive-Connection.svg)
 
 ## 前言
@@ -21,8 +24,8 @@ last_update:
 ```js
 import http from "http";
 
-const server = http.createServer((req, res) => res.end(req.url));
-server.listen(5000);
+const httpServer = http.createServer((req, res) => res.end(req.url));
+httpServer.listen(5000);
 ```
 
 依序發送三個 HTTP request
@@ -32,6 +35,7 @@ server.listen(5000);
 3. `GET /request3 HTTP/1.1\r\nHost: 127.0.0.1:5000\r\n\r\n`
 
 用 [Wireshark](https://www.wireshark.org/download.html) 抓包，可以清楚地看到 request / response 一來一往的順序
+
 ![3-requests-wireshark](../../static/img/3-requests-wireshark.jpg)
 
 可以畫成以下時序圖
@@ -55,6 +59,8 @@ sequenceDiagram
   c ->> s: GET /request3 HTTP/1.1<br/>Host: 127.0.0.1:5000
   s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 9<br/><br/>/request3
 ```
+
+<!-- todo-yus -->
 
 但以上的前提是 "client 跟 server 都遵守規範"！
 

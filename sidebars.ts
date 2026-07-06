@@ -64,10 +64,10 @@ const sidebars: SidebarsConfig = {
         "http/expect-100-continue",
         "http/nncoection-or-connection",
         "http/http-version-negotiation",
-
         "http/m3u8",
-        "http/npm-http-chain-1",
+
         "http/response-misbinding",
+        "http/npm-http-chain-1",
         // "http/from-http-to-vite-preview",
         // "http/node-http-proxy",
         // "http/sentry",
