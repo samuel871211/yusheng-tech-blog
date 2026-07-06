@@ -63,8 +63,8 @@ const sidebars: SidebarsConfig = {
         "http/link-http",
         "http/expect-100-continue",
         "http/nncoection-or-connection",
-
         "http/http-version-negotiation",
+
         "http/m3u8",
         "http/npm-http-chain-1",
         "http/response-misbinding",
