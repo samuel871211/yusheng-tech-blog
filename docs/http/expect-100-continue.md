@@ -1,6 +1,6 @@
 ---
-title: "Expect: 100-Continue"
-description: "Expect: 100-Continue"
+title: "Expect: 100-continue 解析：用途、Node.js 實作與 curl 行為"
+description: "說明 Expect: 100-continue 的正常使用情境、417 Expectation Failed 的觸發條件，以及 Node.js 與 curl 的實際處理行為"
 last_update:
   date: "2026-07-06T08:00:00+08:00"
 ---
