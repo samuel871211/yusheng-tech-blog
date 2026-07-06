@@ -1,6 +1,6 @@
 ---
-title: HTTP Link
-description: HTTP Link
+title: HTTP Link header 教學：比 HTML <link> 更快載入資源
+description: 說明 HTTP Link header 相較 HTML <link> 的載入優勢，並以實作範例驗證 rel=preload、rel=preconnect 的實際效果
 last_update:
   date: "2026-07-06T08:00:00+08:00"
 ---
