@@ -56,14 +56,14 @@ const sidebars: SidebarsConfig = {
         "http/articles-30-end",
         // 以上是 2025 iThome 鐵人賽
 
-        "http/http-1.1-pipelining-and-hol-blocking",
+        "http/http-1.1-pipelining-hol-blocking-vs-request-smuggling",
         "http/a-download-and-content-disposition",
         "http/a-download-filename-and-content-disposition-filename",
         "http/link-html",
         "http/link-http",
         "http/expect-100-continue",
-
         "http/nncoection-or-connection",
+
         "http/http-version-negotiation",
         "http/m3u8",
         "http/npm-http-chain-1",
