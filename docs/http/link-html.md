@@ -1,6 +1,6 @@
 ---
-title: HTML <link>
-description: HTML <link>
+title: HTML <link> 全解析：preload、prefetch、crossorigin 用法
+description: 解析 <link rel> 的各種值與瀏覽器資源載入優先權，並透過 PoC 說明 crossorigin 如何取得完整的第三方腳本錯誤資訊
 last_update:
   date: "2026-07-05T08:00:00+08:00"
 ---
