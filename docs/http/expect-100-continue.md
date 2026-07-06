@@ -2,16 +2,16 @@
 title: "Expect: 100-Continue"
 description: "Expect: 100-Continue"
 last_update:
-  date: "2026-02-08T08:00:00+08:00"
+  date: "2026-07-06T08:00:00+08:00"
 ---
 
 ## 前言
 
 2025/11，我在 Linkedin 看到了 [James Kettle 發的這篇文章](https://www.linkedin.com/posts/james-kettle-albinowax_http1mustdie-activity-7387475238516842496-PgY6/)
 
-exploit 細節我也不清楚，但總之是利用 Frontend 跟 Backend 對 `Expect: 100-continue` 解析的不一致，來達成 HTTP Response Queue Poisoning
+簡單講就是利用 Frontend 跟 Backend 對 `Expect: 100-continue` 解析的不一致，來達成 HTTP Response Queue Poisoning，但細節不會在這篇談到
 
-誠如 James Kettle 在 [HTTP/1.1 Must Die](https://http1mustdie.com/) 所述，會有越來越多不同種類的 HTTP Request Smuggling 被挖掘出來；在我們了解 HTTP Request Smuggling 之前，先來把 HTTP 的基礎打好，就從 `Expect: 100-continue` 這個實務上很少用的 header 開始研究吧！
+誠如 James Kettle 在 [HTTP/1.1 Must Die](https://http1mustdie.com/) 所述，會有越來越多不同種類的 HTTP Request Smuggling 被挖掘出來；在我們了解 HTTP Request Smuggling 之前，先來把 HTTP 的基礎打好，就從 `Expect: 100-continue` 這個實務上很少用的 request header 開始研究吧！
 
 ## 正常的使用情境
 
@@ -198,7 +198,7 @@ Content-Length: 3
 function createSocket(url: URL) {
   return new Promise<net.Socket>((resolve) => {
     const socket = net.connect(parseInt(url.port), url.hostname);
-    socket.on("connect", () => resolve(socket));
+    socket.once("connect", () => resolve(socket));
   });
 }
 
@@ -280,11 +280,12 @@ A client that sends a 100-continue expectation is not required to wait for any s
 
 ## 小結
 
-這篇文章，帶大家了解 `Expect: 100-continue` 是如何在成熟的 HTTP client / server 運作
+在這篇文章，我們學到了
 
-<!-- 下一篇文章，會進入 James Kettle 寫的 Paper [HTTP/1.1 must die: the desync endgame](https://portswigger.net/research/http1-must-die#expect-based-desync-attacks) -->
-
-<!-- todo-yus 還沒深入 -->
+- `Expect: 100-continue` 的使用情境
+- HTTP server 收到 Expect other than 100-continue 要如何處理
+- Node.js http 模組的 client / server 怎麼處理 100 continue 的 request / response
+- curl 針對大檔案上傳的優化
 
 ## 參考資料
 
