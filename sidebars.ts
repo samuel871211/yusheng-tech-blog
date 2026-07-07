@@ -56,6 +56,7 @@ const sidebars: SidebarsConfig = {
         "http/articles-30-end",
         // 以上是 2025 iThome 鐵人賽
 
+        // === 2026 iThome 鐵人賽，前 10 篇 ===
         "http/http-1.1-pipelining-hol-blocking-vs-request-smuggling",
         "http/a-download-and-content-disposition",
         "http/a-download-filename-and-content-disposition-filename",
@@ -66,6 +67,7 @@ const sidebars: SidebarsConfig = {
         "http/http-version-negotiation",
         "http/m3u8",
         "http/response-misbinding",
+        // === 2026 iThome 鐵人賽，前 10 篇 ===
 
         "http/npm-http-chain-1",
         // "http/from-http-to-vite-preview",
@@ -83,7 +85,7 @@ const sidebars: SidebarsConfig = {
         "http/http-2-HAPCK-header-compression",
 
         // "http/service-worker-allowed",
-        // "http/http-caching-4", // ing
+        // "http/http-caching-4", // 進行中
         // "http/cookie", // 必讀
         // "http/TE",
         // "http/http-message-integrity", // 必讀
@@ -176,10 +178,10 @@ const sidebars: SidebarsConfig = {
         // "web-tech/oauth",
         // "web-tech/ip",
         // "web-tech/uri",
-        "web-tech/javascript",
+        "web-tech/javascript", // 進行中
         "web-tech/unicode-utf8-utf16",
-        "web-tech/ABNF-cheat-sheet",
-        "web-tech/binary-data-in-javascript",
+        "web-tech/ABNF-cheat-sheet", // 進行中
+        "web-tech/binary-data-in-javascript", // 進行中
       ],
     },
     {
@@ -215,6 +217,7 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Node.js",
       items: [
+        // === 2026 iThome 鐵人賽，第 xx - xx 篇 ===
         "nodejs/events",
         "nodejs/stream-overview",
         "nodejs/stream-writable",
@@ -231,8 +234,10 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-timeout",
         "nodejs/http-destroy",
         "nodejs/http_proxy",
-        // "nodejs/https_proxy",
+        // "nodejs/https_proxy", // 進行中
         "nodejs/http-uncommon-features",
+        // === 2026 iThome 鐵人賽，第 xx - xx 篇 ===
+
         "nodejs/undici",
         "nodejs/undici-client",
         "nodejs/undici-dispatcher", // todo-yus 很肥，感覺可拆

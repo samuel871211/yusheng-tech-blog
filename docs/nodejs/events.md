@@ -1,13 +1,13 @@
 ---
-title: EventEmitter
-description: "帶你了解 Node.js Event-driven architecture 的核心: EventEmitter"
+title: 搞懂 Node.js EventEmitter：從基本用法到 error、promise rejection 陷阱
+description: Event-driven architecture 的核心，涵蓋 on/emit/once 用法、error 事件陷阱與 promise rejection 處理
 last_update:
-  date: "2026-01-25T08:00:00+08:00"
+  date: "2026-07-07T08:00:00+08:00"
 ---
 
 ## 前言
 
-從 [2025 iThome 鐵人賽](https://ithelp.ithome.com.tw/users/20155705/ironman/8162) 開賽前，我其實就已經規劃這篇文章了，只是一直到 2026/01 才開始寫
+<!-- 從 [2025 iThome 鐵人賽](https://ithelp.ithome.com.tw/users/20155705/ironman/8162) 開賽前，我其實就已經規劃這篇文章了，只是一直到 2026/01 才開始寫 -->
 
 不管是寫前端的 JavaScript
 
@@ -30,7 +30,7 @@ httpServer.on("request", (req, res) => {
 
 都離不開 Event-driven architecture (EDA) 這個概念
 
-尤其是 "有用過 Node.js 原生 http 模組寫 client/server" 的人類們，應該都看過
+尤其是 **"有用過 Node.js 原生 http 模組寫 client/server"** 的人類們，應該都看過
 
 - `EventEmitter`
 - `stream.Readable`
@@ -61,7 +61,7 @@ httpServer.on("request", (req, res) => {
 });
 ```
 
-這問題困擾了我很久，畢竟前端工程師用 JavaScript 要發起 HTTP Request 的話，都是用高階＆封裝好的 API
+這問題困擾了我很久，畢竟前端工程師用 JavaScript 要發起 HTTP request 的話，都是用高階、封裝好的 API
 
 ```ts
 fetch("https://your-api-server.com", {
@@ -89,7 +89,7 @@ flowchart TD
     style D fill:#ffb,stroke:#333
 ```
 
-所以，接下來我會規劃數篇文章，一路從 `EventEmitter` 講到 `http`
+所以，接下來我會規劃數篇文章，一路涵蓋 `EventEmitter`、`stream`、`net.Socket` 跟 `http`
 
 <!-- smtp-server 就是繼承 Event.Emitter -->
 
@@ -152,6 +152,9 @@ myEmitter.on("customEvent", function () {
   console.log("second customEvent listener");
 });
 myEmitter.emit("customEvent");
+
+// first customEvent listener
+// second customEvent listener
 ```
 
 ### Handling events only once
@@ -171,11 +174,11 @@ myEmitter.emit("customEvent"); // customEvent triggered
 myEmitter.emit("customEvent"); // 忽略
 ```
 
-### 大魔王 1: 捕捉 error
+### 大魔王 1：捕捉 error
 
 https://nodejs.org/api/events.html#error-events
 
-這是新手最常踩到的坑，若沒有註冊 `on('error')`，則 `emit('error')` 就會讓 Node.js process exit（常見的 Node.js DoS 原因）
+若沒有註冊 `on('error')`，則 `emit('error')` 會讓 Node.js process exit
 
 ❌ 錯誤作法
 
@@ -200,12 +203,12 @@ myEmitter.on("error", (err) => console.log(err)); // ✅ 正確註冊 on('error'
 myEmitter.emit("error", new Error("oops..."));
 ```
 
-### 小插曲: errorMonitor
+### 小插曲：errorMonitor
 
 https://nodejs.org/api/events.html#error-events
 
 - 會先觸發 `on(errorMonitor)`，再觸發 `on('error')`
-- 好處：將 "監控" 跟 "錯誤處理" 分開，單一職責
+- 好處：將 **"監控"** 跟 **"錯誤處理"** 分開，單一職責
 - ⚠️注意，還是需要監聽 `on('error')`，才不會讓 Node.js process exit
 
 ```ts
@@ -221,7 +224,7 @@ myEmitter.on("error", (err) => console.log(err));
 myEmitter.emit("error", new Error("oops..."));
 ```
 
-### 大魔王 2: 捕捉 promise rejection
+### 大魔王 2：捕捉 promise rejection
 
 https://nodejs.org/api/events.html#capture-rejections-of-promises
 
@@ -259,7 +262,7 @@ myEmitter.emit("hello");
 
 ### 添加插隊的 event
 
-其實 EventEmitter 的概念蠻好懂的，可以把資料結構想成
+其實 `EventEmitter` 的概念蠻好懂的，可以把資料結構想成陣列
 
 ```ts
 const myDailyEvents = {
@@ -321,7 +324,7 @@ myDailyEventsEmitter.prependOnceListener(
 );
 ```
 
-有了這個概念，再來看 EventEmitter 的 methods，就會發現其實就是圍繞 event 跟 listener 的 CRUD
+有了這個概念，再來看 `EventEmitter` 的 methods，就會發現其實就是圍繞 event 跟 listener 的 CRUD
 
 ### EventEmitter prebuild events
 
@@ -347,7 +350,7 @@ myDailyEventsEmitter.prependOnceListener(
 
 ## events 模組的其他 Class
 
-這些我覺得對於學習 http 沒有立即的幫助，且後面三者都是 Web API 移植到 NodeJS，使用情境我覺得不高～
+這些我覺得對於學習 http 沒有立即的幫助，且後面三者都是 Web API 移植到 Node.js，使用情境我覺得不高～
 
 - [EventEmitterAsyncResource](https://nodejs.org/api/events.html#class-eventseventemitterasyncresource-extends-eventemitter)
 - [EventTarget](https://nodejs.org/api/events.html#class-eventtarget)
@@ -378,7 +381,7 @@ import events from "events";
 
 ## 小結
 
-EventEmitter 是 Node.js 非同步事件處理的基礎，但它只負責「註冊事件」和「觸發事件」
+`EventEmitter` 是 Node.js Event-driven architecture 的基礎，但它只負責「註冊事件」和「觸發事件」
 
 當你看到 Node.js http 模組相關的程式碼：
 
@@ -388,11 +391,11 @@ req.on("end", () => {}); // ❓ end 事件什麼時候觸發？
 req.pipe(res); // ❓ pipe 是什麼？
 ```
 
-這些問題的答案都在 **stream** 裡
+這些問題的答案都在 **`stream`** 裡
 
-EventEmitter 只是提供了「事件機制」，而 stream 才定義了「什麼時候該觸發這些事件」
+`EventEmitter` 只是提供了「事件機制」，而 `stream` 才定義了「什麼時候該觸發這些事件」
 
-下一篇我們來看 stream 如何基於 EventEmitter 建立「資料流」的概念
+下一篇我們來看 `stream` 如何基於 `EventEmitter` 建立「資料流」的概念
 
 ## 參考資料
 
