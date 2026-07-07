@@ -1,0 +1,9 @@
+/http/http-1.1-pipelining-and-hol-blocking /http/http-1.1-pipelining-hol-blocking-vs-request-smuggling 301
+/http/link /http/link-http 301
+/http/http2-HAPCK-header-compression /http/http-2-HAPCK-header-compression 301
+/nodejs/http2 /nodejs/http-2 301
+/http/ABNF-cheat-sheet /web-tech/ABNF-cheat-sheet 301
+/nodejs/socket /nodejs/socket-overview 301
+/nodejs/stream /nodejs/stream-overview 301
+/nodejs/stream-1 /nodejs/stream-overview 301
+/http/http-2-flow-control /nodejs/http-2-flow-control 301
