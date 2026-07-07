@@ -1,8 +1,8 @@
 ---
-title: "Preconnected TCP socket Poisoning: Chrome / Firefox、HTTP/1.1 與 Security 邊界分析"
-description: 分析瀏覽器對 preconnected HTTP/1.1 TCP socket 的 request / response binding 行為，並整理 Chrome、Firefox 為何不將其視為 security issue
+title: "Preconnected TCP Socket Poisoning：HTTP/1.1 Response Misbinding 分析"
+description: preconnected TCP socket 被偷塞 response 後，瀏覽器錯誤綁定給後續 request，Chrome、Firefox 回報與規範分析
 last_update:
-  date: "2025-04-17T08:00:00+08:00"
+  date: "2026-07-07T08:00:00+08:00"
 ---
 
 ## 先備知識
@@ -60,13 +60,9 @@ sequenceDiagram
   s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 9<br/><br/>/request3
 ```
 
-<!-- todo-yus -->
-
-但以上的前提是 "client 跟 server 都遵守規範"！
+## "Response Misbinding" 圖解
 
 **如果 server 在第一包 HTTP request 送出以前，就 "偷塞" 了一包 HTTP response，那 request / response 的 binding 會亂掉嗎？**
-
-## "Response Misbinding" 圖解
 
 我想測試的情境如下：
 
@@ -118,14 +114,16 @@ sequenceDiagram
 如果要達成我的目標
 
 1. 第一包 HTTP request 要盡可能地晚一點送（但又必須符合正常 HTTP client 的行為）
-2. "poisoned" HTTP response 要盡可能地早一點送（有想過寫個 C 語言來達到比較精準的 TCP Bytes 控制，但感覺這條路的 attack complexity 很高，因為 race-window 很短）
+2. "poisoned" HTTP response 要盡可能地早一點送（有想過寫個 C 語言來達到比較精準的 TCP bytes 控制，但感覺這條路的 attack complexity 很高，因為 race-window 很短）
 
 ## 轉機
 
 我詢問了 AI
+
 ![ask-ai-client-preconnect](../../static/img/ask-ai-client-preconnect.jpg)
 
 AI 的回覆讓我有了新的想法
+
 ![ask-ai-client-preconnect-response](../../static/img/ask-ai-client-preconnect-response.jpg)
 
 看到 "preconnect" 這個單字，讓我立即想到瀏覽器的
@@ -134,7 +132,7 @@ AI 的回覆讓我有了新的想法
 <link rel="preconnect" href="https://fonts.gstatic.com" />
 ```
 
-可以用來預先建立 TCP 連線（若 https 的話則是 TCP + TLS）
+可以用來預先建立 TCP 連線（若 https 的話則是 TCP + TLS），並且 preconnect 在 [前幾篇文章](./link-html.md) 也有介紹到
 
 ## 時序圖
 
@@ -148,8 +146,8 @@ AI 的回覆讓我有了新的想法
 ```mermaid
 sequenceDiagram
   participant b as browser
-  participant s1 as html server<br/>(127.0.0.1:5000)
-  participant s2 as malicious server<br/>(127.0.0.1:5001)
+  participant s1 as HTML server<br/>(127.0.0.1:5000)
+  participant s2 as preconnected server<br/>(127.0.0.1:5001)
 
 
   b ->> s1: GET / HTTP/1.1<br/>Host: 127.0.0.1:5000
@@ -240,21 +238,11 @@ maliciousServer.listen(5001, () => console.log("listening on port 5001"));
 
 在 1 個工作天以內，我就收到了 Chrome 跟 Firefox 的回應，兩者皆認為這不是 security vulnerability
 
-Chrome 回覆說：
-
-```
-I don't see any security consequences because I don't know how an attacker would inject data into the preconnected socket. Please open a new bug with a clear explanation of the threat model if you believe this is a security bug. Thank you.
-```
+Chrome 的回覆：
 
 ![chrome-feedback](../../static/img/chrome-feedback.jpg)
 
-Firefox 回覆說：
-
-```
-While perhaps we could block aggressively-sent data on an Http1 connection, this is no different in practice than a server that waits for a GET and then sends the same data; it just gets to us a bit faster. We could consider it a protocol error for data to be sent before we send the GET, but it doesn't matter in practice, and sniffing connections for 'early' data a) would have a small cost, in time/cpu and complexity, and b) is inherently racy -- if we sniff it for data, find none, and then send GET - data could come in between sniffing and GET.
-
-This is not a spec violation, and it's not a security issue.
-```
+Firefox 的回覆：
 
 ![firefox-feedback](../../static/img/firefox-feedback.jpg)
 
@@ -266,23 +254,15 @@ This is not a spec violation, and it's not a security issue.
 
 - This is not a spec violation
 
-## RFC 9112 9.2. Associating a Response to a Request
+## Associating a Response to a Request
 
-RFC 9112 是 HTTP/1.1 的正式規範，我直接引用整段原文
-
-```
-HTTP/1.1 does not include a request identifier for associating a given request message with its corresponding one or more response messages. Hence, it relies on the order of response arrival to correspond exactly to the order in which requests are made on the same connection. More than one response message per request only occurs when one or more informational responses (1xx; see Section 15.2 of [HTTP]) precede a final response to the same request.
-
-A client that has more than one outstanding request on a connection MUST maintain a list of outstanding requests in the order sent and MUST associate each received response message on that connection to the first outstanding request that has not yet received a final (non-1xx) response.
-
-If a client receives data on a connection that doesn't have outstanding requests, the client MUST NOT consider that data to be a valid response; the client SHOULD close the connection, since message delimitation is now ambiguous, unless the data consists only of one or more CRLF (which can be discarded per Section 2.2).
-```
-
-依我的解讀，若當下 connection 上尚無 outstanding request，browser 不應將這包 "poisoned" HTTP response 視為後續第一個 request（GET /script1.js）的有效 response。
+引用 [RFC9112 Section 9.2](https://datatracker.ietf.org/doc/html/rfc9112#section-9.2) 原文：
 
 ```
-If a client receives data on a connection that doesn't have outstanding requests, the client MUST NOT consider that data to be a valid response
+If a client receives data on a connection that doesn't have outstanding requests, the client MUST NOT consider that data to be a valid response; the client SHOULD close the connection
 ```
+
+我認為 Chrome 跟 Firefox 在這點是違反規範的
 
 ## 小結
 
@@ -290,9 +270,4 @@ If a client receives data on a connection that doesn't have outstanding requests
 
 - HTTP client 的 finding 要被視為 vulnerability，通常不能只靠 spec violation
 - 真正關鍵的是：attacker 能否因為這個 BUG **獲得新的能力**
-
-這題讓我更在意的是：**HTTP client 的實作是否在 edge case 下仍維持明確的 request / response association**
-
-雖然 vendor 不把它當 security issue，不代表這題沒有研究價值，它仍然是一個很好的案例：
-
-去觀察 browser 如何在真實 optimization（preconnect）情況下，處理不尋常的 edge case
+- 這個 **新的能力** 有沒有辦法造成資安漏洞（DoS, Response Queue Poisoning ...）
