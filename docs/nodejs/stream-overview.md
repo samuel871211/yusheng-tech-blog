@@ -2,7 +2,7 @@
 title: stream 入門：Readable、Writable、Duplex（附 HTTP 實例）
 description: 從 HTTP 視角探索 Node.js stream，了解 Readable、Writable、Duplex 的實作與應用，包含範例
 last_update:
-  date: "2026-01-25T08:00:00+08:00"
+  date: "2026-07-07T08:00:00+08:00"
 ---
 
 ## Types of streams
@@ -14,47 +14,47 @@ stream 有分四種
 - [Duplex](https://nodejs.org/api/stream.html#class-streamduplex)：可讀寫
 - [Transform](https://nodejs.org/api/stream.html#class-streamtransform)：這次不會介紹到它
 
-### HTTP Server 視角：Readable 與 Writable
+## HTTP server 視角：Readable 與 Writable
 
 ```mermaid
 sequenceDiagram
-  participant HTTP Client
-  participant HTTP Server
+  participant c as HTTP client
+  participant s as HTTP server
 
-  HTTP Client ->> HTTP Server: http.IncomingMessage (stream.Readable)
-  Note over HTTP Server: 我身為 Server，我要 "讀取" HTTP Request
+  c ->> s: http.IncomingMessage (stream.Readable)
+  Note over s: 我身為 server，我要 "讀取" HTTP request
 
-  HTTP Server ->> HTTP Client: http.ServerResponse (stream.Writable)
-  Note over HTTP Server: 我身為 Server，我要 "寫入" HTTP Response
+  s ->> c: http.ServerResponse (stream.Writable)
+  Note over s: 我身為 server，我要 "寫入" HTTP response
 ```
 
-### HTTP Client 視角：Readable 與 Writable
+## HTTP client 視角：Readable 與 Writable
 
 ```mermaid
 sequenceDiagram
-  participant HTTP Client
-  participant HTTP Server
+  participant c as HTTP client
+  participant s as HTTP server
 
-  HTTP Client ->> HTTP Server: http.ClientRequest (stream.Writable)
-  Note over HTTP Client: 我身為 Client，我要 "寫入" HTTP Request
+  c ->> s: http.ClientRequest (stream.Writable)
+  Note over c: 我身為 client，我要 "寫入" HTTP request
 
-  HTTP Server ->> HTTP Client: http.IncomingMessage (stream.Readable)
-  Note over HTTP Client: 我身為 Client，我要 "讀取" HTTP Response
+  s ->> c: http.IncomingMessage (stream.Readable)
+  Note over c: 我身為 client，我要 "讀取" HTTP response
 ```
 
 :::info
 從上述的例子，我們可以得知，所謂的 "Readable" 跟 "Writable"，是根據 "你目前的角色" 來看
 :::
 
-### Client 與 Server 的對稱結構：各自的 Socket (stream.Duplex)
+## client 與 server 的對稱結構：各自的 Socket (stream.Duplex)
 
 ```mermaid
 graph TB
     direction TB
     subgraph Server["Server 端"]
         SSocket["Socket<br/>(stream.Duplex)"]
-        SReq["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP Request"]
-        SRes["ServerResponse<br/>(stream.Writable)<br/>寫入 HTTP Response"]
+        SReq["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP request"]
+        SRes["ServerResponse<br/>(stream.Writable)<br/>寫入 HTTP response"]
 
         SReq -->|req.socket| SSocket
         SRes -->|res.socket| SSocket
@@ -63,8 +63,8 @@ graph TB
     subgraph Client["Client 端"]
         direction RL
         CSocket["Socket<br/>(stream.Duplex)"]
-        CReq["ClientRequest<br/>(stream.Writable)<br/>寫入 HTTP Request"]
-        CRes["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP Response"]
+        CReq["ClientRequest<br/>(stream.Writable)<br/>寫入 HTTP request"]
+        CRes["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP response"]
 
         CReq -->|req.socket| CSocket
         CRes -->|res.socket| CSocket
@@ -79,9 +79,7 @@ graph TB
     style SRes fill:#ffd4d4
 ```
 
-### Types of streams 小結
-
-從 HTTP 的視角來看，就會發現 Node.js 模組的底層就是 stream 跟 Socket
+Node.js http 模組的底層就是 stream 跟 Socket：
 
 - stream 是管理資料讀寫的抽象層
 - Socket 則是管理 TCP 連線的抽象層，繼承了 stream.Duplex，可讀寫資料
@@ -90,7 +88,7 @@ graph TB
 
 https://nodejs.org/api/stream.html#class-streamwritable
 
-stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際寫入」的部分留給開發者實作。而這個「實際寫入」的部分，就是 `_write` internal method
+`stream.Writable` 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際寫入」的部分留給開發者實作。而這個「實際寫入」的部分，就是 `_write` 這個 internal method
 
 ❌ 錯誤作法
 
@@ -140,7 +138,7 @@ myWritable.write("123"); // <Buffer 31 32 33>
 - [writable.end](https://nodejs.org/api/stream.html#writableendchunk-encoding-callback)
 - [writable.setDefaultEncoding](https://nodejs.org/api/stream.html#writablesetdefaultencodingencoding)
 
-這些方法可以在 Node.js 的 [http.ClientRequest](https://nodejs.org/api/http.html#class-httpclientrequest) 或是 [http.ServerResponse](https://nodejs.org/api/http.html#class-httpserverresponse) 看到，因為其繼承鏈為
+這些方法可以在 Node.js 的 [`http.ClientRequest`](https://nodejs.org/api/http.html#class-httpclientrequest) 或是 [`http.ServerResponse`](https://nodejs.org/api/http.html#class-httpserverresponse) 看到，因為其繼承鏈為
 
 ```mermaid
 flowchart TD
@@ -155,16 +153,16 @@ flowchart TD
 ```
 
 :::info
-為何 http.OutgoingMessage 不是繼承 stream.Writable ? 因為當時 stream.Writable 根本還沒出生
+為何 `http.OutgoingMessage` 不是繼承 `stream.Writable` ? 因為當時 `stream.Writable` 根本還沒被實作
 
-http.OutgoingMessage 是在 v0.1.17 加入的
+`http.OutgoingMessage` 是在 v0.1.17 加入的
 
-stream.Writable 是在 v0.9.4 加入的
+`stream.Writable` 是在 v0.9.4 加入的
 
-但 http.OutgoingMessage 也是實作了 stream.Writable 該有的 methods
+但 `http.OutgoingMessage` 也是實作了 `stream.Writable` 該有的 methods
 :::
 
-http.ClientRequest
+`http.ClientRequest`
 
 ```ts
 import { request } from "http";
@@ -178,7 +176,7 @@ clientRequest.end();
 clientRequest.setDefaultEncoding();
 ```
 
-http.ServerResponse
+`http.ServerResponse`
 
 ```ts
 import { createServer } from "http";
@@ -197,7 +195,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 ### properties
 
-先參考即可～下一篇文章會帶到
+先參考即可，下一篇文章會帶到
 
 - [writable.closed](https://nodejs.org/api/stream.html#writableclosed)
 - [writable.destroyed](https://nodejs.org/api/stream.html#writabledestroyed)
@@ -216,7 +214,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 https://nodejs.org/api/stream.html#implementing-a-writable-stream
 
-這些底線開頭的 internal methods，只有當你在實作 stream.Writable 的時候才會碰到
+這些底線開頭的 internal methods，只有當你在實作 `stream.Writable` 的時候才會碰到
 
 - [`writable._write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback)
 - [`writable._writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback)
@@ -264,7 +262,7 @@ myWritable.write("123"); // ✅ instance 只呼叫 public methods
 
 https://nodejs.org/api/stream.html#class-streamreadable
 
-同理 [stream.Writable](#streamwritable)，stream.Writable 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際讀取」的部分留給開發者實作。而這個「實際讀取」的部分，就是 `_read` internal method
+同理 [`stream.Writable`](#streamwritable)，`stream.Readable` 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際讀取」的部分留給開發者實作。而這個「實際讀取」的部分，就是 `_read` 這個 internal method
 
 ❌ 錯誤作法
 
@@ -348,7 +346,7 @@ flowchart TD
     style B fill:#bbf,stroke:#333
 ```
 
-As a HTTP client (Receive HTTP Response)
+As an HTTP client (receive HTTP response)
 
 ```ts
 import { request } from "http";
@@ -361,7 +359,7 @@ clientRequest.on("response", (response) => {
 });
 ```
 
-As a HTTP server (Receive HTTP Request)
+As an HTTP server (receive HTTP request)
 
 ```ts
 import { createServer } from "http";
@@ -376,7 +374,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 ### properties
 
-先參考即可～下一篇文章會帶到
+先參考即可，下一篇文章會帶到
 
 - [readable.closed](https://nodejs.org/api/stream.html#readableclosed)
 - [readable.destroyed](https://nodejs.org/api/stream.html#readabledestroyed)
@@ -393,7 +391,7 @@ httpServer.on("request", function requestListener(req, res) {
 
 ### internal methods
 
-這些底線開頭的 internal methods，只有當你在實作 stream.Readable 的時候才會碰到
+這些底線開頭的 internal methods，只有當你在實作 `stream.Readable` 的時候才會碰到
 
 - [`readable._construct`](https://nodejs.org/api/stream.html#readable_constructcallback)
 - [`readable._destroy`](https://nodejs.org/api/stream.html#readable_destroyerr-callback)
@@ -456,23 +454,26 @@ myReadable.on("readable", () => {
 
 ## stream.Duplex
 
-實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是 **"如果 Readable.end，那 Writable 是否要繼續開著"**。聽起來很繞口，我實際舉個 http 的例子，讓各位了解：
+實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是
 
-Node.js http server 的 Socket 就是 `allowHalfOpen = true`，因為通常 Server 收到完整的 HTTP Request (Readable.end) 之後，才能決定 HTTP Response 是什麼，並且回傳給 Client，此時 Writable Side 就必須保持開啟。
+**"如果 Readable side 已經結束，那 Writable side 是否要繼續開著？"**
 
-我們可以寫一個 PoC 來驗證
+聽起來很繞口，我實際舉個實際例子，讓各位了解：
+
+Node.js `http.Server` 的 Socket 就是 `allowHalfOpen = true`，因為通常 server 收到完整的 HTTP request (Readable 結束) 之後，才能決定 HTTP response 是什麼，並且回傳給 client，此時 Writable side 就必須保持開啟
+
+我們可以寫一個 PoC 來驗證 `allowHalfOpen = true`
 
 ```ts
 import { createServer } from "http";
 
-createServer()
-  .listen(5000)
-  .on("request", function httpRequestListener(req, res) {
-    console.log(req.socket === res.socket); // true
-    console.log(req.socket.allowHalfOpen); // true
-    console.log(res.socket?.allowHalfOpen); // true
-    res.end();
-  });
+const httpServer = createServer((req, res) => {
+  console.log(req.socket === res.socket); // true
+  console.log(req.socket.allowHalfOpen); // true
+  console.log(res.socket?.allowHalfOpen); // true
+  res.end();
+});
+httpServer.listen(5000);
 ```
 
 ## Web API 竟然也有 Stream ?!
@@ -490,7 +491,9 @@ createServer()
 
 ## 小結
 
-這篇文章帶大家入門 [stream.Readable](#streamreadable), [stream.Writable](#streamwritable) 以及 [stream.Duplex](#streamduplex)，並且也帶入 Node.js http 的概念，讓大家從 HTTP 的觀點來理解這些抽象層
+這篇文章帶大家入門 [stream.Readable](#streamreadable), [stream.Writable](#streamwritable) 以及 [stream.Duplex](#streamduplex)
+
+並且也帶入 Node.js http 的概念，讓大家從 HTTP 的觀點來理解這些抽象層
 
 下一篇文章，會帶大家深入 stream 的生命週期，以及主要 methods 跟 properties 的使用方法
 
