@@ -162,7 +162,7 @@ await client.request({ method: "GET", path: "/" }); // ✅ 會開一條新的 TC
 
 ## Dispatcher.stream(options, factory[, callback])
 
-比 [Dispatcher.request](#dispatcherrequestoptions-callback) 還要快一點，因為可以節省一個 [stream.Readable](./stream-readable.md) 的創建成本，直接把 response body pipe 到 [stream.Writable](./stream-writable.md)
+比 [Dispatcher.request](#dispatcherrequestoptions-callback) 還要快一點，因為可以節省一個 [stream.Readable](./stream-readable.md) 的創建成本，直接把 response body pipe 到 [stream.Writable](./stream-writable-1.md)
 
 ## Dispatcher.upgrade(options[, callback])
 

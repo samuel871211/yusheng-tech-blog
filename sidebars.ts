@@ -220,8 +220,9 @@ const sidebars: SidebarsConfig = {
         // === 2026 iThome 鐵人賽，第 xx - xx 篇 ===
         "nodejs/events",
         "nodejs/stream-overview",
-        "nodejs/stream-writable", // todo-yus 到這
-        "nodejs/stream-readable",
+        "nodejs/stream-writable-1",
+        "nodejs/stream-writable-2",
+        "nodejs/stream-readable", // todo-yus
         "nodejs/stream-advance",
         "nodejs/socket-overview",
         "nodejs/socket-life-cycle",

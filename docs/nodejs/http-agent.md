@@ -12,7 +12,7 @@ last_update:
 - [EventEmitter](./events.md)
 - [stream-overview](./stream-overview.md)
 - [stream.Readable](./stream-readable.md)
-- [stream.Writable](./stream-writable.md)
+- [stream.Writable](./stream-writable-1.md)
 - [socket-overview](./socket-overview.md)
 - [socket-life-cycle](./socket-life-cycle.md)
 

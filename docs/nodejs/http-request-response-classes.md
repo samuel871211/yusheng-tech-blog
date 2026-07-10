@@ -448,7 +448,7 @@ httpServer.on("request", (req, res) => {
 ```
 
 :::info
-[outgoingMessage.on('prefinish')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-prefinish) 其實是繼承 [stream.Writable](./stream-writable.md)<br/><br/>
+[outgoingMessage.on('prefinish')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-prefinish) 其實是繼承 [stream.Writable](./stream-writable-1.md)<br/><br/>
 不過 [Node.js stream 官方文件](https://nodejs.org/api/stream.html) 完全沒提到 `prefinish`，所以就當作一個小知識先記著就好～
 :::
 

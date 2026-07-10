@@ -1,146 +1,44 @@
 ---
-title: stream.Writable 生命週期
-description: Node.js stream.Writable 生命週期
+title: stream.Writable 記憶體管理、效能優化、錯誤處理
+description: stream.Writable 記憶體管理、效能優化、錯誤處理
 last_update:
-  date: "2026-02-04T08:00:00+08:00"
+  date: "2026-07-10T08:00:00+08:00"
 ---
-
-## 生命週期 1：constructor 與初始化
-
-先來個範例，包含 `constructor`, `_construct` 跟 `_write`，各位覺得執行順序是什麼呢？
-
-```ts
-import { Writable, WritableOptions } from "stream";
-
-class MyWritable extends Writable {
-  constructor(opts?: WritableOptions) {
-    super(opts);
-    console.log(performance.now(), "constructor");
-  }
-  _construct(callback: (error?: Error | null) => void): void {
-    console.log(performance.now(), "_construct");
-    // 模擬 async 操作，例如：建立 TCP 連線
-    setTimeout(callback, 1000);
-  }
-  _write(
-    chunk: any,
-    encoding: BufferEncoding,
-    callback: (error?: Error | null) => void,
-  ): void {
-    // 模擬寫入延遲
-    setTimeout(() => {
-      console.log(performance.now(), chunk);
-      callback();
-    }, 100);
-  }
-}
-
-const myWritable = new MyWritable();
-myWritable.write("123");
-
-// Prints
-// 650.24275 constructor
-// 650.622958 _construct
-// 1754.264416 <Buffer 31 32 33>
-```
-
-執行順序如下：
-
-```mermaid
-flowchart TD
-    A[constructor] --> B[_construct]
-    B --> C[_write]
-
-
-    %% Annotation
-    D["Note: _construct will delay<br/>_write, _destroy or _final"]
-    D -.-> B
-
-    style D fill:#fff5ad,stroke:#aaaa33
-```
-
-## 生命週期 2：寫入資料
-
-我曾經以為寫入資料就是一直 `write` 下去就好
-
-```ts
-const myWritable = getWritableStreamSomehow();
-myWritable.write("123");
-myWritable.write("456");
-```
-
-但如果仔細查看 [`write`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [`_write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 highWaterMark 這兩個名詞一直被提到
-
-我們先來看看 `write` 的 `callback` 何時會被觸發
-
-```ts
-import { Writable, WritableOptions } from "stream";
-
-class MyWritable extends Writable {
-  constructor(opts?: WritableOptions) {
-    super(opts);
-    console.log(performance.now(), "constructor");
-  }
-  _construct(callback: (error?: Error | null) => void): void {
-    console.log(performance.now(), "_construct");
-    // 模擬 async 操作，例如：建立 TCP 連線
-    setTimeout(callback, 1000);
-  }
-  _write(
-    chunk: any,
-    encoding: BufferEncoding,
-    callback: (error?: Error | null) => void,
-  ): void {
-    // 模擬寫入延遲
-    setTimeout(() => {
-      console.log(performance.now(), chunk);
-      callback();
-    }, 100);
-  }
-}
-
-const myWritable = new MyWritable();
-const isSafeToWriteMore = myWritable.write("123", () =>
-  console.log(performance.now(), "data is flushed"),
-);
-console.log(performance.now(), { isSafeToWriteMore });
-
-// Prints
-// 750.2246 constructor
-// 750.8683 { isSafeToWriteMore: true }
-// 751.1718 _construct
-// 1875.7623 <Buffer 31 32 33>
-// 1876.2586 data is flushed
-```
-
-時間軸如下
-
-```mermaid
-flowchart TD
-    A[constructor] --> B[write]
-    B --> C[isSafeToWriteMore<br/>returned synchronously]
-    C --> D[_construct]
-    D --> E[_write callback]
-    E --> F[write callback]
-```
-
-1. 根據 [`readable._construct`](https://nodejs.org/api/stream.html#readable_constructcallback) 的描述，`constructor` 執行完後，`process.nextTick` 才會執行 `_construct`，所以 `write` 的回傳值 `isSafeToWriteMore` 會先印出來。雖然 `writable._construct` 的官方文件沒有描述到這個行為，但基本上兩者的概念是相通的
-2. `_construct` 完成後（執行 `_construct` 的 `callback`），代表可以開始 `_write`
-3. `_write` 完成後（執行 `_write` 的 `callback`），代表可以開始 `write` 的 `callback`
-
-只能讚嘆 Node.js 的 Event-driven architecture 設計真的很精妙，大量的利用 `callback` 把各種 async 事件串連起來
-
-但 Node.js 是怎麼判斷 `isSafeToWriteMore` 呢？這邊就會帶到 backpressure 跟 highWaterMark 這兩個名詞了
 
 ## 記憶體管理：backpressure 與 highWaterMark
 
 在 create instance 的階段可以指定 highWaterMark，單位是 bytes
 
 ```ts
+import { Writable, WritableOptions } from "stream";
+
+class MyWritable extends Writable {
+  constructor(opts?: WritableOptions) {
+    super(opts);
+    console.log(performance.now(), "constructor");
+  }
+  _construct(callback: (error?: Error | null) => void): void {
+    console.log(performance.now(), "_construct");
+    // 模擬 async 操作，例如：建立 TCP 連線
+    setTimeout(callback, 1000);
+  }
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    // 模擬寫入延遲
+    setTimeout(() => {
+      console.log(performance.now(), chunk);
+      callback();
+    }, 100);
+  }
+}
+
 const myWritable = new MyWritable({ highWaterMark: 1024 });
 ```
 
-從上面 [MyWritable](#生命週期-1constructor-與初始化) 的程式碼範例
+從上面的程式碼範例
 
 - 我們在 `_write` 每 100ms 才能消化一個 chunk
 - 但 `write` 本身是同步的 function，可以無限制地呼叫
@@ -148,10 +46,10 @@ const myWritable = new MyWritable({ highWaterMark: 1024 });
 
 ![nodejs-stream-writable-write-flow](../../static/nodejs-stream-writable-write-flow.svg)
 
-回到 `isSafeToWriteMore`，Node.js 在 `write` 的當下，就可以判斷接下來要寫入的 chunk 是否會頂到 highWaterMark
+Node.js 在 `write` 的當下，就可以判斷接下來要寫入的 chunk 是否會頂到 highWaterMark
 
-- 若頂到 highWaterMark，回傳 false
-- 反之，則回傳 true
+- 若頂到 highWaterMark，回傳 `false`
+- 反之，則回傳 `true`
 
 我們試著寫個 PoC 來驗證
 
@@ -242,12 +140,14 @@ myWritable.on("drain", () => {
 而 backpressure 指的就是這整套機制
 
 1. 當 `write` 生產的速度 > `_write` 消化的速度，導致頂到 highWaterMark
-2. 回傳 `{ isSafeToWriteMore: false }`，提醒使用者 "請暫停 `write`"
+2. 回傳 `false`，提醒使用者 **請暫停 `write`**
 3. 使用者需手動監聽 `on("drain")`，等到 `_write` 消化完再繼續 `write`
 
-## 效能優化：`cork`, `uncork` 與 `_writev`
+## 效能優化：`cork`、`uncork` 與 `_writev`
 
-cork 的中文是軟木塞，它"塞住"了 `_write` 的執行，目的是為了優化多個 `write` 在短時間寫入造成的 [head-of-line blocking](../http/http-1.1-pipelining-hol-blocking-vs-request-smuggling.md#pipelining-限制-1-http11-hol-blocking)
+cork 的中文是軟木塞，它 **"塞住"** 了 `_write` 的執行，目的是為了優化多個 `write`，可以合併成一個 `_writev`
+
+從 TCP 封包的層級來看，也可以有效避免 HOL Blocking
 
 ❌ Bad Example
 
@@ -258,8 +158,7 @@ myWritable.write("\r\n");
 myWritable.write("Host: example.com");
 myWritable.write("\r\n\r\n");
 
-// ❌ 傳送多個 TCP 封包，若有 HOL Blocking 則會拖慢傳輸時間
-// ❗ p.s. 這邊先不探討 Nagle's Algorithm，假設 TCP_NODELAY = true，收到所有 chunk 都會直接傳送
+// ❌ 可能會傳送多個 TCP 封包，若有 HOL Blocking 則會拖慢傳輸時間
 ```
 
 ✅ Good Example
@@ -276,11 +175,11 @@ httpRequestWritable.write("\r\n\r\n");
 // that occur within a given Node.js event loop phase.
 process.nextTick(() => httpRequestWritable.uncork()); // ✅ 寫入完成後，再把軟木塞拔掉
 
-// ✅ 最終只會傳送一個 TCP 封包，完美避免 HOL Blocking
-// ❗ p.s. 這邊先不探討 TCP packet size，假設這些資料都會在同一個 packet 送出
+// ✅ 最終只會傳送一個 TCP 封包，避免 HOL Blocking
+// ❗ p.s. 這邊先不探討 TCP packet size，假設這些小量的資料都會在同一個 packet 送出
 ```
 
-而為了優化 Array of chunks 的寫入，Node.js 提供了 [`_writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback) 讓實作者可以實作，我們直接實作一個 PoC
+而為了優化 chunks 的寫入，Node.js 提供了 [`_writev`](https://nodejs.org/api/stream.html#writable_writevchunks-callback) 讓實作者可以實作，我們直接實作一個 PoC
 
 ```ts
 import { Writable } from "stream";
@@ -342,123 +241,6 @@ const httpRequestWritable = getWritableSomehow();
 process.nextTick(() => httpRequestWritable.uncork());
 ```
 
-## 生命週期 3：結束、關閉
-
-當使用者確定不會再寫入後，就可以使用 [writable.end](https://nodejs.org/api/stream.html#writableendchunk-encoding-callback)
-
-```ts
-const httpRequestWritable = getWritableSomehow();
-httpRequestWritable.end("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
-```
-
-也因此 `end` 之後不能再 `write`，否則就會報錯
-
-```ts
-const httpRequestWritable = getWritableSomehow();
-httpRequestWritable.end("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
-httpRequestWritable.write("123"); // Error: write after end
-```
-
-寫個 PoC 來觀察 `end`, `_final` 跟 `_destroy` 的觸發順序
-
-```ts
-import { Writable } from "stream";
-import assert from "assert";
-
-class MyWritable extends Writable {
-  _construct(callback: (error?: Error | null) => void): void {
-    console.log(performance.now(), "_construct");
-    // 模擬 async 操作，例如：建立 TCP 連線
-    setTimeout(callback, 1000);
-  }
-  _final(callback: (error?: Error | null) => void): void {
-    console.log(performance.now(), "_final");
-    // 模擬 async 操作，例如：關閉 TCP 連線
-    setTimeout(callback, 1000);
-  }
-  _destroy(
-    error: Error | null,
-    callback: (error?: Error | null) => void,
-  ): void {
-    console.log(performance.now(), "_destroy");
-    // 模擬 async 操作，例如：關閉 TCP 連線
-    setTimeout(callback, 1000);
-  }
-  _write(
-    chunk: any,
-    encoding: BufferEncoding,
-    callback: (error?: Error | null) => void,
-  ): void {
-    console.log(performance.now(), "_write");
-    // 模擬寫入延遲
-    setTimeout(callback, 100);
-  }
-  _writev(
-    chunks: Array<{ chunk: any; encoding: BufferEncoding }>,
-    callback: (error?: Error | null) => void,
-  ): void {
-    console.log(performance.now(), "_writev");
-    // 模擬寫入延遲
-    setTimeout(callback, 100);
-  }
-}
-
-const myWritable = new MyWritable();
-myWritable.write("12345");
-myWritable.write("67890");
-myWritable.end("abcde", () => console.log(performance.now(), "end callback"));
-assert(myWritable.writable === false);
-assert(myWritable.writableEnded === true);
-myWritable.on("finish", () => {
-  assert(myWritable.writableFinished === true);
-  console.log(performance.now(), "on('finish')");
-});
-myWritable.on("close", () => {
-  assert(myWritable.destroyed === true);
-  assert(myWritable.closed === true);
-  console.log(performance.now(), "on('close')");
-});
-
-// Prints
-// 708.142667 _construct
-// 1709.220417 _writev
-// 1810.945917 _final
-// 2812.627 end callback
-// 2813.00425 on('finish')
-// 2813.522209 _destroy
-// 3815.098334 on('close')
-```
-
-時間軸如下
-
-```mermaid
-flowchart LR
-    A[end] --> B[_writev]
-    B --> C[_final]
-    C --> D[end callback]
-    D --> E["on('finish')"]
-    E --> F[_destroy]
-    F --> G["on('close')"]
-```
-
-- 由於我們的 `_construct` 延遲了 `_write`，加上我們有實作 `_writev`
-- 所以 Node.js 會幫我們把 internal buffer 用 `_writev` 一次處理
-
-若把 `_construct` 的實作註解，則會變成
-
-```ts
-// Prints
-// 642.668042 _write
-// 744.745125 _writev
-// 846.356167 _final
-// 1847.872209 end callback
-// 1848.167542 on('finish')
-// 1848.923875 _destroy
-// 2850.768459 on('close')
-```
-
-這個現象蠻有趣的，Node.js 會先用 `write` 盡快地送出第一個 chunk，後續的 Array of chunks 則用 `_writev` 一次處理
-
 ## handle error
 
 若仔細觀察每個 internal method 的參數，會發現 callback function 都有一個 optional error 參數：
@@ -476,7 +258,7 @@ _final(callback: (error?: Error | null) => void): void
 _destroy(error: Error | null, callback: (error?: Error | null) => void): void
 ```
 
-因為 `_destroy` 是最後一個階段，在 `_construct`, `_write`, `_writev` 或 `_final` 任一階段拋錯，都會接著觸發 `_destroy`
+因為 `_destroy` 是最後一個階段，在 `_construct`、`_write`、`_writev` 或 `_final` 任一階段拋錯，都會接著觸發 `_destroy`
 
 所以 `_destroy` 也需要正確拋錯，才可以被 `on("error")` 捕捉
 
@@ -527,11 +309,13 @@ flowchart LR
     G --> H["on('close')"]
 ```
 
-### 特殊案例: `write` 跟 `_write` 的錯誤傳遞
+## `write` 跟 `_write` 的錯誤傳遞
 
 `_write` 拋出的 `callback(err)` 會先傳遞給 `write` 的 `callback(err)`，再來才會進到 `_destroy`
 
 從它們的介面設計可以看出對稱性，`write` 跟 `_write` 是 1:1 的關係
+
+這樣的設計，可以讓使用者知道哪一包資料的寫入失敗，並且執行對應的處理
 
 ```ts
 write(chunk: any, encoding: BufferEncoding, callback?: (error: Error | null | undefined) => void): boolean;
@@ -600,8 +384,9 @@ flowchart LR
 
 ## 小結
 
-我們在這篇文章學到了 stream.Writable 的生命週期 & 基本操作方法，希望對大家有幫助～
+在這篇文章，我們學到了
 
-## 參考資料
-
-- https://nodejs.org/api/stream.html
+- backpressure 與 highWaterMark 的機制，平衡 **`write` 的生產速度** 跟 **`_write` 的消化速度**
+- `cork` 跟 `uncork` 這個計數器概念，讓多個 `write` 可以合併成一個 `_writev` 的呼叫
+- 錯誤處理：`_construct`、`_write`、`_writev`、`_final` 任一階段 callback 帶 error
+- `write` 跟 `_write` 的 1:1 關係
