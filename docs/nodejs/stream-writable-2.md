@@ -1,13 +1,13 @@
 ---
 title: stream.Writable 記憶體管理、效能優化、錯誤處理
-description: stream.Writable 記憶體管理、效能優化、錯誤處理
+description: 透過 PoC 說明 highWaterMark、drain 事件如何避免記憶體耗盡，並用 cork 搭配 _writev 優化效能
 last_update:
   date: "2026-07-10T08:00:00+08:00"
 ---
 
-## 記憶體管理：backpressure 與 highWaterMark
+## 記憶體管理：backpressure 與 `highWaterMark`
 
-在 create instance 的階段可以指定 highWaterMark，單位是 bytes
+在 create instance 的階段可以指定 `highWaterMark`，單位是 bytes
 
 ```ts
 import { Writable, WritableOptions } from "stream";
@@ -46,9 +46,9 @@ const myWritable = new MyWritable({ highWaterMark: 1024 });
 
 ![nodejs-stream-writable-write-flow](../../static/nodejs-stream-writable-write-flow.svg)
 
-Node.js 在 `write` 的當下，就可以判斷接下來要寫入的 chunk 是否會頂到 highWaterMark
+Node.js 在 `write` 的當下，就可以判斷接下來要寫入的 chunk 是否會頂到 `highWaterMark`
 
-- 若頂到 highWaterMark，回傳 `false`
+- 若頂到 `highWaterMark`，回傳 `false`
 - 反之，則回傳 `true`
 
 我們試著寫個 PoC 來驗證
@@ -139,7 +139,7 @@ myWritable.on("drain", () => {
 
 而 backpressure 指的就是這整套機制
 
-1. 當 `write` 生產的速度 > `_write` 消化的速度，導致頂到 highWaterMark
+1. 當 `write` 生產的速度 > `_write` 消化的速度，導致頂到 `highWaterMark`
 2. 回傳 `false`，提醒使用者 **請暫停 `write`**
 3. 使用者需手動監聽 `on("drain")`，等到 `_write` 消化完再繼續 `write`
 
@@ -386,7 +386,7 @@ flowchart LR
 
 在這篇文章，我們學到了
 
-- backpressure 與 highWaterMark 的機制，平衡 **`write` 的生產速度** 跟 **`_write` 的消化速度**
+- backpressure 與 `highWaterMark` 的機制，平衡 **`write` 的生產速度** 跟 **`_write` 的消化速度**
 - `cork` 跟 `uncork` 這個計數器概念，讓多個 `write` 可以合併成一個 `_writev` 的呼叫
 - 錯誤處理：`_construct`、`_write`、`_writev`、`_final` 任一階段 callback 帶 error
 - `write` 跟 `_write` 的 1:1 關係

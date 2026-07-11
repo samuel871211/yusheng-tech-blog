@@ -69,7 +69,7 @@ myWritable.write("123");
 myWritable.write("456");
 ```
 
-但如果仔細查看 [`write`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [`_write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 highWaterMark 這兩個名詞一直被提到
+但如果仔細查看 [`write`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [`_write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 `highWaterMark` 這兩個名詞一直被提到
 
 我們先來看看 `write` 的 `callback` 何時會被觸發
 
@@ -257,8 +257,8 @@ flowchart LR
 | ------------- | --------------------- | ---------------------------------------------------------------- |
 | `constructor` | No                    | place synchronous code here                                      |
 | `_construct`  | No                    | place asynchronous code here                                     |
-| `_write`      | Yes (or \_writev)     | handle writing a single chunk                                    |
-| `_writev`     | Yes (or \_write)      | handle writing multiple buffered chunks at once, for performance |
+| `_write`      | Yes (or `_writev`)    | handle writing a single chunk                                    |
+| `_writev`     | Yes (or `_write`)     | handle writing multiple buffered chunks at once, for performance |
 | `_final`      | No                    | called before the stream ends, for cleanup logic                 |
 | `_destroy`    | No                    | release underlying resources                                     |
 
@@ -277,8 +277,6 @@ events
 | `on("finish")` | after `_final` completes               |
 | `on("error")`  | after `_destroy` passes an error along |
 | `on("close")`  | after `_destroy` completes             |
-
-正常情境（無 error、使用者沒有主動呼叫 `destroy()`）的時間軸
 
 ![writable-boolean](../../static/writable-boolean.svg)
 

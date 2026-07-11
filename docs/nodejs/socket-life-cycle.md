@@ -370,10 +370,10 @@ const clientSocket = net.createConnection({
 
 ## TCP Socket 生命週期 3: 讀寫資料
 
-雖說在先前 [stream.Readable](./stream-readable.md) 那篇文章有提到，讀取資料有兩種模式
+雖說在先前 [stream.Readable](./stream-readable-1.md) 那篇文章有提到，讀取資料有兩種模式
 
-- [自動讀取: `on('data')`](./stream-readable.md#自動讀取-ondata)
-- [手動讀取: `on('readable')` 搭配 `read`](./stream-readable.md#手動讀取-onreadable-搭配-read)
+- [自動讀取: `on('data')`](./stream-readable-1.md#自動讀取-ondata)
+- [手動讀取: `on('readable')` 搭配 `read`](./stream-readable-1.md#手動讀取-onreadable-搭配-read)
 
 但 `net.Socket` 僅支援第一種**自動讀取**
 

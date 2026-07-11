@@ -162,7 +162,7 @@ await client.request({ method: "GET", path: "/" }); // ✅ 會開一條新的 TC
 
 ## Dispatcher.stream(options, factory[, callback])
 
-比 [Dispatcher.request](#dispatcherrequestoptions-callback) 還要快一點，因為可以節省一個 [stream.Readable](./stream-readable.md) 的創建成本，直接把 response body pipe 到 [stream.Writable](./stream-writable-1.md)
+比 [Dispatcher.request](#dispatcherrequestoptions-callback) 還要快一點，因為可以節省一個 [stream.Readable](./stream-readable-1.md) 的創建成本，直接把 response body pipe 到 [stream.Writable](./stream-writable-1.md)
 
 ## Dispatcher.upgrade(options[, callback])
 
@@ -446,7 +446,7 @@ class RedirectHandler {
 - [fix: update redirect handler options handling, docs, tests](https://github.com/nodejs/undici/pull/4377)
 
 10. 除了以上 "轉成 GET" 的情況會把 request body 捨棄，其餘情況，皆會維持原本的 Method 跟 body
-11. 承上，但如果 request body 是用 `Transfer-Encoding: chunked` 傳輸（ undici 目前尚未實作這種 [Stream.Readable](./stream-readable.md) 的重試機制）則會直接跳出 redirect，並且把 HTTP Response 原封不動回傳給 user program
+11. 承上，但如果 request body 是用 `Transfer-Encoding: chunked` 傳輸（ undici 目前尚未實作這種 [Stream.Readable](./stream-readable-1.md) 的重試機制）則會直接跳出 redirect，並且把 HTTP Response 原封不動回傳給 user program
 
 ```js
 // http server

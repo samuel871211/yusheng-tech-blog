@@ -1,31 +1,31 @@
-<svg width="500" height="300" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
+<svg width="750" height="450" viewBox="0 0 750 450" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" stroke-width="1"/>
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#f0f0f0" stroke-width="1"/>
     </pattern>
   </defs>
   <rect width="100%" height="100%" fill="url(#grid)" />
 
-  <rect x="150" y="50" width="120" height="200" rx="4" fill="none" stroke="#333" stroke-width="2" />
-  <text x="150" y="40" font-family="Arial" font-size="16" font-weight="bold" fill="#333">internal buffer</text>
+  <rect x="225" y="75" width="180" height="300" rx="6" fill="none" stroke="#333" stroke-width="3" />
+  <text x="225" y="60" font-family="Arial" font-size="24" font-weight="bold" fill="#333">internal buffer</text>
 
-  <line x1="140" x2="280" y1="100" y2="100" stroke="#e74c3c" stroke-width="2" stroke-dasharray="5,5" />
-  <text x="285" y="105" font-family="monospace" font-size="14" fill="#e74c3c">highWaterMark</text>
+  <line x1="210" x2="420" y1="150" y2="150" stroke="#e74c3c" stroke-width="3" stroke-dasharray="7.5,7.5" />
+  <text x="427.5" y="157.5" font-family="monospace" font-size="21" fill="#e74c3c">highWaterMark</text>
 
-  <rect x="160" y="210" width="100" height="30" rx="2" fill="#3498db" opacity="0.8" stroke="#2980b9" />
-  <text x="190" y="230" font-family="Arial" font-size="12" fill="white">chunk</text>
-  
-  <rect x="160" y="175" width="100" height="30" rx="2" fill="#3498db" opacity="0.8" stroke="#2980b9" />
-  <text x="190" y="195" font-family="Arial" font-size="12" fill="white">chunk</text>
-  
-  <rect x="160" y="140" width="100" height="30" rx="2" fill="#3498db" opacity="0.4" stroke="#2980b9" />
-  <text x="190" y="160" font-family="Arial" font-size="12" fill="#2980b9">chunk</text>
+  <rect x="240" y="315" width="150" height="45" rx="3" fill="#3498db" opacity="0.8" stroke="#2980b9" />
+  <text x="285" y="345" font-family="Arial" font-size="18" fill="white">chunk</text>
 
-  <path d="M 50 180 L 130 180" fill="none" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)" />
-  <text x="60" y="170" font-family="Arial" font-size="14" fill="#2c3e50" font-style="italic">.push(chunk)</text>
+  <rect x="240" y="262.5" width="150" height="45" rx="3" fill="#3498db" opacity="0.8" stroke="#2980b9" />
+  <text x="285" y="292.5" font-family="Arial" font-size="18" fill="white">chunk</text>
 
-  <path d="M 280 180 L 360 180" fill="none" stroke="#2c3e50" stroke-width="2" marker-end="url(#arrowhead)" />
-  <text x="300" y="170" font-family="Arial" font-size="14" fill="#2c3e50" font-style="italic">.read()</text>
+  <rect x="240" y="210" width="150" height="45" rx="3" fill="#3498db" opacity="0.4" stroke="#2980b9" />
+  <text x="285" y="240" font-family="Arial" font-size="18" fill="#2980b9">chunk</text>
+
+  <path d="M 75 270 L 195 270" fill="none" stroke="#2c3e50" stroke-width="3" marker-end="url(#arrowhead)" />
+  <text x="90" y="255" font-family="Arial" font-size="21" fill="#2c3e50" font-style="italic">.push(chunk)</text>
+
+  <path d="M 420 270 L 540 270" fill="none" stroke="#2c3e50" stroke-width="3" marker-end="url(#arrowhead)" />
+  <text x="450" y="255" font-family="Arial" font-size="21" fill="#2c3e50" font-style="italic">.read()</text>
 
   <defs>
     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">

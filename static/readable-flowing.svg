@@ -1,0 +1,66 @@
+<svg width="1000" height="320" viewBox="0 0 1000 320" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+
+  <text x="500" y="20" text-anchor="middle" font-family="-apple-system, 'Segoe UI', 'Microsoft JhengHei', sans-serif" font-size="15" font-weight="700" fill="#1e293b">readableFlowing 隨 API 呼叫的變化</text>
+
+  <!-- row labels -->
+  <text x="65" y="95" text-anchor="middle" font-family="-apple-system, 'Segoe UI', 'Microsoft JhengHei', sans-serif" font-size="12" font-weight="600" fill="#475569">手動模式</text>
+  <text x="65" y="235" text-anchor="middle" font-family="-apple-system, 'Segoe UI', 'Microsoft JhengHei', sans-serif" font-size="12" font-weight="600" fill="#475569">自動模式</text>
+
+  <!-- ===== Row A: on('readable') ===== -->
+  <!-- baseline segments -->
+  <line x1="150" y1="90" x2="560" y2="90" stroke="#94a3b8" stroke-width="4"/>
+  <line x1="560" y1="90" x2="970" y2="90" stroke="#f59e0b" stroke-width="4"/>
+
+  <!-- milestone dot -->
+  <circle cx="560" cy="90" r="7" fill="#f59e0b"/>
+
+  <!-- event label (above) -->
+  <text x="560" y="65" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on('readable')</text>
+
+  <!-- dashed connector -->
+  <line x1="560" y1="75" x2="560" y2="90" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3,3"/>
+
+  <!-- state labels (below segments) -->
+  <text x="355" y="115" text-anchor="middle" font-size="13" fill="#475569">readableFlowing</text>
+  <text x="355" y="132" text-anchor="middle" font-size="11" fill="#94a3b8">= null</text>
+
+  <text x="765" y="115" text-anchor="middle" font-size="13" fill="#475569">readableFlowing</text>
+  <text x="765" y="132" text-anchor="middle" font-size="11" fill="#f59e0b">= false</text>
+
+  <!-- ===== Row B: on('data') -> pause() -> resume() ===== -->
+  <!-- baseline segments -->
+  <line x1="150" y1="230" x2="355" y2="230" stroke="#94a3b8" stroke-width="4"/>
+  <line x1="355" y1="230" x2="560" y2="230" stroke="#22c55e" stroke-width="4"/>
+  <line x1="560" y1="230" x2="765" y2="230" stroke="#f59e0b" stroke-width="4"/>
+  <line x1="765" y1="230" x2="970" y2="230" stroke="#22c55e" stroke-width="4"/>
+
+  <!-- milestone dots -->
+  <circle cx="355" cy="230" r="7" fill="#22c55e"/>
+  <circle cx="560" cy="230" r="7" fill="#f59e0b"/>
+  <circle cx="765" cy="230" r="7" fill="#22c55e"/>
+
+  <!-- event labels (above) -->
+  <text x="355" y="205" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on('data')</text>
+  <text x="560" y="205" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">pause()</text>
+  <text x="765" y="205" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">resume()</text>
+
+  <!-- dashed connectors -->
+  <line x1="355" y1="215" x2="355" y2="230" stroke="#22c55e" stroke-width="2" stroke-dasharray="3,3"/>
+  <line x1="560" y1="215" x2="560" y2="230" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3,3"/>
+  <line x1="765" y1="215" x2="765" y2="230" stroke="#22c55e" stroke-width="2" stroke-dasharray="3,3"/>
+
+  <!-- state labels (below segments) -->
+  <text x="252" y="255" text-anchor="middle" font-size="13" fill="#475569">readableFlowing</text>
+  <text x="252" y="272" text-anchor="middle" font-size="11" fill="#94a3b8">= null</text>
+
+  <text x="457" y="255" text-anchor="middle" font-size="13" fill="#475569">readableFlowing</text>
+  <text x="457" y="272" text-anchor="middle" font-size="11" fill="#22c55e">= true</text>
+
+  <text x="662" y="255" text-anchor="middle" font-size="13" fill="#475569">readableFlowing</text>
+  <text x="662" y="272" text-anchor="middle" font-size="11" fill="#f59e0b">= false</text>
+  <text x="662" y="287" text-anchor="middle" font-size="11" fill="#94a3b8">isPaused() = true</text>
+
+  <text x="867" y="255" text-anchor="middle" font-size="13" fill="#475569">readableFlowing</text>
+  <text x="867" y="272" text-anchor="middle" font-size="11" fill="#22c55e">= true</text>
+
+</svg>
