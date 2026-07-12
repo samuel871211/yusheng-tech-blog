@@ -1,13 +1,15 @@
 ---
-title: stream 進階：objectMode, pipe
-description: Node.js stream 進階：objectMode, pipe
+title: stream objectMode 與 pipe 實戰教學
+description: 說明 Node.js stream 的 encode/decode、objectMode 用法，並以 HTTP proxy 實例解析 readable.pipe
 last_update:
-  date: "2026-01-29T08:00:00+08:00"
+  date: "2026-07-12T08:00:00+08:00"
 ---
 
 ## encode & decode
 
-我們之前的範例都是寫 string 進 internal buffer，並且沒有指定任何 `encoding` 或是 `decodeStrings`，從 internal buffer 取出來的資料都是 `Buffer`
+我們之前的範例都是寫 `string` 進 internal buffer，沒有指定任何 `encoding` 或是 `decodeStrings`
+
+從 internal buffer 取出來的資料都是 `Buffer`
 
 ```ts
 readable.push("123");
@@ -17,7 +19,7 @@ writable.write("123");
 writable._write(chunk); // chunk: <Buffer 31 32 33>
 ```
 
-若希望 `writable._write(chunk)` 可以保留原始編碼，可以在 create instance 的傳入 `decodeStrings: false`
+若希望 `writable._write(chunk)` 可以保留原始編碼，可以在 create instance 的階段傳入 `decodeStrings: false`
 
 ```ts
 class MyWritable extends Writable {
@@ -35,7 +37,7 @@ const myWritable = new MyWritable({ decodeStrings: false });
 myWritable.write("123");
 ```
 
-若希望 `readable.read()` 讀出來的 chunk 可以轉換成 utf8，可以在 create instance 的傳入 `encoding: "utf8"`
+若希望 `readable.read()` 讀出來的 chunk 可以轉換成 utf8，可以在 create instance 的階段傳入 `encoding: "utf8"`
 
 ```ts
 class MyReadable extends Readable {
@@ -52,11 +54,11 @@ myReadable.on("readable", () => {
 });
 ```
 
-## objectMode
+## `objectMode`
 
-若想要針對 string, Buffer, TypedArray, DataView 以外的資料讀寫，則需要用到 objectMode
+若想要針對 `string`、`Buffer`、`TypedArray` 或 `DataView` 以外的資料讀寫，則需要用到 `objectMode`
 
-假設我有一個 10GB 的 json 檔，存了 Array of Objects
+假設我有一個 10GB 的 json 檔
 
 ```json
 [
@@ -65,7 +67,7 @@ myReadable.on("readable", () => {
 ]
 ```
 
-若希望 `writable._write(chunk)` 的 chunk 都是一個完整的 Object，這個情況就很適合用 objectMode
+若希望 `writable._write(chunk)` 的 chunk 都是一筆完整的資料，這個情況就很適合用 `objectMode`
 
 ```ts
 class MyWritable extends Writable {
@@ -89,7 +91,7 @@ myWritable.write({ name: "alex", age: 30 });
 // { name: 'alex', age: 30 }
 ```
 
-若希望 `readable.read()` 讀出來的 chunk 都是一個完整的 Object，這個情況就很適合用 objectMode
+若希望 `readable.read()` 讀出來的 chunk 都是一筆完整的資料，這個情況就很適合用 `objectMode`
 
 ```ts
 class MyReadable extends Readable {
@@ -108,9 +110,9 @@ myReadable.on("readable", () => {
 });
 ```
 
-在 objectMode 的情況，highWaterMark 的單位就會從 bytes 變成 Object 的數量
+在 `objectMode` 的情況，`highWaterMark` 的單位就會從 bytes 變成 Object 的數量
 
-Writable
+以 `Writable` 為例
 
 ```ts
 class MyWritable extends Writable {
@@ -126,11 +128,11 @@ class MyWritable extends Writable {
 const myWritable = new MyWritable({ objectMode: true, highWaterMark: 2 });
 const canContinue1 = myWritable.write({ name: "kelly", age: 24 });
 const canContinue2 = myWritable.write({ name: "alex", age: 30 });
-console.log({ canContinue1 }); // true
-console.log({ canContinue2 }); // false
+console.log(canContinue1); // true
+console.log(canContinue2); // false
 ```
 
-Readable
+以 `Readable` 為例
 
 ```ts
 class MyReadable extends Readable {
@@ -138,21 +140,21 @@ class MyReadable extends Readable {
     const canContinue1 = this.push({ name: "kelly", age: 24 });
     const canContinue2 = this.push({ name: "alex", age: 30 });
     this.push(null);
-    console.log({ canContinue1 }); // true
-    console.log({ canContinue2 }); // false
+    console.log(canContinue1); // true
+    console.log(canContinue2); // false
   }
 }
 
 const myReadable = new MyReadable({ objectMode: true, highWaterMark: 2 });
 myReadable.on("readable", () => {
-  const kelly = myReadable.read();
-  const alex = myReadable.read();
+  const kelly = myReadable.read(); // { name: "kelly", age: 24 }
+  const alex = myReadable.read(); // { name: "alex", age: 30 }
 });
 ```
 
-另外，objectMode 跟上面介紹的 [encode / decode](#encode--decode) 是互斥的參數，基本上只能擇一使用
+另外，`objectMode` 跟上面介紹的 [encode / decode](#encode--decode) 是互斥的參數，基本上只能擇一使用
 
-Writable 若在 `objectMode: true` 的情境，則 decodeStrings, defaultEncoding 基本上就無效
+`Writable` 若在 `objectMode: true` 的情境，則 `decodeStrings` 跟 `defaultEncoding` 基本上就無效
 
 ```ts
 class MyWritable extends Writable {
@@ -174,7 +176,7 @@ const myWritable = new MyWritable({
 myWritable.write({ name: "kelly", age: 24 });
 ```
 
-Readable 若在 `objectMode: true` 的情境，同時設定 encoding 會導致 `read()` 噴錯
+`Readable` 若在 `objectMode: true` 的情境，同時設定 `encoding` 會導致 `read()` 噴錯
 
 ```ts
 class MyReadable extends Readable {
@@ -191,15 +193,15 @@ myReadable.on("readable", () => {
 });
 ```
 
-## readable.pipe
+## `readable.pipe`
 
-pipe 的中文是管子，在這邊的意思是把 readable 資料源 (source) "透過水管接到" writable 目的地 (destination)
+pipe 的中文是管子，在這邊的意思是把 `Readable` 資料源 (source) "透過水管接到" `Writable` 目的地 (destination)
 
-聽起來很抽象，但實際上各種 HTTP 中間層（Web Server, CDN, Proxy）就是用這個概念在轉發 HTTP Request / Response
+聽起來很抽象，但實際上各種 HTTP 中間層（Web server, CDN, proxy）就是用這個概念在轉發 HTTP request / response
 
-### HTTP Proxy as Example
+### HTTP proxy as Example
 
-若以 "HTTP 中間層" 當作第一人稱的話
+若以 **"HTTP 中間層"** 當作第一人稱的話
 
 ```mermaid
 sequenceDiagram
@@ -207,10 +209,10 @@ sequenceDiagram
   participant middle as HTTP 中間層<br/>(We are here)
   participant server
 
-  client ->> middle: Receive HTTP Request<br/>(stream.Readable)
-  middle ->> server: 將 HTTP Request 轉發出去<br/>Readable.pipe(res)
-  server ->> middle: Receive HTTP Response<br/>(stream.Readable)
-  middle ->> client: 將 HTTP Request 轉傳回去<br/>Readable.pipe(res)
+  client ->> middle: 收到 HTTP request<br/>(stream.Readable)
+  middle ->> server: 將 HTTP request 轉發出去<br/>readable.pipe(res)
+  server ->> middle: 收到 HTTP response<br/>(stream.Readable)
+  middle ->> client: 將 HTTP response 轉發回去<br/>readable.pipe(res)
 ```
 
 我們用 Node.js 實作一個簡單的 HTTP 中間層 + server 架構
@@ -257,25 +259,27 @@ httpServer.on("request", (req, res) => {
 });
 ```
 
-用 Postman 發個 POST 請求到 http://localhost:5000/ ，就可以成功收到 http://localhost:5001/ 回傳的 HTTP Response 了
+用 Postman 發個 POST 請求到 http://localhost:5000/ ，就可以成功收到 http://localhost:5001/ 回傳的 HTTP response 了
 ![postman-post-5000-proxy](../../static/img/postman-post-5000-proxy.jpg)
 
 不過以上只是簡單的 PoC，實際上 HTTP 中間層需要處理很多細節，包含且不限於以下：
 
 1. keep-alive
 2. change origin header
-3. keep or omit cookie
+3. keep or omit cookie, authorization
 4. HTTPS ->> HTTP
 5. HTTP/2 ->> HTTP
 6. error handle
 
-所以通常不會自己手刻 http-proxy，而是會用現成的套件，例如 [http-proxy-3](https://www.npmjs.com/package/http-proxy-3)，處理了大部分 HTTP 的 edge case
+所以通常不會自己手刻 http-proxy，而是會用現成的套件，例如 [http-proxy-3](https://www.npmjs.com/package/http-proxy-3)，處理了大部分 http-proxy 會遇到的 edge case
 
 ## 小結
 
-關於 stream 的解說，分了四篇才講完，下一章節終於要進到 Socket 啦～
+在這篇文章，我們學到了
 
-<!-- ## unshift -->
+- encode & decode
+- `objectMode`
+- `readable.pipe` 跟 HTTP proxy 簡易實作
 
 ## 參考資料
 
