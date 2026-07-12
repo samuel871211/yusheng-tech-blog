@@ -69,7 +69,7 @@ const sidebars: SidebarsConfig = {
         "http/response-misbinding",
         // === 2026 iThome 鐵人賽，前 10 篇 ===
 
-        "http/npm-http-chain-1",
+        "http/npm-http-chain-1", // todo-yus
         // "http/from-http-to-vite-preview",
         // "http/node-http-proxy",
         // "http/sentry",
@@ -225,7 +225,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/stream-readable-1",
         "nodejs/stream-readable-2",
         "nodejs/stream-advance",
-        "nodejs/socket-overview",
+        "nodejs/socket-overview", // todo-yus
         "nodejs/socket-life-cycle",
         "nodejs/http-agent",
         "nodejs/http-request-response-classes",
