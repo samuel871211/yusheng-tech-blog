@@ -21,3 +21,6 @@ yarn-error.log*
 
 # Firebase
 .firebase
+
+# AI
+CLAUDE.md
