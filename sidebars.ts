@@ -225,7 +225,8 @@ const sidebars: SidebarsConfig = {
         "nodejs/stream-readable-1",
         "nodejs/stream-readable-2",
         "nodejs/stream-advance",
-        "nodejs/socket-overview", // todo-yus
+        "nodejs/socket-overview",
+        "nodejs/socket-client-life-cycle",
         "nodejs/socket-life-cycle",
         "nodejs/http-agent",
         "nodejs/http-request-response-classes",
