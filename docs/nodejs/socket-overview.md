@@ -1,8 +1,8 @@
 ---
-title: net.Socket overview
-description: 用 net 模組創建 TCP server / client，並且了解 net.Socket 的概念、用法
+title: Node.js net.Socket 教學：TCP 連線應用
+description: 建立 TCP 連線收發 HTTP，並透過 Wireshark 實測 KeepAlive、BlockList 與 maxConnections 行為
 last_update:
-  date: "2026-02-04T08:00:00+08:00"
+  date: "2026-07-13T08:00:00+08:00"
 ---
 
 ## 前言
@@ -215,8 +215,6 @@ HTTP 層級的 `keepAlive: timeout=5, max=200` 代表的是
 
 以 server 發出 keepAlive "heartbeat" 為例
 
-<!-- todo-yus -->
-
 ```ts
 const server = net.createServer({
   keepAlive: true,
@@ -232,24 +230,25 @@ const socket = net.connect({
 ```
 
 用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000
+
 ![tcp-keep-alive](../../static/img/tcp-keep-alive.jpg)
 
-- 可以看到每 3 秒，由 TCP server 發出 TCP Keep-Alive 封包，Client 回應 TCP Keep-Alive ACK 封包
+- 可以看到每 3 秒，由 TCP server 發出 TCP Keep-Alive 封包，client 回應 TCP Keep-Alive ACK 封包
 - 雖說 `keepAliveInitialDelay: 3000` 的語意是指 TCP 三方交握，過了 3 秒都沒傳輸資料的話，server 就會發出 "heartbeat"
 - 但實際上我用 Node.js v24.13.0 (LTS) + macOS 15.6.1 測試的結果，每 3 秒就會傳送一次 TCP Keep-Alive，這邊我沒深入研究原因
 
 ## BlockList
 
-Node.js 在 [createServer](https://nodejs.org/api/net.html#netcreateserveroptions-connectionlistener) 時，有個參數是 [blockList](https://nodejs.org/api/net.html#class-netblocklist)，可以阻擋特定 IP addresses, ranges, 或 subnets 的連線
+在 [net.createServer](https://nodejs.org/api/net.html#netcreateserveroptions-connectionlistener) 有個參數是 [blockList](https://nodejs.org/api/net.html#class-netblocklist)，可以阻擋特定 IP addresses, ranges, 或 subnets 的連線
 
-使用方式也很簡單，先創建一個 blockList
+使用方式也很簡單，先創建一個 `BlockList`
 
 ```ts
 const blockList = new BlockList();
 blockList.addAddress("127.0.0.1", "ipv4");
 ```
 
-再來創建一個最小 TCP Server
+再來創建一個最小 TCP server
 
 ```ts
 const server = net.createServer({ blockList });
@@ -257,7 +256,7 @@ server.listen(5000);
 server.on("connection", (serverSocket) => console.log("connection"));
 ```
 
-最後創建一個 TCP Client 連過去
+最後創建一個 TCP client 連過去
 
 <!-- prettier-ignore -->
 ```ts
@@ -287,30 +286,27 @@ clientSocket.on("close", () => console.log("close"));
 
 透過以上觀察，我們可以發現：
 
-- TCP 有成功三次交握，並且 Server 後續立即發送 FIN (Finish) 封包
-- 由於 TCP Client 有設定 allowHalfOpen，所以連線還是會維持半開
-- 對 TCP Server 來說，不會觸發 `on("connection")`，因為 blockList 已經擋掉了這個連線
+- TCP 有成功三次交握，並且 server 後續立即發送 FIN (Finish) 封包
+- 由於 TCP client 有設定 `allowHalfOpen`，所以連線還是會維持半開
+- 對 TCP server 來說，不會觸發 `on("connection")`，因為 `BlockList` 已經擋掉了這個連線
 
 ## maxConnections
 
 Node.js 的 [net.Server](https://nodejs.org/api/net.html#class-netserver) 有個 [maxconnections](https://nodejs.org/api/net.html#servermaxconnections) 可以控制，我們來測測看
 
-啟動 TCP Server，將 maxConnections 設成 1
+啟動 TCP server，將 `maxConnections` 設成 1
 
 ```ts
 const server = net.createServer();
 server.maxConnections = 1;
 server.listen(5000);
-server.on("connection", (serverSocket) => {
-  console.log("connection");
-});
+server.on("connection", () => console.log("connection"));
 server.on("drop", console.log);
 ```
 
-建立 2 個 TCP Client，依序連過去
+建立 2 個 TCP client，依序連過去
 
 ```ts
-// TCP Client
 const clientSocket1 = net.createConnection({
   host: "localhost",
   port: 5000,
@@ -342,17 +338,25 @@ connection
 ```
 
 若用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000
+
 ![wireshark-maxconnections](../../static/img/wireshark-maxconnections.jpg)
 
 透過以上觀察，我們可以發現第二個連線，其行為與觸發 [blocklist](#blocklist) 幾乎是一樣的：
 
-- TCP 有成功三次交握，並且 Server 後續立即發送 FIN (Finish) 封包
-- 由於 TCP Client 有設定 allowHalfOpen，所以連線還是會維持半開
-- 對 TCP Server 來說，不會觸發 `on("connection")`，而是會觸發 `on("drop")`
+- TCP 有成功三次交握，並且 server 後續立即發送 FIN (Finish) 封包
+- 由於 TCP client 有設定 `allowHalfOpen`，所以連線還是會維持半開
+- 對 TCP server 來說，不會觸發 `on("connection")`，而是會觸發 `on("drop")`
 
 ## 小結
 
-這篇文章，我們以 HTTP 的視角來對比 TCP Client / Server，並且也學會了基本的語法跟參數。接下來，會進到 TCP socket 的生命週期～
+在這篇文章，我們學到了
+
+- 從 HTTP/1.1 client 的視角，用 `net.Socket` 發送 HTTP request
+- 從 HTTP/1.1 server 的視角，用 `net.createServer` 接收 HTTP request，並且回傳 HTTP response
+- TCP Keep-Alive 跟 HTTP Keep-Alive 的差異
+- `Blocklist` 跟 `maxConnections` 這兩個控制 TCP 連線 **"來源"** 跟 **"上限"** 的參數
+
+接下來，會進到 `net.Socket` 的生命週期～
 
 ## 參考資料
 
