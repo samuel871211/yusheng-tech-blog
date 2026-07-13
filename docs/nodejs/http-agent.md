@@ -1,8 +1,8 @@
 ---
-title: http.Agent
-description: "為什麼 Node.js http 模組的 API 設計這麼低階？帶你了解 Node.js http 模組的設計理念"
+title: Node.js http.Agent：TCP 連線池管理教學
+description: 從 TCP 三次交握的效能問題出發，解析 http.Agent 連線池、keepAlive 與 maxSockets 的設計
 last_update:
-  date: "2026-02-22T08:00:00+08:00"
+  date: "2026-07-13T08:00:00+08:00"
 ---
 
 ## 前言
@@ -11,36 +11,40 @@ last_update:
 
 - [EventEmitter](./events.md)
 - [stream-overview](./stream-overview.md)
-- [stream.Readable](./stream-readable-1.md)
-- [stream.Writable](./stream-writable-1.md)
+- [stream.Readable (1)](./stream-readable-1.md)
+- [stream.Readable (2)](./stream-readable-2.md)
+- [stream.Writable (1)](./stream-writable-1.md)
+- [stream.Writable (2)](./stream-writable-2.md)
+- [stream advance](./stream-advance.md)
 - [socket-overview](./socket-overview.md)
+- [socket-client-life-cycle](./socket-client-life-cycle.md)
 - [socket-life-cycle](./socket-life-cycle.md)
 
 終於可以進到 Node.js http 模組了！
 
 :::info
-本文測試 & 引用的 Node.js 原始碼為 v24.x latest
+本文測試、引用的 Node.js 原始碼為 v24.x
 :::
 
-## Why http.Agent ?
+## Why `http.Agent` ?
 
 如果沒有 [http.Agent](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpagent) 的話
 
 ```ts
-// Server
+// server
 const server = http.createServer((req, res) => {
   console.log("req.headers", req.headers);
   res.end();
 });
 server.listen(5000);
 
-// Client
+// client
 const noop = () => {};
 const request = http.request({
   host: "localhost",
   port: 5000,
   path: "/",
-  agent: false, // ✅
+  agent: false, // ✅ 不使用 `http.Agent`
 });
 request.end();
 request.on("response", (res) => {
@@ -50,7 +54,7 @@ request.on("response", (res) => {
 });
 ```
 
-從 log 的 [Connection: close](../http/keep-alive-and-connection.md) 可以得出結論：每次 HTTP Round Trip 結束，都會關閉 TCP 連線
+從 log 的 [Connection: close](../http/keep-alive-and-connection.md) 可以得出結論：每次 HTTP round trip 結束，都會關閉 TCP 連線
 
 ```ts
 req.headers { host: 'localhost:5000', connection: 'close' }
@@ -61,34 +65,34 @@ res.headers {
 }
 ```
 
-從 TCP (layer 4) 的角度來看，每次都需要
+從 TCP 的角度來看，每次都需要
 <span style={{ color: "red" }}>"三次交握開啟連線"</span> + <span style={{ color: "green" }}>"四次交握關閉連線"</span>，效能上會比較差
 ![/wireshark-tcp-3+4](../../static/img/wireshark-tcp-3+4.jpg)
 
-http.Agent 為此而生，它幫使用者管理
+`http.Agent` 為此而生，它幫使用者管理
 
-- TCP Socket 連線池
+- TCP socket 連線池
 - concurrent 連線上限
 
-<!-- Node.js 使用 [http.request](https://nodejs.org/docs/latest-v24.x/api/http.html#httprequestoptions-callback) 發起 HTTP Request 時，若沒有使用 [http.Agent](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpagent)，則每個請求都會創建一個新的 TCP 連線，並且該連線傳輸完這個 HTTP Request 就會關閉。若從 TCP (Layer 4) 的角度來看，每次都需要三次交握開啟連線 + 四次交握關閉連線，效能上會比較差。所以，管理 TCP Socket 連線池就成了一門學問，http.Agent 正是為此而生（當然 http.Agent 能做到的不止是管理 TCP Socket 連線池）。 -->
+<!-- Node.js 使用 [http.request](https://nodejs.org/docs/latest-v24.x/api/http.html#httprequestoptions-callback) 發起 HTTP Request 時，若沒有使用 [http.Agent](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpagent)，則每個請求都會創建一個新的 TCP 連線，並且該連線傳輸完這個 HTTP Request 就會關閉。若從 TCP (Layer 4) 的角度來看，每次都需要三次交握開啟連線 + 四次交握關閉連線，效能上會比較差。所以，管理 TCP socket 連線池就成了一門學問，http.Agent 正是為此而生（當然 http.Agent 能做到的不止是管理 TCP socket 連線池）。 -->
 
 ## new http.Agent(options)
 
 https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
 
-| option                      | description -                                                                                                                                                                                                                       |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| keepAlive                   | Keep sockets around even when there are no outstanding requests,<br/>so they can be used for future requests without having to reestablish a TCP connection.                                                                        |
-| keepAliveMsecs              | 同 [net.createServer](https://nodejs.org/api/net.html#netcreateserveroptions-connectionlistener) 的 `keepAliveInitialDelay`                                                                                                         |
-| agentKeepAliveTimeoutBuffer | 假設 Server 設定 `keep-alive: timeout=3`<br/>Agent 設定 `agentKeepAliveTimeoutBuffer = 1000`<br/>那 Agent 會在 3000 - 1000 = 2 秒後，將這個連線視為過期<br/>為了避免 Client 還想傳送資料，但 Server 已經要關閉這條連線              |
-| maxSockets                  | 每個 Origin 最多可以有幾個 concurrent TCP Socket<br/>參考 [options.maxSockets 圖解](#optionsmaxsockets)<br/>(Origin 是 [agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions) 的回傳值) |
-| maxTotalSockets             | 最多可以有幾個 concurrent TCP Socket                                                                                                                                                                                                |
-| maxFreeSockets              | Only works when `keepAlive = true`                                                                                                                                                                                                  |
-| scheduling                  | 要如何從 [freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets) 陣列中選擇<br/>- fifo (First In First Out)<br/>- lifo (Last In First Out)                                                               |
-| timeout                     | 同 [socket.timeout](https://nodejs.org/api/net.html#sockettimeout)                                                                                                                                                                  |
-| proxyEnv                    | v24.5.0 加入的，目前還在 Stability: 1.1 - Active development，細節在 [Built-in Proxy Support (Forward proxy)](./http_proxy.md) 介紹                                                                                                 |
-| defaultPort                 | Default port to use when the port is not specified in requests.                                                                                                                                                                     |
-| protocol                    | The protocol to use for the agent.                                                                                                                                                                                                  |
+| option                      | description                                                                                                                                                                                                                              |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| keepAlive                   | Keep sockets around even when there are no outstanding requests,<br/>so they can be used for future requests without having to reestablish a TCP connection.                                                                             |
+| keepAliveMsecs              | 同 [net.createServer](https://nodejs.org/api/net.html#netcreateserveroptions-connectionlistener) 的 `keepAliveInitialDelay`                                                                                                              |
+| agentKeepAliveTimeoutBuffer | 假設 server 設定 `keep-alive: timeout=3`<br/>`http.Agent` 設定 `agentKeepAliveTimeoutBuffer = 1000`<br/>那 `http.Agent` 會在 3000 - 1000 = 2 秒後，將這個連線視為過期<br/>為了避免 client 還想傳送資料，但 server 已經要關閉這條連線     |
+| maxSockets                  | 每個 origin 最多可以有幾個 concurrent TCP socket<br/>參考 [options.maxSockets 圖解](#optionsmaxsockets-圖解)<br/>(origin 是 [agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions) 的回傳值) |
+| maxTotalSockets             | 最多可以有幾個 concurrent TCP socket                                                                                                                                                                                                     |
+| maxFreeSockets              | Only works when `keepAlive = true`                                                                                                                                                                                                       |
+| scheduling                  | 要如何從 [freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets) 陣列中選擇<br/>- fifo (First In First Out)<br/>- lifo (Last In First Out)                                                                    |
+| timeout                     | 同 [socket.timeout](https://nodejs.org/api/net.html#sockettimeout)                                                                                                                                                                       |
+| proxyEnv                    | v24.5.0 加入的，目前還在 Stability: 1.1 - Active development<br/>細節在 [Built-in Proxy Support (Forward proxy)](./http_proxy.md) 介紹                                                                                                   |
+| defaultPort                 | Default port to use when the port is not specified in requests                                                                                                                                                                           |
+| protocol                    | The protocol to use for the agent                                                                                                                                                                                                        |
 
 ## methods
 
@@ -97,7 +101,7 @@ https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
 | [createConnection(options[, callback])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentcreateconnectionoptions-callback) | 同 [net.createConnection()](https://nodejs.org/api/net.html#netcreateconnection)<br/>❌ 正常使用者不會碰到它<br/>有需要客製化行為才需要 override |
 | [keepSocketAlive(socket)](https://nodejs.org/docs/latest-v24.x/api/http.html#agentkeepsocketalivesocket)                          | ❌ 正常使用者不會碰到它<br/>有需要客製化行為才需要 override                                                                                      |
 | [reuseSocket(socket, request)](https://nodejs.org/docs/latest-v24.x/api/http.html#agentreusesocketsocket-request)                 | ❌ 正常使用者不會碰到它<br/>有需要客製化行為才需要 override                                                                                      |
-| [destroy()](https://nodejs.org/docs/latest-v24.x/api/http.html#agentdestroy)                                                      | 銷毀整個 http.Agent                                                                                                                              |
+| [destroy()](https://nodejs.org/docs/latest-v24.x/api/http.html#agentdestroy)                                                      | 銷毀整個 `http.Agent`                                                                                                                            |
 | [getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions)                                      | ❌ 正常使用者不會碰到它<br/>用來當作連線池的 group key<br/>詳細請參考 [這裡](#read-only-properties)                                              |
 
 ## properties
@@ -121,7 +125,7 @@ https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
 }
 ```
 
-- [requests](https://nodejs.org/docs/latest-v24.x/api/http.html#agentrequests)：Pending Request Queue。超過 [options.maxSockets](#optionsmaxsockets) 或是 [options.maxTotalSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentmaxtotalsockets) 的 Request 就會被丟到這裡
+- [requests](https://nodejs.org/docs/latest-v24.x/api/http.html#agentrequests)：pending requests queue。超過 [options.maxSockets](#optionsmaxsockets) 或是 [options.maxTotalSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentmaxtotalsockets) 的 requests 就會被丟到這裡
 
 ```ts
 {
@@ -139,68 +143,87 @@ https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
 }
 ```
 
+:::info
 這邊的 `example.com:80:` 跟 `www.google.com:80:` 就是 [agent.getName([options])](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions) 回傳的 group key
+:::
 
-## options.maxSockets
-
-Determines how many concurrent sockets the agent can have open per origin. Origin is the returned value of [agent.getName()](https://nodejs.org/docs/latest-v24.x/api/http.html#agentgetnameoptions).
+## `options.maxSockets` 圖解
 
 ```mermaid
 sequenceDiagram
-  participant A as user program<br/>(http client)
-  participant P as Pending Request Queue<br/>(agent.requests)
-  participant S as example.com<br/>(http server)
+  participant A as user program<br/>(HTTP client)
+  participant P as pending requests queue<br/>(agent.requests)
+  participant S as example.com<br/>(HTTP server)
   Note Over A, P: new http.Agent({ maxSockets: 3 })
 
-  A ->> S: GET /request1 HTTP/1.1<br/>(TCP Socket 1)
-  A ->> S: GET /request2 HTTP/1.1<br/>(TCP Socket 2)
-  A ->> S: GET /request3 HTTP/1.1<br/>(TCP Socket 3)
+  A ->> S: GET /request1 HTTP/1.1<br/>(TCP socket 1)
+  A ->> S: GET /request2 HTTP/1.1<br/>(TCP socket 2)
+  A ->> S: GET /request3 HTTP/1.1<br/>(TCP socket 3)
 
-  Note Over A, P: 超過 maxSockets,<br/>先丟到 Pending Request Queue
+  Note Over A, P: 超過 maxSockets<br/>先丟到 pending requests queue
 
   A ->> P: GET /request4 HTTP/1.1
 
-  S ->> A: HTTP/1.1 200 OK<br/>(TCP Socket 1)
+  S ->> A: HTTP/1.1 200 OK<br/>(TCP socket 1)
 
-  Note Over A, P: TCP Socket 1 被釋放<br/>可以分配給 request 4
+  Note Over A, P: TCP socket 1 被釋放<br/>可以分配給 request 4
 
   P ->> S: GET /request4 HTTP/1.1
 
   Note Over A, P: 目前剛好頂到 maxSockets
 ```
 
-## ClientRequest 跟 net.Socket 連結的橋樑
+## `ClientRequest` 跟 `net.Socket` 連結的橋樑
 
-當你用 `http.request` 發起請求時，背後會優先從 `http.Agent` 的連線池（[freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets)）挑選一個已連線的 `net.Socket` 關聯到這個 `ClientRequest`。若 `freeSockets` 為空，就會建立一個新的 TCP 連線。詳細的實作可以看 `lib/_http_agent.js` 的 `Agent.prototype.addRequest`
+當你用 `http.request` 發起請求時，背後會優先從 `http.Agent` 的連線池（[freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets)）挑選一個已連線的 `net.Socket` 關聯到這個 `ClientRequest`
+
+若 `freeSockets` 為空，就會建立一個新的 TCP 連線。詳細的實作可以看 `lib/_http_agent.js` 的 `Agent.prototype.addRequest`
 
 我們寫個 PoC 來測試
 
 ```ts
+// HTTP server
+const httpServer = http.createServer((req, res) => res.end());
+httpServer.listen(5000);
+
+// HTTP client
 const agent = new http.Agent({ keepAlive: true });
 // ✅ 剛開始沒有建立任何 TCP 連線
 assert(Object.keys(agent.freeSockets).length === 0);
-const clientRequest = http.request({ host: "localhost", port: 5000, agent });
-clientRequest.on("socket", (socket) => console.log(clientRequest.reusedSocket)); // ❌ false
-clientRequest.end();
-clientRequest.on("close", () =>
+const clientRequest1 = http.request({ host: "localhost", port: 5000, agent });
+clientRequest1.on("socket", () => console.log(clientRequest1.reusedSocket)); // ❌ false
+clientRequest1.end();
+clientRequest1.on("close", () =>
   nextTick(() => {
-    // ✅ 使用 nextTick，確保 localhost:5000 的 TCP Socket 已經回收到 freeSockets
+    // ✅ 使用 nextTick，確保 localhost:5000 的 TCP socket 已經回收到 freeSockets
     assert(Object.keys(agent.freeSockets).length === 1);
     const clientRequest2 = http.request({
       host: "localhost",
       port: 5000,
       agent,
     });
-    clientRequest2.on("socket", (socket) =>
-      console.log(clientRequest2.reusedSocket),
-    ); // ✅ true
+    clientRequest2.on("socket", () => console.log(clientRequest2.reusedSocket)); // ✅ true
     clientRequest2.end();
   }),
 );
 ```
 
-- [request.on('socket')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-socket): `ClientRequest` 跟 `net.Socket` 關聯的瞬間觸發
-- [request.reusedSocket](https://nodejs.org/docs/latest-v24.x/api/http.html#requestreusedsocket): 該 `net.Socket` 是否關聯過其他 `ClientRequest`
+- [request.on('socket')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-socket)：`ClientRequest` 跟 `net.Socket` 關聯的瞬間觸發
+- [request.reusedSocket](https://nodejs.org/docs/latest-v24.x/api/http.html#requestreusedsocket)：該 `net.Socket` 是否關聯過其他 `ClientRequest`
+
+## 小結
+
+|            | Without `http.Agent`<br/>(`agent: false`) | With `http.Agent`<br/>(`keepAlive: true`) |
+| ---------- | ----------------------------------------- | ----------------------------------------- |
+| Connection | New TCP connection per request            | Reuse socket from `freeSockets`           |
+| Header     | `Connection: close`                       | `Connection: keep-alive`                  |
+| Handshake  | 3-way + 4-way handshake x N               | 3-way handshake x 1, then reuse           |
+
+| Property      | State  | Description                                                       |
+| ------------- | ------ | ----------------------------------------------------------------- |
+| `sockets`     | In use | Socket currently handling a request                               |
+| `freeSockets` | Idle   | Kept alive for reuse (`keepAlive: true`)                          |
+| `requests`    | Queued | Waiting for a free socket (over `maxSockets` / `maxTotalSockets`) |
 
 <!-- todo-yus 有點不確定這三個的差別 -->
 
@@ -264,7 +287,7 @@ ClientRequest.prototype.setNoDelay = function setNoDelay(noDelay) {
 };
 ```
 
-[request.setSocketKeepAlive([enable][, initialDelay])](https://nodejs.org/docs/latest-v24.x/api/http.html#requestsetsocketkeepaliveenable-initialdelay)：參考 [TCP Socket 也有 keepAlive ?!](./socket-overview.md#tcp-socket-也有-keepalive-)
+[request.setSocketKeepAlive([enable][, initialDelay])](https://nodejs.org/docs/latest-v24.x/api/http.html#requestsetsocketkeepaliveenable-initialdelay)：參考 [TCP socket 也有 keepAlive ?!](./socket-overview.md#tcp-socket-也有-keepalive-)
 
 ```js
 ClientRequest.prototype.setSocketKeepAlive = function setSocketKeepAlive(
@@ -339,15 +362,15 @@ host: 123
 
 <!-- ## IncomingMessage Start Line
 
-Client, Server 都有的
+client, server 都有的
 
 - [message.httpVersion](https://nodejs.org/docs/latest-v24.x/api/http.html#messagehttpversion)
 
-Server 會收到的
+server 會收到的
 
 - [message.url](https://nodejs.org/docs/latest-v24.x/api/http.html#messageurl)
 - [message.method](https://nodejs.org/docs/latest-v24.x/api/http.html#messagemethod)
 
-Client 會收到的
+client 會收到的
 
 - [message.statusCode](https://nodejs.org/docs/latest-v24.x/api/http.html#messagestatuscode) -->
