@@ -563,7 +563,7 @@ if (keepAliveTimeout != null) {
 - `autoSelectFamily`: [net.connect](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的參數
 - `autoSelectFamilyAttemptTimeout`: [net.connect](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的參數
 
-詳細我在 [TCP "Client" Socket 生命週期 2: connect](./socket-life-cycle.md#tcp-client-socket-生命週期-2-connect) 有介紹過，這邊就不贅述
+詳細我在 [TCP "Client" Socket 生命週期 2: connect](./socket-client-life-cycle.md#tcp-client-socket-生命週期-2connect) 有介紹過，這邊就不贅述
 
 ## ClientOptions.connect
 

@@ -125,7 +125,7 @@ https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
 }
 ```
 
-- [requests](https://nodejs.org/docs/latest-v24.x/api/http.html#agentrequests)：pending requests queue。超過 [options.maxSockets](#optionsmaxsockets) 或是 [options.maxTotalSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentmaxtotalsockets) 的 requests 就會被丟到這裡
+- [requests](https://nodejs.org/docs/latest-v24.x/api/http.html#agentrequests)：pending requests queue。超過 [options.maxSockets](#optionsmaxsockets-圖解) 或是 [options.maxTotalSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentmaxtotalsockets) 的 requests 就會被丟到這裡
 
 ```ts
 {
