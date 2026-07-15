@@ -229,9 +229,9 @@ const sidebars: SidebarsConfig = {
         "nodejs/socket-client-life-cycle",
         "nodejs/socket-life-cycle",
         "nodejs/http-agent",
-        "nodejs/http-request-response-classes", // todo-yus
+        "nodejs/http-request-response-classes",
         "nodejs/http-gracefully-close-server",
-        "nodejs/http-server-security",
+        "nodejs/http-server-security", // todo-yus
         "nodejs/http-strictContentLength",
         "nodejs/http-maxRequestsPerSocket",
         "nodejs/http-timeout",
