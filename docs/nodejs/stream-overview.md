@@ -7,7 +7,7 @@ last_update:
 
 ## Types of streams
 
-stream 有分四種
+`stream` 有分四種
 
 - [Writable](https://nodejs.org/api/stream.html#class-streamwritable)：可寫
 - [Readable](https://nodejs.org/api/stream.html#class-streamreadable)：可讀
@@ -46,25 +46,25 @@ sequenceDiagram
 從上述的例子，我們可以得知，所謂的 "Readable" 跟 "Writable"，是根據 "你目前的角色" 來看
 :::
 
-## client 與 server 的對稱結構：各自的 Socket (stream.Duplex)
+## client / server 對稱結構
 
 ```mermaid
-graph TB
-    direction TB
-    subgraph Server["Server 端"]
-        SSocket["Socket<br/>(stream.Duplex)"]
-        SReq["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP request"]
-        SRes["ServerResponse<br/>(stream.Writable)<br/>寫入 HTTP response"]
+%%{init: {"themeVariables": {"fontSize": "40px"}}}%%
+graph
+    subgraph Server["server 端"]
+        SSocket["net.Socket<br/>(stream.Duplex)"]
+        SReq["IncomingMessage<br/>(stream.Readable)<br/>read<br/>HTTP request"]
+        SRes["ServerResponse<br/>(stream.Writable)<br/>send<br/>HTTP response"]
 
         SReq -->|req.socket| SSocket
         SRes -->|res.socket| SSocket
     end
 
-    subgraph Client["Client 端"]
+    subgraph Client["client 端"]
         direction RL
-        CSocket["Socket<br/>(stream.Duplex)"]
-        CReq["ClientRequest<br/>(stream.Writable)<br/>寫入 HTTP request"]
-        CRes["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP response"]
+        CSocket["net.Socket<br/>(stream.Duplex)"]
+        CReq["ClientRequest<br/>(stream.Writable)<br/>send<br/>HTTP request"]
+        CRes["IncomingMessage<br/>(stream.Readable)<br/>read<br/>HTTP response"]
 
         CReq -->|req.socket| CSocket
         CRes -->|res.socket| CSocket
@@ -79,16 +79,16 @@ graph TB
     style SRes fill:#ffd4d4
 ```
 
-Node.js http 模組的底層就是 stream 跟 Socket：
+Node.js http 模組的底層就是 `stream` 跟 `net.Socket`：
 
-- stream 是管理資料讀寫的抽象層
-- Socket 則是管理 TCP 連線的抽象層，繼承了 stream.Duplex，可讀寫資料
+- `stream` 是管理資料讀寫的抽象層
+- `net.Socket` 則是管理 TCP 連線的抽象層，繼承了 `stream.Duplex`，可讀寫資料
 
-## stream.Writable
+## `stream.Writable`
 
 https://nodejs.org/api/stream.html#class-streamwritable
 
-`stream.Writable` 是一個 Base Class + Template Class，它處理所有的 stream 邏輯（buffering、backpressure、events...），但把「實際寫入」的部分留給開發者實作。而這個「實際寫入」的部分，就是 `_write` 這個 internal method
+`stream.Writable` 是一個 Base Class + Template Class，它處理所有的 `stream` 邏輯（buffering、backpressure、events...），但把「實際寫入」的部分留給開發者實作。而這個「實際寫入」的部分，就是 `_write` 這個 internal method
 
 ❌ 錯誤作法
 
@@ -258,7 +258,7 @@ const myWritable = new MyWritable();
 myWritable.write("123"); // ✅ instance 只呼叫 public methods
 ```
 
-## stream.Readable
+## `stream.Readable`
 
 https://nodejs.org/api/stream.html#class-streamreadable
 
@@ -452,7 +452,7 @@ myReadable.on("readable", () => {
 - [readable.take](https://nodejs.org/api/stream.html#readabletakelimit-options)
 - [readable.reduce](https://nodejs.org/api/stream.html#readablereducefn-initial-options)
 
-## stream.Duplex
+## `stream.Duplex`
 
 實作了 [stream.Readable](#streamreadable) 跟 [stream.Writable](#streamwritable)，另外多了 [duplex.allowHalfOpen](https://nodejs.org/api/stream.html#duplexallowhalfopen) 這個參數，它的意思是
 
@@ -460,7 +460,7 @@ myReadable.on("readable", () => {
 
 聽起來很繞口，我實際舉個實際例子，讓各位了解：
 
-Node.js `http.Server` 的 Socket 就是 `allowHalfOpen = true`，因為通常 server 收到完整的 HTTP request (Readable 結束) 之後，才能決定 HTTP response 是什麼，並且回傳給 client，此時 Writable side 就必須保持開啟
+Node.js `http.Server`，每個 request / response 關聯到的 `net.Socket` 就是 `allowHalfOpen = true`，因為通常 server 收到完整的 HTTP request (Readable 結束) 之後，才能決定 HTTP response 是什麼，並且回傳給 client，此時 Writable side 就必須保持開啟
 
 我們可以寫一個 PoC 來驗證 `allowHalfOpen = true`
 
@@ -485,9 +485,9 @@ httpServer.listen(5000);
 | ReadableStream | stream.Readable |
 | WritableStream | stream.Writable |
 
-不過 Node.js 在 v16.5.0 也加入了 `ReadableStream`, `WritableStream`，對 JavaScript 開發者來說是一大福音，減少學習成本
+不過 Node.js 在 v16.5.0 也加入了 `ReadableStream` 跟 `WritableStream`，對 JavaScript 開發者來說是一大福音，減少學習成本
 
-我在 [Transfer-Encoding 這篇文章](../http/transfer-encoding.md#readablestream讓你分塊讀取-response-body) 也有提到 ReadableStream 的簡易概念，有興趣的夥伴可以參考
+我在 [Transfer-Encoding 這篇文章](../http/transfer-encoding.md#readablestream讓你分塊讀取-response-body) 也有提到 `ReadableStream` 的簡易概念，有興趣的夥伴可以參考
 
 ## 小結
 
@@ -495,7 +495,7 @@ httpServer.listen(5000);
 
 並且也帶入 Node.js http 的概念，讓大家從 HTTP 的觀點來理解這些抽象層
 
-下一篇文章，會帶大家深入 stream 的生命週期，以及主要 methods 跟 properties 的使用方法
+下一篇文章，會帶大家深入 `stream` 的生命週期，以及主要 methods 跟 properties 的使用方法
 
 ## 參考資料
 
