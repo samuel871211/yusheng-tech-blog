@@ -2,7 +2,7 @@
 title: http.Server security
 description: "headersTimeout, requestTimeout, maxHeaderSize, maxHeadersCount"
 last_update:
-  date: "2026-03-03T08:00:00+08:00"
+  date: "2026-07-15T08:00:00+08:00"
 ---
 
 ## 前言
@@ -17,18 +17,19 @@ Node.js 提供以下 properties 可以設定 `http.Server` 的 timeout
 - [server.headersTimeout](https://nodejs.org/docs/latest-v24.x/api/http.html#serverheaderstimeout)
 - [server.requestTimeout](https://nodejs.org/docs/latest-v24.x/api/http.html#serverrequesttimeout)
 
+## 何時會觸發 `'request'` event
+
 一個正常的 HTTP request 如下
 
 ```
 POST /user HTTP/1.1
-Host: example.com
-Content-Length: 23
-Content-Type: application/json
+Host: localhost:5000
+Content-Length: 20
 
-{ "username": "hello" }
+{"username":"hello"}
 ```
 
-Node.js `http.Server` 只要收到完整的 headers 就可以觸發 `'request'` 事件。寫個 PoC 驗證：
+Node.js `http.Server` 只要收到完整的 headers 就會觸發 `'request'` 事件，寫個 PoC 驗證：
 
 ```ts
 import http from "http";
@@ -41,19 +42,14 @@ httpServer.on("request", (req, res) => {
 
 // client (use net.Socket to control raw bytes)
 const socket = net.createConnection({ host: "localhost", port: 5000 });
-socket.write(
+const httpMessage =
   "POST /user HTTP/1.1\r\n" +
-    "Host: example.com\r\n" +
-    "Content-Length: 23\r\n" +
-    "Content-Type: application/json\r\n\r\n",
-);
+  "Host: localhost:5000\r\n" +
+  "Content-Length: 20\r\n\r\n";
+socket.write(httpMessage);
 
 // Prints
-// {
-//   host: 'example.com',
-//   'content-length': '23',
-//   'content-type': 'application/json'
-// }
+// { host: 'localhost:5000', 'content-length': '20' }
 ```
 
 [RFC 9110#section-5.3](https://datatracker.ietf.org/doc/html/rfc9110#section-5.3) 也有提到，HTTP server 需要收到完整的 request headers section，才可以發送回應。所以 Node.js 選擇在 request headers 完整以後，才觸發 `'reuqest'` 事件，這邊是合理的（不需要等到 body 送完才觸發）
@@ -62,7 +58,9 @@ socket.write(
 A server MUST NOT apply a request to the target resource until it receives the entire request header section
 ```
 
-我們現在知道 request headers 區塊的邊界了，若 client 刻意不發送完整的 request headers
+## `headersTimeout`
+
+若 client 刻意不發送完整的 request headers，這時 server 就可以用 `headersTimeout` 來防止 request 永遠卡住
 
 ```ts
 import http from "http";
@@ -70,6 +68,7 @@ import http from "http";
 // server
 // ✅ 調低 connectionsCheckingInterval，比較好觀察 headersTimeout 的秒數
 const httpServer = http.createServer({ connectionsCheckingInterval: 0 });
+// ✅ 設定 headersTimeout = 3 秒
 httpServer.headersTimeout = 3000;
 httpServer.listen(5000);
 httpServer.on("request", (req, res) => {
@@ -78,28 +77,30 @@ httpServer.on("request", (req, res) => {
 
 // client (use net.Socket to control raw bytes)
 const socket = net.createConnection({ host: "localhost", port: 5000 });
-// ✅ 刻意不包含 headers 結尾的 `\r\n\r\n`，觸發 `headersTimeout`
-const data =
-  "POST /user HTTP/1.1\r\nHost: example.com\r\nContent-Length: 23\r\nContent-Type: application/json";
-socket.write(data, () => console.log(performance.now())); // 884.3236
+// ✅ 刻意不包含 headers 結尾的 `\r\n\r\n`，觸發 headersTimeout
+const httpMessage =
+  "POST /user HTTP/1.1\r\n" + "Host: localhost:5000\r\n" + "Content-Length: 20";
+socket.write(httpMessage, () => console.log(performance.now())); // 884.3236
+socket.setEncoding("latin1");
 socket.on("data", (chunk) => {
   console.log(performance.now()); // 3892.4877
   console.log({ chunk }); // { chunk: 'HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n' }
 });
 ```
 
-粗略的計算 "client 送出 data" 到 "client 收到 408 Request Timeout" 的時間差，剛好 3 秒 => 符合預期
+粗略的計算 **"client 送出 data"** 到 **"client 收到 408 Request Timeout"** 的時間差，剛好 3 秒 => 符合預期
 
-並且，`headersTimeout` 是從 connection 建立後就直接掛上 timer，即便 client 不送任何資料，還是會觸發
+並且 `headersTimeout` 是從 TCP connection 建立後就直接掛上 timer，即便 client 不送任何資料，還是會觸發
 
 ```js
-// http server
+// server
 // ✅ 調低 connectionsCheckingInterval，比較好觀察 headersTimeout 的秒數
 const httpServer = http.createServer({ connectionsCheckingInterval: 0 });
+// ✅ 設定 headersTimeout = 3 秒
 httpServer.headersTimeout = 3000;
 httpServer.listen(5000);
 
-// http client (use net.Socket to control raw bytes)
+// client
 const socket = net.createConnection({ host: "localhost", port: 5000 });
 socket.setEncoding("latin1");
 socket.on("connect", () => console.log(performance.now(), "connect"));
@@ -111,6 +112,10 @@ socket.on("close", () => console.log(performance.now(), "close"));
 // 3286.0515 { data: 'HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n' }
 // 3288.512458 close
 ```
+
+## `requestTimeout`
+
+<!-- todo-yus -->
 
 再來測試 [server.requestTimeout](https://nodejs.org/docs/latest-v24.x/api/http.html#serverrequesttimeout)
 
