@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1250" height="880" viewBox="0 0 1250 880">
+  <defs>
+    <style>
+      .ink { fill: none; stroke: #3f2b7a; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .inkDash { fill: none; stroke: #666; stroke-width: 3; stroke-dasharray: 10 8; stroke-linecap: round; }
+      .divider { stroke: #ccc; stroke-width: 2; }
+      .boxReq { fill: #eef2ff; stroke: #3f2b7a; stroke-width: 4; }
+      .boxRes { fill: #eafbea; stroke: #3f2b7a; stroke-width: 4; }
+      .boxErr { fill: #fdecea; stroke: #c0392b; stroke-width: 4; }
+      .txt { font-family: "Segoe Print", "Comic Sans MS", "Bradley Hand", cursive; fill: #2c2c2c; }
+      .title { font-size: 32px; font-weight: bold; fill: #3f2b7a; }
+      .label { font-size: 26px; fill: #3f2b7a; }
+      .boxlabel { font-size: 25px; fill: #222; text-anchor: middle; dominant-baseline: middle; }
+    </style>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,14 L14,7 z" fill="#3f2b7a"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,14 L14,7 z" fill="#666"/>
+    </marker>
+  </defs>
+
+  <!-- background -->
+  <rect x="0" y="0" width="1250" height="880" fill="#fafafa"/>
+  <rect x="0" y="0" width="1250" height="880" fill="url(#grid)"/>
+
+  <!-- title -->
+  <text class="txt title" x="40" y="50">maxRequestsPerSocket = 3</text>
+
+  <!-- ============ Panel A: Pipeline ============ -->
+  <text class="txt label" x="40" y="207">pipeline</text>
+
+  <!-- request boxes (100x100, touching) -->
+  <rect x="230" y="100" width="100" height="100" class="boxReq"/>
+  <text class="txt boxlabel" x="280" y="150">req1</text>
+  <rect x="330" y="100" width="100" height="100" class="boxReq"/>
+  <text class="txt boxlabel" x="380" y="150">req2</text>
+  <rect x="430" y="100" width="100" height="100" class="boxReq"/>
+  <text class="txt boxlabel" x="480" y="150">req3</text>
+  <rect x="530" y="100" width="100" height="100" class="boxReq"/>
+  <text class="txt boxlabel" x="580" y="150">req4</text>
+
+  <!-- single straight TCP socket line -->
+  <line class="ink" x1="230" y1="200" x2="1080" y2="200" marker-end="url(#arrow)"/>
+  <text class="txt label" x="1100" y="207">socket</text>
+
+  <!-- response boxes (100x100, touching, continuing straight from req4) -->
+  <rect x="630" y="200" width="100" height="100" class="boxRes"/>
+  <text class="txt boxlabel" x="680" y="250">200</text>
+  <rect x="730" y="200" width="100" height="100" class="boxRes"/>
+  <text class="txt boxlabel" x="780" y="250">200</text>
+  <rect x="830" y="200" width="100" height="100" class="boxRes"/>
+  <text class="txt boxlabel" x="880" y="250">200</text>
+  <rect x="930" y="200" width="100" height="100" class="boxErr"/>
+  <text class="txt boxlabel" x="980" y="250">503</text>
+
+  <line class="divider" x1="40" y1="340" x2="1160" y2="340"/>
+
+  <!-- ============ Panel B: Non-pipeline ============ -->
+  <text class="txt label" x="40" y="487">non-pipeline</text>
+
+  <!-- Connection #1 : req1~req3, one straight socket line -->
+  <rect x="230" y="380" width="100" height="100" class="boxReq"/>
+  <text class="txt boxlabel" x="280" y="430">req1</text>
+  <rect x="430" y="380" width="100" height="100" class="boxReq"/>
+  <text class="txt boxlabel" x="480" y="430">req2</text>
+  <rect x="630" y="380" width="100" height="100" class="boxReq"/>
+  <text class="txt boxlabel" x="680" y="430">req3</text>
+
+  <line class="ink" x1="230" y1="480" x2="1080" y2="480" marker-end="url(#arrow)"/>
+  <text class="txt label" x="1110" y="487">socket #1</text>
+
+  <rect x="330" y="480" width="100" height="100" class="boxRes"/>
+  <text class="txt boxlabel" x="380" y="530">200</text>
+  <rect x="530" y="480" width="100" height="100" class="boxRes"/>
+  <text class="txt boxlabel" x="580" y="530">200</text>
+  <rect x="730" y="480" width="100" height="100" class="boxRes"/>
+  <text class="txt boxlabel" x="780" y="530">200</text>
+
+  <!-- Connection #2 : req4 alone on a new socket -->
+  <rect x="830" y="650" width="100" height="100" class="boxReq"/>
+  <text class="txt boxlabel" x="880" y="700">req4</text>
+
+  <line class="ink" x1="830" y1="750" x2="1080" y2="750" marker-end="url(#arrow)"/>
+  <text class="txt label" x="1110" y="757">socket #2</text>
+
+  <rect x="930" y="750" width="100" height="100" class="boxRes"/>
+  <text class="txt boxlabel" x="980" y="800">200</text>
+</svg>

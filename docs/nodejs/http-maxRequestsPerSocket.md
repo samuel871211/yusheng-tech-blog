@@ -28,7 +28,7 @@ flowchart LR
 - [server.maxRequestsPerSocket](https://nodejs.org/docs/latest-v24.x/api/http.html#servermaxrequestspersocket)
 - [server.on("droprequest")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-droprequest) -->
 
-## `maxRequestsPerSocket` 實測
+## `maxRequestsPerSocket` + pipeline 實測
 
 server 設定 `maxRequestsPerSocket = 3`
 
@@ -64,6 +64,7 @@ Content-Length: 1
 - 第 1,2 個 response header 有 `Keep-Alive: timeout=5, max=3`
 - 第 3 個 response header 則會有 `Connection: close`，但此時還不會真的關閉連線
 - 第 4 個 response 開始，則一律回傳 `503 Service Unavailable`
+- 這樣設計的原因，是為了避免破壞 HTTP/1.1 pipelined requests
 
 ```
 HTTP/1.1 200 OK
@@ -106,12 +107,53 @@ httpServer.on("dropRequest", (req, socket) => {
 });
 ```
 
+## `maxRequestsPerSocket` + request 按照順序
+
+正常情境（非 pipelined requests），超過 `maxRequestsPerSocket` 的請求，就會導到新的 TCP 連線
+
+server 設定 `maxRequestsPerSocket = 3`
+
+```ts
+const httpServer = http.createServer();
+httpServer.maxRequestsPerSocket = 3;
+httpServer.listen(5000);
+httpServer.on("request", (req, res) => {
+  console.log("remotePort: ", req.socket.remotePort);
+  res.end();
+});
+```
+
+client 用 `http.request` 依序發送 4 個 request
+
+```ts
+const req1 = http.request({ host: "localhost", port: 5000 }).end();
+await new Promise((resolve) => req1.on("close", resolve));
+const req2 = http.request({ host: "localhost", port: 5000 }).end();
+await new Promise((resolve) => req2.on("close", resolve));
+const req3 = http.request({ host: "localhost", port: 5000 }).end();
+await new Promise((resolve) => req3.on("close", resolve));
+const req4 = http.request({ host: "localhost", port: 5000 }).end();
+await new Promise((resolve) => req4.on("close", resolve));
+```
+
+從 server log 可以觀察到，第 4 個 request 就會開啟新的連線，`remotePort` 跟前 3 個 request 不一樣
+
+```
+remotePort:  53443
+remotePort:  53443
+remotePort:  53443
+remotePort:  53444
+```
+
 ## 小結
 
 在這篇文章，我們學到了
 
 - KeepAlive 連線會被 client 重複使用，可能導致舊 Pod 流量過載、新 Pod 分不到流量
-- 承上，`maxRequestsPerSocket` 可以強制汰換掉老舊的 TCP connection
-- 當一條 socket 處理到第 `maxRequestsPerSocket` 個 request 時，response header 會先帶上 `Connection: close`，但不會馬上斷線
-- 超過 `maxRequestsPerSocket` 之後的 request，一律回傳 `503 Service Unavailable`
-- 可以透過 `on("dropRequest")` 在 503 回傳前加上監控邏輯，但不該在裡面手動操作 socket 的狀態機
+- `maxRequestsPerSocket` 可以強制汰換掉老舊的 TCP connection
+- `maxRequestsPerSocket` 遇到 pipelined requests 的情境
+- `on("dropRequest")` 的用法
+
+最後比較一下 `maxRequestsPerSocket` 遇到 pipeline 跟 non-pipeline requests 的差異
+
+![http-maxRequestsPerSocket-pipeline-vs-non-pipeline](../../static/http-maxRequestsPerSocket-pipeline-vs-non-pipeline.svg)
