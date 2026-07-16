@@ -7,9 +7,9 @@ last_update:
 
 <!-- todo-yus 分段落 -->
 
-## Client 跟 Server 的 timeout
+## Node.js client 跟 server 的 timeout
 
-Node.js 的 Client 跟 Server 各自都可以設定 timeout，其背後也都是 `net.Socket.setTimeout` 的呼叫
+Node.js 的 client 跟 server 各自都可以設定 timeout，其背後也都是 `net.Socket.setTimeout` 的呼叫
 
 - `http.Server`
   - [server.timeout](https://nodejs.org/docs/latest-v24.x/api/http.html#servertimeout)
@@ -24,12 +24,13 @@ Node.js 的 Client 跟 Server 各自都可以設定 timeout，其背後也都是
   - [message.setTimeout(msecs[, callback])](https://nodejs.org/docs/latest-v24.x/api/http.html#messagesettimeoutmsecs-callback)
   - `message.on("timeout")`：沒在官方文件列出，但實際上有這個 event
 
-## 以 http server 的角度來看
+<!-- todo-yus -->
 
-我們直接來看 Node.js 原始碼的實作
+## Node.js setTimeout 原始碼實作
+
+IncomingMessage
 
 ```ts
-// IncomingMessage
 IncomingMessage.prototype.setTimeout = function setTimeout(msecs, callback) {
   if (callback) this.on("timeout", callback);
   this.socket.setTimeout(msecs);
@@ -38,9 +39,7 @@ IncomingMessage.prototype.setTimeout = function setTimeout(msecs, callback) {
 
 // OutgoingMessage
 OutgoingMessage.prototype.setTimeout = function setTimeout(msecs, callback) {
-  if (callback) {
-    this.on("timeout", callback);
-  }
+  if (callback) this.on("timeout", callback);
 
   if (!this[kSocket]) {
     this.once("socket", function socketSetTimeoutOnConnect(socket) {
@@ -64,7 +63,7 @@ Server.prototype.setTimeout = function setTimeout(msecs, callback) {
 
 - 若 socket 已經被關聯，直接呼叫 `socket.setTimeout`
 - 若 socket 尚未被關聯，則監聽 `this.once("socket")`，然後呼叫 `socket.setTimeout`
-- 有 `callback` 就幫忙設定 `this.on("timeout")`，算是一個語法糖
+- 有 `callback` 就幫忙設定 `this.on("timeout", callback)`，算是一個語法糖
 
 以 `http.Server` 為例子，理論上可以在這三個地方設定 `setTimeout`
 
