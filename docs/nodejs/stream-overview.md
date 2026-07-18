@@ -49,7 +49,7 @@ sequenceDiagram
 ## client / server 對稱結構
 
 ```mermaid
-%%{init: {"themeVariables": {"fontSize": "40px"}}}%%
+%%{init: {"themeVariables": {"fontSize": "24px"}}}%%
 graph
     subgraph Server["server 端"]
         SSocket["net.Socket<br/>(stream.Duplex)"]

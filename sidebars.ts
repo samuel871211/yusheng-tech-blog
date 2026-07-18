@@ -231,12 +231,12 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-agent",
         "nodejs/http-request-response-classes",
         "nodejs/http-gracefully-close-server",
-        "nodejs/http-server-security", // todo-yus
+        "nodejs/http-server-security",
         "nodejs/http-strictContentLength",
         "nodejs/http-maxRequestsPerSocket",
         "nodejs/http-timeout",
         "nodejs/http-destroy",
-        "nodejs/http_proxy",
+        "nodejs/http_proxy", // todo-yus
         // "nodejs/https_proxy", // 進行中
         "nodejs/http-uncommon-features",
         // === 2026 iThome 鐵人賽，第 xx - xx 篇 ===

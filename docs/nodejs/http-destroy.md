@@ -1,44 +1,44 @@
 ---
-title: destroy() method
-description: "destroy() 背後到底做了什麼事情？"
+title: Node.js http destroy()：req/res 為何共殺一條 socket
+description: 從原始碼拆解 autoDestroy、keep-alive 保護機制，到 server/client 實測
 last_update:
-  date: "2026-03-03T08:00:00+08:00"
+  date: "2026-07-18T08:00:00+08:00"
 ---
 
-## 非對稱的設計: destroy
+## 非對稱的官方文件
 
 Node.js 官方文件在描述 `destroy([error])` 跟 `destroyed` 時，並沒有把所有情境都列出來
 
-- destroy([error])
+- `destroy([error])`
   - [clientRequest.destroy([error])](https://nodejs.org/docs/latest-v24.x/api/http.html#requestdestroyerror)
-  - serverResponse.destroy([error]) => 官方文件沒列出，但實際上有這個 method
+  - `serverResponse.destroy([error])` => 官方文件沒列出，但實際上有這個 method
   - [outgoingMessage.destroy([error])](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagedestroyerror)
   - [incomingMessage.destroy([error])](https://nodejs.org/docs/latest-v24.x/api/http.html#messagedestroyerror)
-- destroyed
+- `destroyed`
   - [clientRequest.destroyed](https://nodejs.org/docs/latest-v24.x/api/http.html#requestdestroyed)
-  - serverResponse.destroyed => 官方文件沒列出，但實際上有這個 property
-  - outgoingMessage.destroyed => 官方文件沒列出，但實際上有這個 property
-  - incomingMessage.destroyed => 官方文件沒列出，但實際上有這個 property
+  - `serverResponse.destroyed` => 官方文件沒列出，但實際上有這個 property
+  - `outgoingMessage.destroyed` => 官方文件沒列出，但實際上有這個 property
+  - `incomingMessage.destroyed` => 官方文件沒列出，但實際上有這個 property
 
-我們複習一下 stream, Socket, http 的繼承關係
+我們複習一下 `stream`、`net.Socket` 跟 `http` 的繼承關係
 
 ```mermaid
-graph TB
-    direction TB
-    subgraph Server["Server 端"]
-        SSocket["Socket<br/>(stream.Duplex)"]
-        SReq["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP Request"]
-        SRes["ServerResponse<br/>(stream.Writable)<br/>寫入 HTTP Response"]
+%%{init: {"themeVariables": {"fontSize": "24px"}}}%%
+graph
+    subgraph Server["server 端"]
+        SSocket["net.Socket<br/>(stream.Duplex)"]
+        SReq["IncomingMessage<br/>(stream.Readable)<br/>read<br/>HTTP request"]
+        SRes["ServerResponse<br/>(stream.Writable)<br/>send<br/>HTTP response"]
 
         SReq -->|req.socket| SSocket
         SRes -->|res.socket| SSocket
     end
 
-    subgraph Client["Client 端"]
+    subgraph Client["client 端"]
         direction RL
-        CSocket["Socket<br/>(stream.Duplex)"]
-        CReq["ClientRequest<br/>(stream.Writable)<br/>寫入 HTTP Request"]
-        CRes["IncomingMessage<br/>(stream.Readable)<br/>讀取 HTTP Response"]
+        CSocket["net.Socket<br/>(stream.Duplex)"]
+        CReq["ClientRequest<br/>(stream.Writable)<br/>send<br/>HTTP request"]
+        CRes["IncomingMessage<br/>(stream.Readable)<br/>read<br/>HTTP response"]
 
         CReq -->|req.socket| CSocket
         CRes -->|res.socket| CSocket
@@ -53,13 +53,13 @@ graph TB
     style SRes fill:#ffd4d4
 ```
 
-- Socket 是一個可讀寫的資料流，但 http 模組刻意將讀、寫分成兩個抽象 Class（[IncomingMessage](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpincomingmessage), [OutgoingMessage](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpoutgoingmessage)）
-- 也因此，`request.socket` 跟 `response.socket` 必定為同一個 socket instance
-- 不管是 request 還是 response 呼叫 `destroy([error])`，背後都有可能會呼叫到對應的 `socket.destroy([error])`
+- `net.Socket` 是一個可讀寫的資料流，但 `http` 模組刻意將讀、寫分成兩個抽象 Class（[IncomingMessage](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpincomingmessage), [OutgoingMessage](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpoutgoingmessage)）
+- 也因此，`req.socket` 跟 `res.socket` 必定為同一個 socket instance
+- 不管是 request 還是 response 呼叫 `destroy([error])`，背後都會呼叫到同一個 socket instance 的 `destroy([error])`
 
-## IncomingMessage autoDestroy
+## `IncomingMessage` `autoDestroy` 歷史
 
-根據 [IncomingMessage 的 History](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpincomingmessage)
+根據 `IncomingMessage` 官方文件的 [History](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpincomingmessage)
 
 | Version | Changes                                                                   |
 | ------- | ------------------------------------------------------------------------- |
@@ -71,17 +71,23 @@ graph TB
 
 並且我也在 Github 翻到了 v15.5.0 這個改動
 
-- PR: [http: use `autoDestroy: true` in incoming message](https://github.com/nodejs/node/pull/33035/changes)
-- Issue: [[Bug] `http.IncomingMessage.destroyed` is `true` after payload read since v15.5.0](https://github.com/nodejs/node/issues/36617)
+- PR：[http: use `autoDestroy: true` in incoming message](https://github.com/nodejs/node/pull/33035/changes)
+- issue：[[Bug] `http.IncomingMessage.destroyed` is `true` after payload read since v15.5.0](https://github.com/nodejs/node/issues/36617)
 
-對於 `IncomingMessage` 的生命週期，讀完 HTTP Request / Response，其任務已經達成，故標記為 `destroyed: true` 是合理的
+對於 `IncomingMessage` 的生命週期，讀完 HTTP request / response，其任務已經達成，故標記為 `destroyed: true` 是合理的
+
+## `IncomingMessage` `autoDestroy` 測試
 
 寫個 PoC 來測試
 
 ```ts
+import http from "http";
+
+const httpServer = http.createServer();
+httpServer.listen(5000);
 httpServer.on("request", (req, res) => {
   req.resume();
-  // ✅ Server 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
+  // ✅ server 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
   req.on("end", () => nextTick(() => assert(req.destroyed)));
   res.end("123");
 });
@@ -94,12 +100,35 @@ const clientRequest = http.request({
 clientRequest.end("123");
 clientRequest.on("response", (res) => {
   res.resume();
-  // ✅ Client 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
+  // ✅ client 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
   res.on("end", () => nextTick(() => assert(res.destroyed)));
 });
 ```
 
-不過 HTTP/1.1 預設是 [keepAlive](../http/keep-alive-and-connection.md)，Socket 會重複使用。若 `autoDestroy` 的話，就有可能會呼叫 `socket.destroy([error])`，Node.js 是怎麼避免這件事情的呢？以 http client 為例子，我們直接看 Node.js 原始碼：
+## `IncomingMessage._destroy` 原始碼
+
+其實就是呼叫 `IncomingMessage.socket.destroy(err)`，沒有額外實作太多東西
+
+```ts
+// lib/_http_incoming.js
+IncomingMessage.prototype._destroy = function _destroy(err, cb) {
+  // ... 前面省略
+
+  if (this.socket && !this.socket.destroyed && this.aborted) {
+    this.socket.destroy(err);
+
+    // ... 以下省略
+  }
+};
+```
+
+## `IncomingMessage` `autoDestroy` 誤殺 socket？
+
+HTTP/1.1 預設是 [keepAlive](../http/keep-alive-and-connection.md)，`net.Socket` 會重複在多個 HTTP request / response 使用
+
+若 `autoDestroy = true` 的話，理論上會呼叫到 `socket.destroy([error])`
+
+Node.js 是怎麼避免這件事情的呢？以 HTTP client 為例子，我們直接看 Node.js 原始碼：
 
 ```ts
 // lib/_http_client.js
@@ -117,6 +146,7 @@ function responseKeepAlive(req) {
 
   req.destroyed = true;
   if (req.res) {
+    // ✅ 重點在 Node.js 的這段註解
     // Detach socket from IncomingMessage to avoid destroying the freed
     // socket in IncomingMessage.destroy().
     req.res.socket = null;
@@ -124,101 +154,56 @@ function responseKeepAlive(req) {
 }
 ```
 
+以 HTTP server 為例子，我們直接看 Node.js 原始碼是怎麼防止 `autoDestroy` 誤殺 socket 的
+
 ```ts
 // lib/_http_incoming.js
 IncomingMessage.prototype._destroy = function _destroy(err, cb) {
   // ... 前面省略
 
+  // ✅ request body 正常結束 => aborted = false => 不會進入 if 條件
   if (this.socket && !this.socket.destroyed && this.aborted) {
     this.socket.destroy(err);
 
     // ... 以下省略
   }
-```
-
-其實連註解都有說，要在 `IncomingMessage.destroy()` 之前把 `req.res.socket` 設成 `null`，確保不會執行到 `socket.destroy()`
-
-function 的執行順序如下：
-
-```mermaid
-flowchart TD
-  A["responseOnEnd"] --> B["responseKeepAlive"]
-  B --> C["IncomingMessage.destroy()"]
-  C --> D["IncomingMessage._destroy()"]
-```
-
-在 http client 端，response body 完整接收後，這個 HTTP Round Trip 已結束，Socket 的 ownership 必須立刻回到 `Agent.freeSockets`，因此 Node.js 會主動執行 `req.res.socket = null`
-
-但 http server 端，request body 完整接收後，此時 response 通常還沒完整送出，user program 可能還需要存取 `request.socket`，所以 Socket 會等到 `response.on('finish')` 之後才會被解除關聯，直接來看 Node.js 原始碼：
-
-```ts
-// lib/_http_server.js
-function resOnFinish(req, res, socket, state, server) {
-  // ...以上省略
-  res.detachSocket(socket);
-  clearIncoming(req);
-  // ...以下省略
-}
-
-ServerResponse.prototype.detachSocket = function detachSocket(socket) {
-  assert(socket._httpMessage === this);
-  socket.removeListener("close", onServerResponseClose);
-  socket._httpMessage = null;
-  this.socket = null;
 };
 ```
 
-寫個 PoC 來測試
+## `IncomingMessage.destroy([error])` 呼叫時機
+
+我們現在知道
+
+- `IncomingMessage` 繼承了 `stream.Readable`
+- `readable.on("end")` 之後，預設會 `autoDestroy`
+- user program 要呼叫 `IncomingMessage.destroy([error])` 的合理時間點就是 **"資料讀完之前，我不想再接著讀了"**
+
+### server side 實測
+
+server
 
 ```ts
-httpServer.on("request", (req, res) => {
-  req.resume();
-  // ✅ Server 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
-  req.on("end", () => nextTick(() => assert(req.destroyed)));
-  // ✅ Server 的 Socket 在 HTTP Round Trip 結束後，會自動解除關聯
-  res.on("finish", () => assert(res.socket === null));
-  res.end("123");
-});
+import http from "http";
 
-const clientRequest = http.request({
-  host: "localhost",
-  port: 5000,
-  method: "POST",
-});
-clientRequest.end("123");
-clientRequest.on("response", (res) => {
-  res.resume();
-  res.on("end", () => {
-    // ✅ Client 的 Socket 在 HTTP Round Trip 結束後，會自動解除關聯
-    assert(res.socket === null);
-    // ✅ Client 的 IncomingMessage 在讀完資料後，會自動把 destroyed 設為 true
-    nextTick(() => assert(res.destroyed));
-  });
-});
-```
-
-## IncomingMessage.destroy([error])
-
-我們現在知道 `IncomingMessage` 繼承了 `Readable`，且 `Readable.on("end")` 之後，預設會 `autoDestroy`，那 user program 要呼叫 `IncomingMessage.destroy([error])` 的合理時間點就是 "資料讀完之前，我不想再接著讀了"。
-
-寫個 PoC 來實測 http server 的 `IncomingMessage`
-
-```ts
+const httpServer = http.createServer();
+httpServer.listen(5000);
 httpServer.on("request", (req, res) => {
   req.destroy();
-  assert(req.socket.destroyed);
-  assert(res.socket?.destroyed);
+  assert(req.socket.destroyed); // ✅
+  assert(res.socket.destroyed); // ✅
   res.end("123"); // ❌ noop
 });
 ```
 
-用 `curl http://localhost:5000` 測試，結果是沒收到任何回應，因為 Socket 已經被 destroy 了
+client 用 `curl http://localhost:5000` 測試，結果是沒收到任何回應，因為 `net.Socket` 已經被 destroy 了
 
 ```
 curl: (52) Empty reply from server
 ```
 
-寫個 PoC 來實測 http client 的 `IncomingMessage`
+### client side 實測
+
+client
 
 ```ts
 const clientRequest = http.request({
@@ -228,17 +213,17 @@ const clientRequest = http.request({
 clientRequest.end();
 clientRequest.on("response", (res) => {
   res.destroy();
-  assert(clientRequest.socket?.destroyed);
-  assert(res.socket.destroyed);
+  assert(clientRequest.socket.destroyed); // ✅
+  assert(res.socket.destroyed); // ✅
 });
 clientRequest.on("error", (e) => {
-  assert(e instanceof Error);
-  assert(e.message === "socket hang up");
-  assert((e as any).code === "ECONNRESET");
+  assert(e instanceof Error); // ✅
+  assert(e.message === "socket hang up"); // ✅
+  assert((e as any).code === "ECONNRESET"); // ✅
 });
 ```
 
-至於為何會需要在 `clientRequest` 捕捉錯誤，直接看 Node.js 原始碼
+至於為何會需要在 `ClientRequest` 捕捉錯誤，直接看 Node.js 原始碼
 
 ```ts
 // lib/_http_client.js
@@ -255,48 +240,20 @@ function socketOnEnd() {
 }
 ```
 
-## 為何 http client 有 "socket hang up" 這個錯誤 ?
+## 小結：這 API 設計真的很反直覺
 
-| 呼叫 `clientRequest.destroy()` 的時機點 | 解釋                                                                                                    |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| http client 的 response 已經收到        | ✅ Node.js 已經建立 HTTP response (`IncomingMessage`)<br/>接下來是 user program 的職責                  |
-| http client 的 response 尚未建立        | ❌ Node.js 尚未建立 HTTP response (`IncomingMessage`)<br/>就被切斷 Socket 連線，故拋出 "socket hang up" |
+我們一路從 `EventEmitter`、`stream`、`net.Socket` 讀到 `http`，我們知道
 
-## destroy 小結
+- `stream.Readable` / `stream.Writable` 各自有 `destroy([error])`，這是 `stream` 抽象層給的能力
+- `ClientRequest`、`ServerResponse` 跟 `IncomingMessage` 繼承了上述兩者，所以必須實作 `destroy([error])`
 
-| 你想做的事                               | 正確 API           |
-| ---------------------------------------- | ------------------ |
-| server 不想讀 request body，但要正常回應 | `req.resume()`     |
-| client 不想讀 response body，但要成功    | `res.resume()`     |
-| 任一方放棄整個 HTTP 流程                 | `destroy([error])` |
+  |        | request Class                             | response Class                            |
+  | ------ | ----------------------------------------- | ----------------------------------------- |
+  | client | `ClientRequest`<br/>(`stream.Writable`)   | `IncomingMessage`<br/>(`stream.Readable`) |
+  | server | `IncomingMessage`<br/>(`stream.Readable`) | `ServerResponse`<br/>(`stream.Writable`)  |
 
-<!-- | Role                                     | Meaning of `destroy()` |
-| ---------------------------------------- | -------------------- |
-| http client's request (ClientRequest)    | Abort the request or stop reading response |
-| http client's response (IncomingMessage) | Stop reading response body |
-| http server's request (IncomingMessage)  | Stop reading request |
-| http server's response (ServerResponse)  | Stop sending response | -->
-
-<!-- ## ClientRequest 在不同階段呼叫 destroy() 的語意差異
-```mermaid
-sequenceDiagram
-  participant A as ClientRequest
-  participant B as Request Sent<br/>ClientRequest.end()
-  participant C as Response Receiving<br/>ClientRequest.on('response')
-  participant D as Response Body Fully Sent<br/>IncomingMessage.on('end')
-
-  Note Over A,B:  abort the request
-  Note Over C,D: stop reading response body
-``` -->
-
-<!-- ## http client's IncomingMessage 在不同階段呼叫 destroy() 的語意差異
-```mermaid
-sequenceDiagram
-  participant A as http client's IncomingMessage
-  participant B as Response Receiving<br/>ClientRequest.on('response')
-  participant C as Response Body Fully Sent<br/>IncomingMessage.on('end')
-
-  Note Over B,C: stop reading response body
-``` -->
-
-<!-- ## ClientRequest.destroy([error]) -->
+- 但 HTTP 的 request 跟 response 並非完全獨立，而是部份耦合的
+  - 以 client 的角度，若把傳輸中的 request 殺掉，那 response 還有必要留著嗎？
+  - 以 server 的角度，若把傳輸中的 response 殺掉，那 request 還有必要留著嗎？
+- `stream` 的抽象假設讀跟寫可以獨立生死，但 HTTP 語意上它們是綁定的一筆交易
+- 結果就是「看起來每個物件都能獨立 destroy，實際上呼叫誰，都有可能造成全滅」
