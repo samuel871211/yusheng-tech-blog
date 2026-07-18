@@ -40,6 +40,10 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 - `OK`, `Partial Content` ...
 - `GET`, `POST` ...
 - `Connection`, `Keep-Alive` ...
+- Forward Proxy
+- Reverse Proxy
+- target server
+- Cors preflight request
 
 ## Installation
 

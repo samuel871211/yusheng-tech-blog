@@ -217,7 +217,7 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Node.js",
       items: [
-        // === 2026 iThome 鐵人賽，第 xx - xx 篇 ===
+        // === 2026 iThome 鐵人賽，第 11 - 30 篇 ===
         "nodejs/events",
         "nodejs/stream-overview",
         "nodejs/stream-writable-1",
@@ -236,11 +236,11 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-maxRequestsPerSocket",
         "nodejs/http-timeout",
         "nodejs/http-destroy",
-        "nodejs/http_proxy", // todo-yus
-        // "nodejs/https_proxy", // 進行中
-        "nodejs/http-uncommon-features",
+        "nodejs/http_proxy",
+        "nodejs/http-uncommon-features", // todo-yus
         // === 2026 iThome 鐵人賽，第 xx - xx 篇 ===
 
+        // "nodejs/https_proxy", // 進行中
         "nodejs/undici",
         "nodejs/undici-client",
         "nodejs/undici-dispatcher", // todo-yus 很肥，感覺可拆
