@@ -237,8 +237,8 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-timeout",
         "nodejs/http-destroy",
         "nodejs/http_proxy",
-        "nodejs/http-uncommon-features", // todo-yus
-        // === 2026 iThome 鐵人賽，第 xx - xx 篇 ===
+        "nodejs/http-uncommon-features",
+        // === 2026 iThome 鐵人賽，第 11 - 30 篇 ===
 
         // "nodejs/https_proxy", // 進行中
         "nodejs/undici",
