@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "http",
       items: [
+        // === 2025 iThome 鐵人賽 ===
         "http/anatomy-of-an-http-message",
         "http/keep-alive-and-connection",
         "http/browser-max-tcp-connection-6-per-host",
@@ -54,7 +55,7 @@ const sidebars: SidebarsConfig = {
         "http/http-caching-2",
         "http/http-caching-3",
         "http/articles-30-end",
-        // 以上是 2025 iThome 鐵人賽
+        // === 2025 iThome 鐵人賽 ===
 
         // === 2026 iThome 鐵人賽，前 10 篇 ===
         "http/http-1.1-pipelining-hol-blocking-vs-request-smuggling",
