@@ -2,7 +2,7 @@
 title: stream.Writable 生命週期
 description: 整理 Node.js Writable 面向開發者與使用者的方法、事件觸發順序，附時間軸圖解正常關閉流程
 last_update:
-  date: "2026-07-10T08:00:00+08:00"
+  date: "2026-07-20T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -47,17 +47,12 @@ myWritable.write("123");
 執行順序如下：
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[constructor] --> B[_construct]
     B --> C[_write]
-
-
-    %% Annotation
-    D["Note: _construct will delay<br/>_write, _destroy or _final"]
-    D -.-> B
-
-    style D fill:#fff5ad,stroke:#aaaa33
 ```
+
+<!-- ![stream-writable-constructor](../../static/stream-writable-constructor.svg) -->
 
 ## 生命週期 2：寫入資料
 
@@ -100,9 +95,8 @@ class MyWritable extends Writable {
 }
 
 const myWritable = new MyWritable();
-const isSafeToWriteMore = myWritable.write("123", () =>
-  console.log(performance.now(), "data is flushed"),
-);
+const callback = () => console.log(performance.now(), "data is flushed");
+const isSafeToWriteMore = myWritable.write("123", callback);
 console.log(performance.now(), { isSafeToWriteMore });
 
 // Prints
@@ -116,19 +110,21 @@ console.log(performance.now(), { isSafeToWriteMore });
 時間軸如下
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[constructor] --> B[write]
-    B --> C[isSafeToWriteMore<br/>returned synchronously]
-    C --> D[_construct]
-    D --> E[_write callback]
-    E --> F[write callback]
+    B --> C[_construct]
+    C --> D[_write]
+    D --> F[callback of write]
 ```
 
-1. 根據 [`readable._construct`](https://nodejs.org/api/stream.html#readable_constructcallback) 的描述，`constructor` 執行完後，`process.nextTick` 才會執行 `_construct`，所以 `write` 的回傳值 `isSafeToWriteMore` 會先印出來。雖然 `writable._construct` 的官方文件沒有描述到這個行為，但基本上兩者的概念是相通的
-2. `_construct` 完成後（執行 `_construct` 的 `callback`），代表可以開始 `_write`
-3. `_write` 完成後（執行 `_write` 的 `callback`），代表可以開始 `write` 的 `callback`
+<!-- ![](../../static/stream-writable-constructor-to-write.svg) -->
 
-只能讚嘆 Node.js 的 Event-driven architecture 設計真的很精妙，大量的利用 `callback` 把各種 async 事件串連起來
+- 根據 [`readable._construct`](https://nodejs.org/api/stream.html#readable_constructcallback) 的描述，`constructor` 執行完後，`process.nextTick` 才會執行 `_construct`
+- 雖然 `writable._construct` 的官方文件沒有描述到這個行為，但基本上兩者的概念是相通的
+- `_construct` 完成後（呼叫 `_construct` 的 `callback`），代表可以開始 `_write`
+- `_write` 完成後（呼叫 `_write` 的 `callback`），代表可以開始 `write` 的 `callback`
+
+只能讚嘆 Node.js 的 Event-driven architecture 設計真的很精妙，大量的利用 `callback` 把各種非同步事件串連起來
 
 但 Node.js 是怎麼判斷 `isSafeToWriteMore` 呢？這會在下一篇文章介紹到
 
@@ -230,6 +226,8 @@ flowchart LR
     E --> F[_destroy]
     F --> G["on('close')"]
 ```
+
+<!-- ![](../../static/stream-writable-end-to-close.svg) -->
 
 - 由於我們的 `_construct` 延遲了 `_write`，加上我們有實作 `_writev`
 - 所以 Node.js 會幫我們把 internal buffer 用 `_writev` 一次處理
