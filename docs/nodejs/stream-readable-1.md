@@ -2,7 +2,7 @@
 title: stream.Readable 生命週期
 description: 整理 Node.js Readable 面向開發者與使用者的方法、事件觸發順序，附時間軸圖解正常關閉流程
 last_update:
-  date: "2026-07-11T08:00:00+08:00"
+  date: "2026-07-20T08:00:00+08:00"
 ---
 
 ## 生命週期 1：constructor 與初始化
@@ -43,6 +43,8 @@ flowchart LR
     A[constructor] --> B[_construct]
     B --> C[_read]
 ```
+
+<!-- ![](../../static/stream-readable-constructor-to-read.svg) -->
 
 ## 生命週期 2：運作 - 兩種讀取模式的切換
 
@@ -139,14 +141,12 @@ myReadable.on("pause", () => {
 執行順序如下：
 
 ```mermaid
-flowchart TD
-    A["on('data')"] --> B[_read]
-    B --> C["on('resume')<br/>(readableFlowing = true)"]
-    C --> D["pause()"]
-    D --> E["on('pause')<br/>(readableFlowing = false)"]
-    E --> F["resume()"]
-    F --> G["on('resume')<br/>(readableFlowing = true)"]
+flowchart LR
+    A["pause()"] --> B["on('pause')"]
+    C["resume()"] --> D["on('resume')"]
 ```
+
+<!-- ![](../../static/stream-readable-pause-resume.svg) -->
 
 ### 手動讀取：`on('readable')` 搭配 `read`
 
@@ -254,12 +254,13 @@ myReadable.on("close", () => {
 執行順序如下：
 
 ```mermaid
-flowchart TD
-    A[_read] --> B["push(null)"]
-    B --> C["on('end')<br/>readableEnded = true"]
-    C --> D[destroy + _destroy]
-    D --> E["on('close')<br/>closed = true<br/>destoryed = true"]
+flowchart LR
+    A["push(null)"] --> B["on('end')"]
+    B --> D[_destroy]
+    D --> E["on('close')"]
 ```
+
+<!-- ![](../../static/stream-readable-end-to-close.svg) -->
 
 ## 小結
 
