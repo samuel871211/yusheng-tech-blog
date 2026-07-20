@@ -10,7 +10,7 @@ last_update:
 
 # 昱昇の技術部落格 - 專注於 Web Security 與 HTTP 研究
 
-![index](../static/index.svg)
+![index](../static/img/index.svg)
 
 ### 目前研究方向
 

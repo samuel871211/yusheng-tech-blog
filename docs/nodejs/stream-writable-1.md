@@ -278,7 +278,7 @@ events
 | `on("error")`  | after `_destroy` passes an error along |
 | `on("close")`  | after `_destroy` completes             |
 
-![writable-boolean](../../static/writable-boolean.svg)
+![writable-boolean](../../static/img/writable-boolean.svg)
 
 ## 參考資料
 

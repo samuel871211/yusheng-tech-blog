@@ -393,7 +393,7 @@ ABNF Definition
 
 ## 小結
 
-![utf8_utf16_landscape_v2](../../static/utf8_utf16_landscape_v2.svg)
+![utf8_utf16_landscape_v2](../../static/img/utf8_utf16_landscape_v2.svg)
 
 <!-- todo-yus 慢慢補 -->
 

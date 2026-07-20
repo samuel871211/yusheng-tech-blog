@@ -202,7 +202,7 @@ clientRequest.on("response", (res) => {
 
 ## `headersTimeout` 跟 `requestTimeout` 圖解
 
-![headers-timeout-vs-request-timeout](../../static/headers-timeout-vs-request-timeout.svg)
+![headers-timeout-vs-request-timeout](../../static/img/headers-timeout-vs-request-timeout.svg)
 
 ## 限制 headers 大小
 

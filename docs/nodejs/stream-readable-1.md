@@ -273,9 +273,9 @@ flowchart TD
 | `_destroy`    | No                    | release underlying resources                   |
 | `push`        | No                    | should only be invoked inside `_read`          |
 
-![readable-flowing](../../static/readable-flowing.svg)
+![readable-flowing](../../static/img/readable-flowing.svg)
 
-![readable-boolean](../../static/readable-boolean.svg)
+![readable-boolean](../../static/img/readable-boolean.svg)
 
 ## 參考資料
 

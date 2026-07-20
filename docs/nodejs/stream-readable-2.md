@@ -18,7 +18,7 @@ myReadable.read(); // 16384 bytes
 
 但實務上讀取 `read` 跟寫入 `push` 的速度會不一樣，此時就需要記憶體管理機制，避免 OOM
 
-![nodejs-stream-readable-read-flow](../../static/nodejs-stream-readable-read-flow.svg)
+![nodejs-stream-readable-read-flow](../../static/img/nodejs-stream-readable-read-flow.svg)
 
 `push` 的回傳值，如同 [writable.write](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 一樣是 boolean，代表的是 **isSafeToPushMore**、**canContinue** 的意思
 
@@ -210,8 +210,8 @@ myWritable.end();
 
 ## Readable vs Writable
 
-![readable-role-flow](../../static/readable-role-flow.svg)
-![writable-role-flow](../../static/writable-role-flow.svg)
+![readable-role-flow](../../static/img/readable-role-flow.svg)
+![writable-role-flow](../../static/img/writable-role-flow.svg)
 
 <!-- |                      | Readable                                            | Writable                                                |
 | -------------------- | --------------------------------------------------- | ------------------------------------------------------- |

@@ -44,7 +44,7 @@ const myWritable = new MyWritable({ highWaterMark: 1024 });
 - 但 `write` 本身是同步的 function，可以無限制地呼叫
 - 為了避免記憶體耗盡，就必須實作一個 "高水位線"
 
-![nodejs-stream-writable-write-flow](../../static/nodejs-stream-writable-write-flow.svg)
+![nodejs-stream-writable-write-flow](../../static/img/nodejs-stream-writable-write-flow.svg)
 
 Node.js 在 `write` 的當下，就可以判斷接下來要寫入的 chunk 是否會頂到 `highWaterMark`
 

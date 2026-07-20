@@ -380,4 +380,4 @@ const clientSocket = net.connect({
 | connectionAttemptTimeout | ✅                       | ❌                       |
 | connectionAttemptFailed  | ✅                       | ❌                       |
 
-![tcp-client-connect-state-machine](../../static/tcp-client-connect-state-machine.svg)
+![tcp-client-connect-state-machine](../../static/img/tcp-client-connect-state-machine.svg)

@@ -463,7 +463,7 @@ clientRequest.on("response", (response: http.IncomingMessage) => {
 
 Node.js http 模組層的各種 `setTimeout` 或是 `timeout`，底層都是綁定到 `net.Socket.setTimeout`
 
-![http-timeout](../../static/http-timeout.svg)
+![http-timeout](../../static/img/http-timeout.svg)
 
 也因此會有 [後者覆蓋前者](#case-4timeout-後者覆蓋前者) 的狀況，因為
 

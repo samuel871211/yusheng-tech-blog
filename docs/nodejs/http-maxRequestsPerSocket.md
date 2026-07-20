@@ -156,4 +156,4 @@ remotePort:  53444
 
 最後比較一下 `maxRequestsPerSocket` 遇到 pipeline 跟 non-pipeline requests 的差異
 
-![http-maxRequestsPerSocket-pipeline-vs-non-pipeline](../../static/http-maxRequestsPerSocket-pipeline-vs-non-pipeline.svg)
+![http-maxRequestsPerSocket-pipeline-vs-non-pipeline](../../static/img/http-maxRequestsPerSocket-pipeline-vs-non-pipeline.svg)

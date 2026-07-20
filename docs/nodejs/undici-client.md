@@ -284,7 +284,7 @@ class FastTimer {
 
 ## headersTimeout & bodyTimeout 圖解
 
-![headers-timeout-vs-body-timeout](../../static/headers-timeout-vs-body-timeout.svg)
+![headers-timeout-vs-body-timeout](../../static/img/headers-timeout-vs-body-timeout.svg)
 
 ## ClientOptions.maxHeaderSize
 
