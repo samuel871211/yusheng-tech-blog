@@ -123,6 +123,8 @@ sequenceDiagram
   Note over c: clientSocket.on("end")<br/>clientSocket's Readable has ended
 ```
 
+<!-- ![](../../static/tcp-client-server-socket-end.svg) -->
+
 ### server 透過 `socket.end()` 發起關閉連線
 
 <!-- prettier-ignore -->
@@ -160,6 +162,8 @@ clientSocket.on("end", () => {
 用 [Wireshark](https://www.wireshark.org/download.html) 抓 Loopback: lo0，加上篩選 tcp.port == 5000，觀察由 TCP server 主動發起的關閉連線
 
 ![tcp-server-4-way](../../static/img/tcp-server-4-way.jpg)
+
+<!-- todo-yus -->
 
 流程如下：
 
