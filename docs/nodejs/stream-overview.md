@@ -28,6 +28,8 @@ sequenceDiagram
   Note over s: 我身為 server，我要 "寫入" HTTP response
 ```
 
+<!-- ![](../../static/stream-overview-from-http-server-point-of-view.svg) -->
+
 ## HTTP client 視角：Readable 與 Writable
 
 ```mermaid
@@ -41,6 +43,8 @@ sequenceDiagram
   s ->> c: http.IncomingMessage (stream.Readable)
   Note over c: 我身為 client，我要 "讀取" HTTP response
 ```
+
+<!-- ![](../../static/stream-overview-from-http-client-point-of-view.svg) -->
 
 :::info
 從上述的例子，我們可以得知，所謂的 "Readable" 跟 "Writable"，是根據 "你目前的角色" 來看
@@ -78,6 +82,8 @@ graph
     style SReq fill:#d4edff
     style SRes fill:#ffd4d4
 ```
+
+<!-- ![](../../static/client-server-readable-writable.svg) -->
 
 Node.js http 模組的底層就是 `stream` 跟 `net.Socket`：
 
@@ -151,6 +157,8 @@ flowchart TD
     style C fill:#bfb,stroke:#333
     style D fill:#ffb,stroke:#333
 ```
+
+<!-- ![](../../static/client-request-server-response-extends.svg) -->
 
 :::info
 為何 `http.OutgoingMessage` 不是繼承 `stream.Writable` ? 因為當時 `stream.Writable` 根本還沒被實作
@@ -345,6 +353,8 @@ flowchart TD
     style A fill:#f9f,stroke:#333
     style B fill:#bbf,stroke:#333
 ```
+
+<!-- ![](../../static/incoming-message-extends.svg) -->
 
 As an HTTP client (receive HTTP response)
 

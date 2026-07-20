@@ -88,7 +88,7 @@ flowchart LR
     style D fill:#ffb,stroke:#333
 ```
 
-<!-- ![](../../static/EventEmitter-to-http.png) -->
+<!-- ![](../../static/EventEmitter-to-http.svg) -->
 
 所以，接下來我會規劃數篇文章，一路涵蓋 `EventEmitter`、`stream`、`net.Socket` 跟 `http`
 
@@ -298,7 +298,7 @@ graph LR
     style L6 fill:#f0f0f0
 ```
 
-<!-- ![](../../static/my-daily-events.png) -->
+<!-- ![](../../static/my-daily-events.svg) -->
 
 當你觸發 `myDailyEventsEmitter.emit('morning')`，就會先刷牙 (brushMyTeeth)，再吃早餐 (haveBreakfast)
 
