@@ -303,11 +303,12 @@ myWritable.on("close", () => {
 
 ```mermaid
 flowchart LR
-    A[_construct] --> E["callback(err)"]
-    E --> F[_destroy]
+    A["_construct"] --> F[_destroy]
     F --> G["on('error')"]
     G --> H["on('close')"]
 ```
+
+<!-- ![](../../static/stream-writable-construct-to-close.svg) -->
 
 ## `write` 跟 `_write` 的錯誤傳遞
 
@@ -373,14 +374,15 @@ myWritable.on("close", () => {
 
 ```mermaid
 flowchart LR
-    A[_write] --> B["_write<br/>callback(err)"]
-    B --> C["write<br/>callback(err)"]
+    A["callback(err)<br/>of _write"] --> C["callback(err)<br/>of write"]
     C --> D[_destroy]
     D --> E["on('error')"]
     E --> F["on('close')"]
 
     style C fill:#fff5ad,stroke:#aaaa33
 ```
+
+<!-- ![](../../static/stream-writable-write-error-to-close.svg) -->
 
 ## 小結
 
