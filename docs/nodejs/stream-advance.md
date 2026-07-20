@@ -152,7 +152,7 @@ myReadable.on("readable", () => {
 });
 ```
 
-另外，`objectMode` 跟上面介紹的 [encode / decode](當作第一人稱的話#encode--decode) 是互斥的參數，基本上只能擇一使用
+另外，`objectMode` 跟上面介紹的 [encode / decode](#encode--decode) 是互斥的參數，基本上只能擇一使用
 
 `Writable` 若在 `objectMode: true` 的情境，則 `decodeStrings` 跟 `defaultEncoding` 基本上就無效
 
