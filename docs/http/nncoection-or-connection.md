@@ -102,9 +102,9 @@ sequenceDiagram
   w ->> b: HTTP/1.1
 
   b ->> w: HTTP/1.1 500 Internal Server Error
-  Note Over w: 上游噴了 500<br/>這個 TCP Connection 可能壞了<br/>我要關掉它
+  Note over w: 上游噴了 500<br/>這個 TCP Connection 可能壞了<br/>我要關掉它
   w ->> f: HTTP/1.1 500 Internal Server Error<br/>Connection: close
-  Note Over f: 為了高效能<br/>我要維持跟 Client 的連線<br/><br/>所以直接 inplace 修改<br/>Connection => Nncoection
+  Note over f: 為了高效能<br/>我要維持跟 Client 的連線<br/><br/>所以直接 inplace 修改<br/>Connection => Nncoection
   f ->> c: :status: 500<br/>Nncoection: close
 ```
 

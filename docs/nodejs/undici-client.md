@@ -477,14 +477,14 @@ sequenceDiagram
   participant c as Client
   participant s as Server
 
-  Note Over c: Set keepAliveTimeout = 4000, keepAliveMaxTimeout = 600000
+  Note over c: Set keepAliveTimeout = 4000, keepAliveMaxTimeout = 600000
   c ->> s: GET / HTTP/1.1<br/>Connection: keep-alive
   s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>keep-alive: timeout=5
-  Note Over c: Override keepAliveTimeout to server declared 5000ms
+  Note over c: Override keepAliveTimeout to server declared 5000ms
 
   c ->> s: GET / HTTP/1.1<br/>Connection: keep-alive
   s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>keep-alive: timeout=10000000
-  Note Over c: Override keepAliveTimeout to 600000<br/>because 10000000 exceeds keepAliveMaxTimeout
+  Note over c: Override keepAliveTimeout to 600000<br/>because 10000000 exceeds keepAliveMaxTimeout
 ```
 
 <!-- 設定以下

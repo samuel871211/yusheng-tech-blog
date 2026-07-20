@@ -45,17 +45,17 @@ sequenceDiagram
   participant c as client
   participant s as server
 
-  Note Over c,s: TCP 3-way handshake
+  Note over c,s: TCP 3-way handshake
 
-  Note Over c,s: 1st HTTP round trip
+  Note over c,s: 1st HTTP round trip
   c ->> s: GET /request1 HTTP/1.1<br/>Host: 127.0.0.1:5000
   s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 9<br/><br/>/request1
 
-  Note Over c,s: 2nd HTTP round trip
+  Note over c,s: 2nd HTTP round trip
   c ->> s: GET /request2 HTTP/1.1<br/>Host: 127.0.0.1:5000
   s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 9<br/><br/>/request2
 
-  Note Over c,s: 3rd HTTP round trip
+  Note over c,s: 3rd HTTP round trip
   c ->> s: GET /request3 HTTP/1.1<br/>Host: 127.0.0.1:5000
   s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 9<br/><br/>/request3
 ```
@@ -71,13 +71,13 @@ sequenceDiagram
   participant c as client
   participant s as server
 
-  Note Over c,s: TCP 3-way handshake
+  Note over c,s: TCP 3-way handshake
 
-  Note Over s: Poison the TCP socket by sending<br/>a complete "poisoned" HTTP response
+  Note over s: Poison the TCP socket by sending<br/>a complete "poisoned" HTTP response
   s ->> c: HTTP/1.1 302 Found<br/>Location: http://evil.com<br/>Content-Length: 0
   c ->> s: GET /request1 HTTP/1.1<br/>Host: 127.0.0.1:5000
 
-  Note Over c: Will client treat the "poisoned" HTTP response<br/>as the response of /request1 ?
+  Note over c: Will client treat the "poisoned" HTTP response<br/>as the response of /request1 ?
 ```
 
 ## 現實難點
@@ -105,7 +105,7 @@ sequenceDiagram
   participant c as client
   participant s as server
 
-  Note Over c,s: TCP 3-way handshake
+  Note over c,s: TCP 3-way handshake
 
   c ->> s: GET /request1 HTTP/1.1<br/>Host: 127.0.0.1:5000
   s ->> c: HTTP/1.1 302 Found<br/>Location: http://evil.com<br/>Content-Length: 0
@@ -153,13 +153,13 @@ sequenceDiagram
   b ->> s1: GET / HTTP/1.1<br/>Host: 127.0.0.1:5000
   s1 ->> b: HTTP/1.1 200 OK<br/>Content-Type: text/html<br/>Content-Length: ...<br/><br/>HTML Content...
 
-  Note Over b, s2: browser preconnect to malicious server
+  Note over b, s2: browser preconnect to malicious server
 
-  Note Over s2: Poison the TCP socket by sending<br/>a complete "poisoned" HTTP response
+  Note over s2: Poison the TCP socket by sending<br/>a complete "poisoned" HTTP response
   s2 ->> b: HTTP/1.1 200 OK<br/>Content-Length: 15<br/><br/>alert('poison')
   b ->> s2: GET /script1.js HTTP/1.1<br/>Host: 127.0.0.1:5001
 
-  Note Over b: Will browser treat the "poisoned" HTTP response<br/>as the response of /script1.js ?
+  Note over b: Will browser treat the "poisoned" HTTP response<br/>as the response of /script1.js ?
 ```
 
 ## PoC

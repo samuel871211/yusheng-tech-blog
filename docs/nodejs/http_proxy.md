@@ -178,18 +178,18 @@ sequenceDiagram
   participant P as HTTP/1.0 Forward Proxy
   participant S as HTTP/1.1 server
 
-  Note Over C, S: 假設 HTTP/1.1 client 沒送 Host header 的話
+  Note over C, S: 假設 HTTP/1.1 client 沒送 Host header 的話
   C ->> P: GET http://localhost:5000/ HTTP/1.1
-  Note Over P: 將 absolute-form 轉成 origin-form<br/>但沒有生成 Host header
+  Note over P: 將 absolute-form 轉成 origin-form<br/>但沒有生成 Host header
   P ->> S: GET / HTTP/1.0
 
-  Note Over S: Host 資訊遺失<br/>雖然 HTTP/1.0<br/>沒有強制要 Host header<br/>但 server 實作上還是<br/>回應 400 Bad Request
+  Note over S: Host 資訊遺失<br/>雖然 HTTP/1.0<br/>沒有強制要 Host header<br/>但 server 實作上還是<br/>回應 400 Bad Request
   S ->> P: HTTP/1.0 400 Bad Request
   P ->> C: HTTP/1.0 400 Bad Request
 
-  Note Over C, S: 假設 HTTP/1.1 client 有送 Host header 的話
+  Note over C, S: 假設 HTTP/1.1 client 有送 Host header 的話
   C ->> P: GET http://localhost:5000/ HTTP/1.1<br/>Host: localhost:5000
-  Note Over P: 將 absolute-form 轉成 origin-form<br/>Host header 不認識，直接轉發
+  Note over P: 將 absolute-form 轉成 origin-form<br/>Host header 不認識，直接轉發
   P ->> S: GET / HTTP/1.0<br/>Host: localhost:5000
 
   S ->> P: HTTP/1.0 200 OK
@@ -231,12 +231,12 @@ sequenceDiagram
   participant S as server
 
   C ->> P: GET http://example.com HTTP/1.1<br/>Connection: keep-alive<br/>Host: example.com
-  Note Over P: 我不認識 Connection: keep-alive<br/>但我還是會轉發<br/>然後我也沒有把 1.1 改成 1.0
+  Note over P: 我不認識 Connection: keep-alive<br/>但我還是會轉發<br/>然後我也沒有把 1.1 改成 1.0
   P ->> S: GET / HTTP/1.1<br/>Connection: keep-alive<br/>Host: example.com
-  Note Over S: 沒問題，這條連線我會維持 N 秒
+  Note over S: 沒問題，這條連線我會維持 N 秒
   S ->> P: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Content-Length: 0
-  Note Over P: 我不認識 Connection: keep-alive<br/>所以我沒有把這條連線留在連線池
-  Note Over P, S: proxy 到 server 中間<br/>維持了一條 idle TCP 連線
+  Note over P: 我不認識 Connection: keep-alive<br/>所以我沒有把這條連線留在連線池
+  Note over P, S: proxy 到 server 中間<br/>維持了一條 idle TCP 連線
   P ->> C: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Content-Length: 0
 ```
 
@@ -249,9 +249,9 @@ sequenceDiagram
   participant S as server
 
   C ->> P: GET http://example.com HTTP/1.1<br/>Proxy-Connection: keep-alive<br/>Host: example.com
-  Note Over P: 我不認識 Proxy-Connection: keep-alive<br/>但我還是會轉發
+  Note over P: 我不認識 Proxy-Connection: keep-alive<br/>但我還是會轉發
   P ->> S: GET / HTTP/1.0<br/>Proxy-Connection: keep-alive<br/>Host: example.com
-  Note Over S: 沒看到 Connection: keep-alive<br/>傳送完以後不保留連線
+  Note over S: 沒看到 Connection: keep-alive<br/>傳送完以後不保留連線
   S ->> P: HTTP/1.0 200 OK<br/>Content-Length: 0
   P ->> C: HTTP/1.0 200 OK<br/>Content-Length: 0
 ```
@@ -265,12 +265,12 @@ sequenceDiagram
   participant S as server
 
   C ->> P: GET http://example.com HTTP/1.1<br/>Proxy-Connection: keep-alive<br/>Host: example.com
-  Note Over P: 將 Proxy-Connection: keep-alive<br/>轉成 Connection: keep-alive
+  Note over P: 將 Proxy-Connection: keep-alive<br/>轉成 Connection: keep-alive
   P ->> S: GET / HTTP/1.1<br/>Connection: keep-alive<br/>Host: example.com
   S ->> P: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Content-Length: 0
-  Note Over P, S: TCP 連線可以複用
+  Note over P, S: TCP 連線可以複用
   P ->> C: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Content-Length: 0
-  Note Over C, P: TCP 連線可以複用
+  Note over C, P: TCP 連線可以複用
 ```
 
 ## NO_PROXY

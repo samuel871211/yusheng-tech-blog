@@ -37,11 +37,11 @@ sequenceDiagram
   participant c as client
   participant s as server
 
-  Note Over c, s: TLS handshake
+  Note over c, s: TLS handshake
   c ->> s: Client Hello (SNI = localhost)
   s ->> c: Server Hello (SAN = localhost, a.com, b.com)
 
-  Note Over c, s: HTTP/2 Connection Preface<br/>(ORIGIN frame 最早的送出時機 = server 送完 SETTINGS frame 之後)
+  Note over c, s: HTTP/2 Connection Preface<br/>(ORIGIN frame 最早的送出時機 = server 送完 SETTINGS frame 之後)
   c ->> s: Magic, SETTINGS[0]
   s ->> c: SETTINGS[0], SETTINGS[0] ACK, ORIGIN[0] localhost, a.com, b.com
   c ->> s: SETTINGS[0] ACK

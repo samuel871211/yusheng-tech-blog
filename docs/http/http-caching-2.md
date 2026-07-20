@@ -78,19 +78,19 @@ sequenceDiagram
   participant Browser
   participant Origin Server
 
-  Note Over Browser, Origin Server: Open Browser Tab With Disable Cache
+  Note over Browser, Origin Server: Open Browser Tab With Disable Cache
 
   Browser ->> Origin Server: GET /image.jpg HTTP/1.1<br/>Cache-Control: no-cache
   Origin Server ->> Browser: HTTP/1.1 200 OK<br/>Cache-Control: public, max-age=5, immutable<br/>Content-Length: 1374458<br/>Content-Type: image/jpeg<br/><br/>binary data...
 
-  Note Over Browser, Origin Server: Open Browser Tab With Enable Cache
+  Note over Browser, Origin Server: Open Browser Tab With Enable Cache
 
   Browser ->> Origin Server: GET /image.jpg HTTP/1.1<br/>Cache-Control: max-age=0
   Origin Server ->> Browser: HTTP/1.1 304 Not Modified<br/>Cache-Control: public, max-age=5, immutable
 
-  Note Over Browser, Origin Server: fetch /image.jpg?case=1 With Enable Cache
+  Note over Browser, Origin Server: fetch /image.jpg?case=1 With Enable Cache
 
-  Note Over Browser: Browser Cache is fresh, return directly
+  Note over Browser: Browser Cache is fresh, return directly
 ```
 
 ## Nginx Proxy Cache 設定

@@ -154,23 +154,23 @@ sequenceDiagram
   participant A as user program<br/>(HTTP client)
   participant P as pending requests queue<br/>(agent.requests)
   participant S as example.com<br/>(HTTP server)
-  Note Over A, P: new http.Agent({ maxSockets: 3 })
+  Note over A, P: new http.Agent({ maxSockets: 3 })
 
   A ->> S: GET /request1 HTTP/1.1<br/>(TCP socket 1)
   A ->> S: GET /request2 HTTP/1.1<br/>(TCP socket 2)
   A ->> S: GET /request3 HTTP/1.1<br/>(TCP socket 3)
 
-  Note Over A, P: 超過 maxSockets<br/>先丟到 pending requests queue
+  Note over A, P: 超過 maxSockets<br/>先丟到 pending requests queue
 
   A ->> P: GET /request4 HTTP/1.1
 
   S ->> A: HTTP/1.1 200 OK<br/>(TCP socket 1)
 
-  Note Over A, P: TCP socket 1 被釋放<br/>可以分配給 request 4
+  Note over A, P: TCP socket 1 被釋放<br/>可以分配給 request 4
 
   P ->> S: GET /request4 HTTP/1.1
 
-  Note Over A, P: 目前剛好頂到 maxSockets
+  Note over A, P: 目前剛好頂到 maxSockets
 ```
 
 ## `ClientRequest` 跟 `net.Socket` 連結的橋樑

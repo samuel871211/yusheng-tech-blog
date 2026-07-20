@@ -138,7 +138,7 @@ sequenceDiagram
   participant C as _headers<br/>(headersSent = true)
   participant D as _send()
 
-  Note Over A, D: 設定 headers
+  Note over A, D: 設定 headers
   A ->> B: setHeader(name, value)
   A ->> B: setHeaders(headers)
   A ->> B: appendHeader(name, value)
@@ -146,7 +146,7 @@ sequenceDiagram
   A ->> D: flushHeaders()
   A ->> C: writeHead(statusCode[, statusMessage][, headers])
 
-  Note Over A, D: 取得 headers
+  Note over A, D: 取得 headers
   A ->> B: getHeader(name)
   A ->> B: getHeaderNames()
   A ->> B: getHeaders()

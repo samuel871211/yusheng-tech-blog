@@ -109,18 +109,18 @@ clientSocket.on("end", () => {
 
 ```mermaid
 sequenceDiagram
-  participant TCP client
-  participant TCP server
+  participant c as TCP client
+  participant s as TCP server
 
-  TCP client ->> TCP server: clientSocket.end()<br/>(FIN will be sent)
-  Note Over TCP client: clientSocket's Writable has ended
-  TCP server ->> TCP client: ACK (sent automatically by OS)
-  Note Over TCP server: serverSocket.on("end")<br/>serverSocket's Readable has ended
+  c ->> s: clientSocket.end()<br/>(FIN will be sent)
+  Note over c: clientSocket's Writable has ended
+  s ->> c: ACK (sent automatically by OS)
+  Note over s: serverSocket.on("end")<br/>serverSocket's Readable has ended
 
-  TCP server ->> TCP client: serverSocket.end()<br/>(FIN will be sent)
-  Note Over TCP server: serverSocket's Writable has ended
-  TCP client ->> TCP server: ACK (sent automatically by OS)
-  Note Over TCP client: clientSocket.on("end")<br/>clientSocket's Readable has ended
+  s ->> c: serverSocket.end()<br/>(FIN will be sent)
+  Note over s: serverSocket's Writable has ended
+  c ->> s: ACK (sent automatically by OS)
+  Note over c: clientSocket.on("end")<br/>clientSocket's Readable has ended
 ```
 
 ### server 透過 `socket.end()` 發起關閉連線
@@ -169,14 +169,14 @@ sequenceDiagram
   participant TCP server
 
   TCP server ->> TCP client: serverSocket.end()<br/>(FIN will be sent)
-  Note Over TCP server: serverSocket's Writable has ended
+  Note over TCP server: serverSocket's Writable has ended
   TCP client ->> TCP server: ACK (sent automatically by OS)
-  Note Over TCP client: clientSocket.on("end")<br/>clientSocket's Readable has ended
+  Note over TCP client: clientSocket.on("end")<br/>clientSocket's Readable has ended
 
   TCP client ->> TCP server: clientSocket.end()<br/>(FIN will be sent)
-  Note Over TCP client: clientSocket's Writable has ended
+  Note over TCP client: clientSocket's Writable has ended
   TCP server ->> TCP client: ACK (sent automatically by OS)
-  Note Over TCP server: serverSocket.on("end")<br/>serverSocket's Readable has ended
+  Note over TCP server: serverSocket.on("end")<br/>serverSocket's Readable has ended
 ```
 
 ## TCP socket 生命週期 4-1：強制關閉連線

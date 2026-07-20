@@ -2025,15 +2025,15 @@ sequenceDiagram
   participant Client
   participant Frontend Server
 
-  Note Over Client, Frontend Server: Attacker
+  Note over Client, Frontend Server: Attacker
   Client ->> Frontend Server: Request 1 + Request 2
   Frontend Server ->> Client: Response 1
 
-  Note Over Client, Frontend Server: Victim
+  Note over Client, Frontend Server: Victim
   Client ->> Frontend Server: Request 3
   Frontend Server ->> Client: Response 2
 
-  Note Over Client, Frontend Server: Attacker
+  Note over Client, Frontend Server: Attacker
   Client ->> Frontend Server: Request 4
   Frontend Server ->> Client: Response 3
 ```

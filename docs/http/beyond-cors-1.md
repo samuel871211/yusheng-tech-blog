@@ -68,19 +68,19 @@ sequenceDiagram
   participant a.example.com
   participant b.example.com
 
-  Note Over a.example.com, b.example.com: HTTP Round Trip Without CORP
+  Note over a.example.com, b.example.com: HTTP Round Trip Without CORP
 
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Content-Type: image/png
 
-  Note Over a.example.com: Response Body 載入到 Memory<br/>攻擊者可透過 Spectre 達成越界讀取
+  Note over a.example.com: Response Body 載入到 Memory<br/>攻擊者可透過 Spectre 達成越界讀取
 
-  Note Over a.example.com, b.example.com: HTTP Round Trip With CORP
+  Note over a.example.com, b.example.com: HTTP Round Trip With CORP
 
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-origin<br/>Content-Type: image/png
 
-  Note Over a.example.com: Browser 檢查 CORP header<br/>發現跨域且政策為 same-origin<br/>直接丟棄 Response Body<br/>圖片載入失敗，但 F12 > Network 仍可見 headers
+  Note over a.example.com: Browser 檢查 CORP header<br/>發現跨域且政策為 same-origin<br/>直接丟棄 Response Body<br/>圖片載入失敗，但 F12 > Network 仍可見 headers
 ```
 
 ### 一石二鳥
@@ -242,7 +242,7 @@ sequenceDiagram
   participant a.example.com
   participant b.example.com
 
-  Note Over a.example.com, b.example.com: Case1: CORP `same-site`
+  Note over a.example.com, b.example.com: Case1: CORP `same-site`
 
   a.example.com ->> b.example.com: Can I load your image?
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
@@ -250,7 +250,7 @@ sequenceDiagram
   b.example.com ->> a.example.com: Sure, I allow same-site or cross-origin
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-site | cross-origin<br/>Content-Type: image/png
 
-  Note Over a.example.com, b.example.com: Case2: CORP `same-origin`
+  Note over a.example.com, b.example.com: Case2: CORP `same-origin`
 
   a.example.com ->> b.example.com: Can I load your image?
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
@@ -258,11 +258,11 @@ sequenceDiagram
   b.example.com ->> a.example.com: Sorry, we are not same-origin
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-origin<br/>Content-Type: image/png
 
-  Note Over a.example.com: Browser ignore the response body because of CORP
+  Note over a.example.com: Browser ignore the response body because of CORP
 
-  Note Over a.example.com, b.example.com: Case 3-1: COEP `require-corp`
+  Note over a.example.com, b.example.com: Case 3-1: COEP `require-corp`
 
-  Note Over a.example.com: COEP: require-corp
+  Note over a.example.com: COEP: require-corp
 
   a.example.com ->> b.example.com: I want to load your image only if you say so
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
@@ -270,9 +270,9 @@ sequenceDiagram
   b.example.com ->> a.example.com: Sure, I allow same-site or cross-origin
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-site | cross-origin<br/>Content-Type: image/png
 
-  Note Over a.example.com, b.example.com: Case 3-2: COEP `require-corp`
+  Note over a.example.com, b.example.com: Case 3-2: COEP `require-corp`
 
-  Note Over a.example.com: COEP: require-corp
+  Note over a.example.com: COEP: require-corp
 
   a.example.com ->> b.example.com: I want to load your image only if you say so
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
@@ -280,11 +280,11 @@ sequenceDiagram
   b.example.com ->> a.example.com: Sorry, we are not same-origin
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-origin<br/>Content-Type: image/png
 
-  Note Over a.example.com: Browser ignore the response body because of CORP
+  Note over a.example.com: Browser ignore the response body because of CORP
 
-  Note Over a.example.com, b.example.com: Case 3-3: COEP `require-corp`
+  Note over a.example.com, b.example.com: Case 3-3: COEP `require-corp`
 
-  Note Over a.example.com: COEP: require-corp
+  Note over a.example.com: COEP: require-corp
 
   a.example.com ->> b.example.com: I want to load your image only if you say so
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png"/>
@@ -292,11 +292,11 @@ sequenceDiagram
   b.example.com ->> a.example.com: I don't have CORP Header...
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Content-Type: image/png
 
-  Note Over a.example.com: Browser ignore the response body because of COEP
+  Note over a.example.com: Browser ignore the response body because of COEP
 
-  Note Over a.example.com, b.example.com: Case 4-1: COEP `credentialless`
+  Note over a.example.com, b.example.com: Case 4-1: COEP `credentialless`
 
-  Note Over a.example.com: COEP: credentialless
+  Note over a.example.com: COEP: credentialless
 
   a.example.com ->> b.example.com: I want to load your image without sending credentials
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png" />
@@ -304,11 +304,11 @@ sequenceDiagram
   b.example.com ->> a.example.com: Sorry, we are not same-origin
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-origin<br/>Content-Type: image/png
 
-  Note Over a.example.com: Browser ignore the response body because of CORP
+  Note over a.example.com: Browser ignore the response body because of CORP
 
-  Note Over a.example.com, b.example.com: Case 4-2: COEP `credentialless`
+  Note over a.example.com, b.example.com: Case 4-2: COEP `credentialless`
 
-  Note Over a.example.com: COEP: credentialless
+  Note over a.example.com: COEP: credentialless
 
   a.example.com ->> b.example.com: I want to load your image without sending credentials
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png" />
@@ -316,9 +316,9 @@ sequenceDiagram
   b.example.com ->> a.example.com: Sure, I allow same-site or cross-origin
   b.example.com ->> a.example.com: HTTP/1.1 200 OK<br/>Cross-Origin-Resource-Policy: same-site | cross-origin<br/>Content-Type: image/png
 
-  Note Over a.example.com, b.example.com: Case 4-3: COEP `credentialless`
+  Note over a.example.com, b.example.com: Case 4-3: COEP `credentialless`
 
-  Note Over a.example.com: COEP: credentialless
+  Note over a.example.com: COEP: credentialless
 
   a.example.com ->> b.example.com: I want to load your image without sending credentials
   a.example.com ->> b.example.com: <img src="https://b.example.com/image.png" />

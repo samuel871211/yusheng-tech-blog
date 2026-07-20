@@ -72,12 +72,12 @@ sequenceDiagram
   B ->> S: GET /index.html HTTP/1.1<br/>Host: example.com
   S ->> B: HTTP/1.1 103 Early Hints<br/>Link: </style.css>#59; rel=preload#59; as=style
 
-  Note Over B: preload http://example.com/style.css
+  Note over B: preload http://example.com/style.css
 
   B ->> S: GET /style.css HTTP/1.1<br/>Host: example.com
   S ->> B: HTTP/1.1 200 OK<br/>Content-Type: text/css<br/>Content-Length: 999<br/><br/>CSS Content Here...
 
-  Note Over S: after few seconds
+  Note over S: after few seconds
   S ->> B: HTTP/1.1 200 OK<br/>Content-Type: text/html<br/>Content-Length: 999<br/><br/>HTML Content Here...
 ```
 
