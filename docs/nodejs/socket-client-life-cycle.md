@@ -215,6 +215,8 @@ flowchart TD
   D --> E["on('error')"]
 ```
 
+<!-- ![](../../static/connection-attempt-failed-to-error.svg) -->
+
 至於為何 Node.js 會把所有 addresses 都嘗試連線一次呢？根據 [socket.connect](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener) 的官方文件，重點的預設值為：
 
 - `family: 0`：IPv6 跟 IPv4 都允許
@@ -321,6 +323,8 @@ flowchart TD
   C --> D["connectionAttemptFailed<br/>104.18.27.120:81"]
   D --> E["on('error')"]
 ```
+
+<!-- ![](../../static/connection-attempt-timeout-to-error.svg) -->
 
 - 第一組 IP 104.18.26.120 經過 10ms 就 timeout
 - 第二組 IP 104.18.27.120 由於是最後一組，所以不受 10ms 的 timeout 限制（畢竟要以連線成功為優先）
