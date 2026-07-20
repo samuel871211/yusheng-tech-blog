@@ -152,7 +152,7 @@ myReadable.on("readable", () => {
 });
 ```
 
-另外，`objectMode` 跟上面介紹的 [encode / decode](#encode--decode) 是互斥的參數，基本上只能擇一使用
+另外，`objectMode` 跟上面介紹的 [encode / decode](當作第一人稱的話#encode--decode) 是互斥的參數，基本上只能擇一使用
 
 `Writable` 若在 `objectMode: true` 的情境，則 `decodeStrings` 跟 `defaultEncoding` 基本上就無效
 
@@ -210,10 +210,12 @@ sequenceDiagram
   participant server
 
   client ->> middle: 收到 HTTP request<br/>(stream.Readable)
-  middle ->> server: 將 HTTP request 轉發出去<br/>readable.pipe(res)
+  middle ->> server: 將 HTTP request 轉發出去<br/>readable.pipe(req)
   server ->> middle: 收到 HTTP response<br/>(stream.Readable)
   middle ->> client: 將 HTTP response 轉發回去<br/>readable.pipe(res)
 ```
+
+<!-- ![](../../static/stream-pipe-http-example.svg) -->
 
 我們用 Node.js 實作一個簡單的 HTTP 中間層 + server 架構
 
@@ -264,12 +266,12 @@ httpServer.on("request", (req, res) => {
 
 不過以上只是簡單的 PoC，實際上 HTTP 中間層需要處理很多細節，包含且不限於以下：
 
-1. keep-alive
-2. change origin header
-3. keep or omit cookie, authorization
-4. HTTPS ->> HTTP
-5. HTTP/2 ->> HTTP
-6. error handle
+- keep-alive
+- change origin header
+- keep or omit cookie, authorization
+- HTTPS ->> HTTP
+- HTTP/2 ->> HTTP
+- error handle
 
 所以通常不會自己手刻 http-proxy，而是會用現成的套件，例如 [http-proxy-3](https://www.npmjs.com/package/http-proxy-3)，處理了大部分 http-proxy 會遇到的 edge case
 
