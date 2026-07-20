@@ -13,7 +13,6 @@ last_update:
 
 ```ts
 addEventListener("click", () => {});
-document.onload = () => {};
 ```
 
 還是後端的 Node.js
@@ -78,7 +77,7 @@ fetch("https://your-api-server.com", {
 如果想搞懂 Node.js http 模組的話，你必須得知道這一整條路的關聯
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[EventEmitter] --> B[stream]
     B --> C[net.Socket]
     C --> D[http]
