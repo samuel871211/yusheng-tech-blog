@@ -134,6 +134,8 @@ flowchart LR
     C --> D["on('close')"]
 ```
 
+<!-- ![](../../static/stream-readable-construct-to-close.svg) -->
+
 ### `_read` 階段正確呼叫 `destroy`
 
 ```ts
@@ -182,6 +184,8 @@ flowchart LR
     C --> D["on('close')"]
 ```
 
+<!-- ![](../../static/stream-readable-read-to-close.svg) -->
+
 ## `writable._final` vs `readable.push`
 
 在 `stream.Readable`，結束的訊號 `readable.push(null)` 是由實作者在 `_read` 的實作內主動呼叫的
@@ -206,7 +210,7 @@ myWritable.write("some data");
 myWritable.end();
 ```
 
-也因此，`stream.Readable` 沒有 `_final` 這個 internal method，因為 Node.js 已經提供在 `_read` 實作 async 操作的彈性了
+也因此，`stream.Readable` 沒有 `_final` 這個 internal method，因為 Node.js 已經提供在 `_read` 實作非同步操作的彈性了
 
 ## Readable vs Writable
 
