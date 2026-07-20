@@ -70,3 +70,10 @@ This command generates static content into the `build` directory and can be serv
 ## last_update
 
 每篇文章都會有 last_update，這代表的是文章內容最後的更新日期，格式排版、修正錯字不算在內。
+
+## 圖片
+
+| Path        | Description                     |
+| ----------- | ------------------------------- |
+| /static/img | images reference by docs folder |
+| /static/    | images only reference by iThome |
