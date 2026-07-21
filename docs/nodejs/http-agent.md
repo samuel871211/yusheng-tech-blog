@@ -20,7 +20,7 @@ last_update:
 - [socket-client-life-cycle](./socket-client-life-cycle.md)
 - [socket-life-cycle](./socket-life-cycle.md)
 
-終於可以進到 Node.js http 模組了！
+終於可以進到 Node.js `http` 模組了！
 
 :::info
 本文測試、引用的 Node.js 原始碼為 v24.x
@@ -65,8 +65,9 @@ res.headers {
 }
 ```
 
-從 TCP 的角度來看，每次都需要
+從 TCP 的視角來看，每次都需要
 <span style={{ color: "red" }}>"三次交握開啟連線"</span> + <span style={{ color: "green" }}>"四次交握關閉連線"</span>，效能上會比較差
+
 ![/wireshark-tcp-3+4](../../static/img/wireshark-tcp-3+4.jpg)
 
 `http.Agent` 為此而生，它幫使用者管理
@@ -76,7 +77,7 @@ res.headers {
 
 <!-- Node.js 使用 [http.request](https://nodejs.org/docs/latest-v24.x/api/http.html#httprequestoptions-callback) 發起 HTTP Request 時，若沒有使用 [http.Agent](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpagent)，則每個請求都會創建一個新的 TCP 連線，並且該連線傳輸完這個 HTTP Request 就會關閉。若從 TCP (Layer 4) 的角度來看，每次都需要三次交握開啟連線 + 四次交握關閉連線，效能上會比較差。所以，管理 TCP socket 連線池就成了一門學問，http.Agent 正是為此而生（當然 http.Agent 能做到的不止是管理 TCP socket 連線池）。 -->
 
-## new http.Agent(options)
+## `new http.Agent(options)`
 
 https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions
 
@@ -173,11 +174,13 @@ sequenceDiagram
   Note over A, P: 目前剛好頂到 maxSockets
 ```
 
+<!-- ![](../../static/http-agent-max-sockets.svg) -->
+
 ## `ClientRequest` 跟 `net.Socket` 連結的橋樑
 
-當你用 `http.request` 發起請求時，背後會優先從 `http.Agent` 的連線池（[freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets)）挑選一個已連線的 `net.Socket` 關聯到這個 `ClientRequest`
+當你用 `http.request` 發起請求時，背後會優先從 `http.Agent` 的連線池（[freeSockets](https://nodejs.org/docs/latest-v24.x/api/http.html#agentfreesockets)）挑選一個已連線的 `net.Socket` 關聯到這個 `ClientRequest`。若 `freeSockets` 為空，就會建立一個新的 TCP 連線
 
-若 `freeSockets` 為空，就會建立一個新的 TCP 連線。詳細的實作可以看 `lib/_http_agent.js` 的 `Agent.prototype.addRequest`
+詳細的實作可以看 `lib/_http_agent.js` 的 `Agent.prototype.addRequest`
 
 我們寫個 PoC 來測試
 
@@ -208,7 +211,7 @@ clientRequest1.on("close", () =>
 );
 ```
 
-- [request.on('socket')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-socket)：`ClientRequest` 跟 `net.Socket` 關聯的瞬間觸發
+- [request.on("socket")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-socket)：`ClientRequest` 跟 `net.Socket` 關聯的瞬間觸發
 - [request.reusedSocket](https://nodejs.org/docs/latest-v24.x/api/http.html#requestreusedsocket)：該 `net.Socket` 是否關聯過其他 `ClientRequest`
 
 ## 小結
