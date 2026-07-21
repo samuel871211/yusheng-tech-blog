@@ -141,6 +141,8 @@ timeline
       : httpServer closed
 ```
 
+<!-- ![](../../static/http-server-close-timeline-5s.svg) -->
+
 若將 HTTP server 的延遲改成 20 秒
 
 ```ts
@@ -159,6 +161,8 @@ timeline
        : gracefulClose
     10s: force exit
 ```
+
+<!-- ![](../../static/http-server-close-timeline-10s.svg) -->
 
 ## 小結
 
