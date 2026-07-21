@@ -81,6 +81,8 @@ sequenceDiagram
   S ->> B: HTTP/1.1 200 OK<br/>Content-Type: text/html<br/>Content-Length: 999<br/><br/>HTML Content Here...
 ```
 
+<!-- ![](../../static/http-103-early-hints.svg) -->
+
 server
 
 ```ts
@@ -106,11 +108,7 @@ httpServer.on("request", (req, res) => {
 index.html
 
 ```html
-<html>
-  <body>
-    <h1>hello world</h1>
-  </body>
-</html>
+<h1>hello world</h1>
 ```
 
 瀏覽器打開 http://localhost:5000/ ，發現 103 Early Hints 提供的 `/style.css` 沒正確被載入
@@ -126,13 +124,9 @@ index.html
 < HTTP/1.1 200 OK
 < Connection: keep-alive
 < Keep-Alive: timeout=5
-< Content-Length: 62
+< Content-Length: 20
 <
-<html>
-  <body>
-    <h1>hello world</h1>
-  </body>
-</html>
+<h1>hello world</h1>
 ```
 
 ### Browser compatibility
@@ -159,13 +153,9 @@ Link: </style.css>; rel=preload; as=style
 HTTP/1.1 200 OK
 Connection: keep-alive
 Keep-Alive: timeout=5
-Content-Length: 62
+Content-Length: 20
 
-<html>
-  <body>
-    <h1>hello world</h1>
-  </body>
-</html>
+<h1>hello world</h1>
 ```
 
 通常 MDN 這種面對大眾的文件都會寫的比較隱晦
