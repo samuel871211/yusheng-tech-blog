@@ -33,6 +33,8 @@ graph
     style SRes fill:#ffd4d4
 ```
 
+<!-- ![](../../static/http-client-server-class.svg) -->
+
 client side code
 
 ```ts
@@ -77,59 +79,61 @@ graph
     style SRes fill:#ffd4d4
 ```
 
+<!-- ![](../../static/http-client-request-server-response.svg) -->
+
 ## 寫入流程 1：何時才會送出 header ? 了解 Node.js API 的設計
 
 Node.js 提供了以下 methods 可以設定 headers
 
-- setHeader
+- `setHeader`
   - [request.setHeader(name, value)](https://nodejs.org/docs/latest-v24.x/api/http.html#requestsetheadername-value)
   - [response.setHeader(name, value)](https://nodejs.org/docs/latest-v24.x/api/http.html#responsesetheadername-value)
   - [outgoingMessage.setHeader(name, value)](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagesetheadername-value)
-- setHeaders
+- `setHeaders`
   - [outgoingMessage.setHeaders(headers)](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagesetheadersheaders)
-- appendHeader
+- `appendHeader`
   - [outgoingMessage.appendHeader(name, value)](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessageappendheadername-value)
-- flushHeaders
+- `flushHeaders`
   - [request.flushHeaders()](https://nodejs.org/docs/latest-v24.x/api/http.html#requestflushheaders)
   - [response.flushHeaders()](https://nodejs.org/docs/latest-v24.x/api/http.html#responseflushheaders)
   - [outgoingMessage.flushHeaders()](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessageflushheaders)
-- removeHeader
+- `removeHeader`
   - [request.removeHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#requestremoveheadername)
   - [response.removeHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#responseremoveheadername)
   - [outgoingMessage.removeHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessageremoveheadername)
-- writeHead（這是 `ServerResponse` 獨有的 method）
+- `writeHead`（這是 `ServerResponse` 獨有的 method）
   - [response.writeHead(statusCode[, statusMessage][, headers])](https://nodejs.org/docs/latest-v24.x/api/http.html#responsewriteheadstatuscode-statusmessage-headers)
 
 以下 methods 可以取得 headers
 
-- getHeader
+- `getHeader`
   - [request.getHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#requestgetheadername)
   - [response.getHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#responsegetheadername)
   - [outgoingMessage.getHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagegetheadername)
-- getHeaderNames
+- `getHeaderNames`
   - [request.getHeaderNames()](https://nodejs.org/docs/latest-v24.x/api/http.html#requestgetheadernames)
   - [response.getHeaderNames()](https://nodejs.org/docs/latest-v24.x/api/http.html#responsegetheadernames)
   - [outgoingMessage.getHeaderNames()](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagegetheadernames)
-- getHeaders
+- `getHeaders`
   - [request.getHeaders()](https://nodejs.org/docs/latest-v24.x/api/http.html#requestgetheaders)
   - [response.getHeaders()](https://nodejs.org/docs/latest-v24.x/api/http.html#responsegetheaders)
   - [outgoingMessage.getHeaders()](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagegetheaders)
-- hasHeader
+- `hasHeader`
   - [request.hasHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#requesthasheadername)
   - [response.hasHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#responsehasheadername)
   - [outgoingMessage.hasHeader(name)](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagehasheadername)
 
 以下 properties 可以讀取 headers 狀態
 
-- headersSent
+- `headersSent`
   - [response.headersSent](https://nodejs.org/docs/latest-v24.x/api/http.html#responseheaderssent)
   - [outgoingMessage.headersSent](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessageheaderssent)
 
 Node.js 把整個 headers 的操作分成三個階段，我們可以用 git 的概念來類比
 
-| git             | Local Staging        | Local Commit (immutable) | Actual Push |
-| --------------- | -------------------- | ------------------------ | ----------- |
-| OutgoingMessage | kOutHeaders (object) | `_headers` (string)      | `_send()`   |
+| git               | Local Staging          | Local Commit (immutable) | Actual Push |
+| ----------------- | ---------------------- | ------------------------ | ----------- |
+| `OutgoingMessage` | `kOutHeaders` (object) | `_headers` (string)      | `_send()`   |
 
 ```mermaid
 sequenceDiagram
@@ -138,7 +142,7 @@ sequenceDiagram
   participant C as _headers<br/>(headersSent = true)
   participant D as _send()
 
-  Note over A, D: 設定 headers
+  Note over A, D: 設定 headers 的 methods
   A ->> B: setHeader(name, value)
   A ->> B: setHeaders(headers)
   A ->> B: appendHeader(name, value)
@@ -146,12 +150,14 @@ sequenceDiagram
   A ->> D: flushHeaders()
   A ->> C: writeHead(statusCode[, statusMessage][, headers])
 
-  Note over A, D: 取得 headers
+  Note over A, D: 取得 headers 的 methods
   A ->> B: getHeader(name)
   A ->> B: getHeaderNames()
   A ->> B: getHeaders()
   A ->> B: hasHeader(name)
 ```
+
+<!-- ![](../../static/http-nodejs-headers-methods.svg) -->
 
 ## 測試 `writeHead`
 
@@ -395,17 +401,17 @@ first linesecond linethird line
 
 以下 properties 跟 events 可以得知 body 送完以後的生命週期
 
-- writableEnded
+- `writableEnded`
   - [request.writableEnded](https://nodejs.org/docs/latest-v24.x/api/http.html#requestwritableended)
   - [response.writableEnded](https://nodejs.org/docs/latest-v24.x/api/http.html#responsewritableended)
   - [outgoingMessage.writableEnded](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagewritableended)
-- on('prefinish')
-  - [outgoingMessage.on('prefinish')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-prefinish)
-- on('finish')
-  - [request.on('finish')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-finish)
-  - [response.on('finish')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-finish)
-  - [outgoingMessage.on('finish')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-finish)
-- writableFinished
+- `on("prefinish")`
+  - [outgoingMessage.on("prefinish")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-prefinish)
+- `on("finish")`
+  - [request.on("finish")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-finish)
+  - [response.on("finish")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-finish)
+  - [outgoingMessage.on("finish")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-finish)
+- `writableFinished`
   - [request.writableFinished](https://nodejs.org/docs/latest-v24.x/api/http.html#requestwritablefinished)
   - [response.writableFinished](https://nodejs.org/docs/latest-v24.x/api/http.html#responsewritablefinished)
   - [outgoingMessage.writableFinished](https://nodejs.org/docs/latest-v24.x/api/http.html#outgoingmessagewritablefinished)
@@ -418,6 +424,8 @@ flowchart LR
   B --> C["on('finish')"]
   C --> D["end cb"]
 ```
+
+<!-- ![](../../static/end-to-prefinish-to-end-cb.svg) -->
 
 寫個 PoC 來測試
 
@@ -443,7 +451,7 @@ httpServer.on("request", (req, res) => {
 ```
 
 :::info
-[outgoingMessage.on('prefinish')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-prefinish) 其實是繼承 [stream.Writable](./stream-writable-1.md)<br/><br/>
+[outgoingMessage.on("prefinish")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-prefinish) 其實是繼承 [stream.Writable](./stream-writable-1.md)<br/><br/>
 不過 [Node.js stream 官方文件](https://nodejs.org/api/stream.html) 完全沒提到 `prefinish`，所以就當作一個小知識先記著就好～
 :::
 
