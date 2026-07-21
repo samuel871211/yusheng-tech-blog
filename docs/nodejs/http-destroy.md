@@ -53,6 +53,8 @@ graph
     style SRes fill:#ffd4d4
 ```
 
+<!-- ![](../../static/client-server-readable-writable.svg) -->
+
 - `net.Socket` 是一個可讀寫的資料流，但 `http` 模組刻意將讀、寫分成兩個抽象 Class（[IncomingMessage](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpincomingmessage), [OutgoingMessage](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpoutgoingmessage)）
 - 也因此，`req.socket` 跟 `res.socket` 必定為同一個 socket instance
 - 不管是 request 還是 response 呼叫 `destroy([error])`，背後都會呼叫到同一個 socket instance 的 `destroy([error])`
