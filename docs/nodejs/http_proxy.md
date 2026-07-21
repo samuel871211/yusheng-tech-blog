@@ -15,11 +15,13 @@ last_update:
 
 ```mermaid
 flowchart LR
-  A["GET https://google.com"] --> B[Forward Proxy]
+  A["GET http://google.com"] --> B[Forward Proxy]
   C["GET http://example.com"] --> B
   B --> D["GET /<br/>Host: google.com"]
   B --> E["GET /<br/>Host: example.com"]
 ```
+
+<!-- ![](../../static/http-forward-proxy.svg) -->
 
 **Reverse Proxy**
 
@@ -30,6 +32,8 @@ flowchart LR
   B --> D["origin server 1<br/>GET http://localhost:8000"]
   B --> E["origin server 2<br/>GET http://localhost:8001"]
 ```
+
+<!-- ![](../../static/http-reverse-proxy.svg) -->
 
 |          | Forward Proxy                            | Reverse Proxy                           |
 | -------- | ---------------------------------------- | --------------------------------------- |
@@ -70,9 +74,11 @@ fetch("http://example.com");
 
 ```mermaid
 flowchart LR
-  A["Node.js<br/>GET http://example.com"] --> B[Forward Proxy<br/>http://localhost:8080]
-  B --> C["target server<br/>https://example.com"]
+  A["Node.js<br/>HTTP request"] --> B[Forward Proxy<br/>http://localhost:8080]
+  B --> C["target server<br/>http://example.com"]
 ```
+
+<!-- ![](../../static/http-request-forward-proxy-to-target-server.svg) -->
 
 ## HTTP_PROXY
 
@@ -117,6 +123,8 @@ sequenceDiagram
   S ->> P: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 0
   P ->> C: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 0
 ```
+
+<!-- ![](../../static/http-forward-proxy-round-trip.svg) -->
 
 觀察到幾個重點
 
@@ -196,6 +204,8 @@ sequenceDiagram
   P ->> C: HTTP/1.0 200 OK
 ```
 
+<!-- ![](../../static/http-1.0-forward-proxy-host-header.svg) -->
+
 ## authority-form
 
 用在 [CONNECT](../http/http-request-methods-1.md#connect) 請求
@@ -224,10 +234,12 @@ Host: example.com
 以下為時序圖為考古推論，我沒有實際用 ancient HTTP/1.0 proxy 測試過（我也找不到這種古老架構測試了）
 :::
 
+如果 client 沒有送 `Proxy-Connection: keep-alive`，而是送 `Connection: keep-alive` 的話
+
 ```mermaid
 sequenceDiagram
   participant C as client
-  participant P as Forward Proxy
+  participant P as HTTP/1.0 Forward Proxy
   participant S as server
 
   C ->> P: GET http://example.com HTTP/1.1<br/>Connection: keep-alive<br/>Host: example.com
@@ -240,12 +252,14 @@ sequenceDiagram
   P ->> C: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Content-Length: 0
 ```
 
+<!-- ![](../../static/http-1.0-forward-proxy-without-proxy-connection.svg) -->
+
 如果 client 改送 `Proxy-Connection: keep-alive`，即便 proxy 無腦轉發，也可以避免 proxy 到 server 中間維持了閒置的 TCP 連線
 
 ```mermaid
 sequenceDiagram
   participant C as client
-  participant P as Forward Proxy
+  participant P as HTTP/1.0 Forward Proxy
   participant S as server
 
   C ->> P: GET http://example.com HTTP/1.1<br/>Proxy-Connection: keep-alive<br/>Host: example.com
@@ -256,12 +270,14 @@ sequenceDiagram
   P ->> C: HTTP/1.0 200 OK<br/>Content-Length: 0
 ```
 
-如果 client 改送 `Proxy-Connection: keep-alive`，支援長連線的 proxy 就會轉成 `Connection: keep-alive`
+<!-- ![](../../static/http-1.0-forward-proxy-with-proxy-connection.svg) -->
+
+如果 client 改送 `Proxy-Connection: keep-alive`，支援 `Proxy-Connection` 的 proxy 就會轉成 `Connection: keep-alive`
 
 ```mermaid
 sequenceDiagram
   participant C as client
-  participant P as Forward Proxy
+  participant P as Forward Proxy<br/>that supports<br/>Proxy-Connection
   participant S as server
 
   C ->> P: GET http://example.com HTTP/1.1<br/>Proxy-Connection: keep-alive<br/>Host: example.com
@@ -272,6 +288,8 @@ sequenceDiagram
   P ->> C: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Content-Length: 0
   Note over C, P: TCP 連線可以複用
 ```
+
+<!-- ![](../../static/http-forward-proxy-that-supports-proxy-connection.svg) -->
 
 ## NO_PROXY
 
