@@ -23,6 +23,8 @@ flowchart LR
   F[HTTP request 5] --> G[新的 K8S Pod]
 ```
 
+<!-- ![](../../static/http-max-requests-per-socket-pods.svg) -->
+
 <!-- ## 限制每個 TCP socket 最多能處理的 HTTP request 數量
 
 - [server.maxRequestsPerSocket](https://nodejs.org/docs/latest-v24.x/api/http.html#servermaxrequestspersocket)
