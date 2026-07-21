@@ -2,7 +2,7 @@
 title: 深入 net.Socket：4-way handshake、socket.end vs destroy 差異
 description: 介紹 Node.js TCP socket 生命週期，包含 bytesRead/bytesWritten 追蹤、優雅關閉連線與強制 destroy 系列方法的原始碼解析
 last_update:
-  date: "2026-07-13T08:00:00+08:00"
+  date: "2026-07-21T08:00:00+08:00"
 ---
 
 ## 前言
@@ -163,25 +163,25 @@ clientSocket.on("end", () => {
 
 ![tcp-server-4-way](../../static/img/tcp-server-4-way.jpg)
 
-<!-- todo-yus -->
-
 流程如下：
 
 ```mermaid
 sequenceDiagram
-  participant TCP client
-  participant TCP server
+  participant c as TCP client
+  participant s as TCP server
 
-  TCP server ->> TCP client: serverSocket.end()<br/>(FIN will be sent)
-  Note over TCP server: serverSocket's Writable has ended
-  TCP client ->> TCP server: ACK (sent automatically by OS)
-  Note over TCP client: clientSocket.on("end")<br/>clientSocket's Readable has ended
+  s ->> c: serverSocket.end()<br/>(FIN will be sent)
+  Note over s: serverSocket's Writable has ended
+  c ->> s: ACK (sent automatically by OS)
+  Note over c: clientSocket.on("end")<br/>clientSocket's Readable has ended
 
-  TCP client ->> TCP server: clientSocket.end()<br/>(FIN will be sent)
-  Note over TCP client: clientSocket's Writable has ended
-  TCP server ->> TCP client: ACK (sent automatically by OS)
-  Note over TCP server: serverSocket.on("end")<br/>serverSocket's Readable has ended
+  c ->> s: clientSocket.end()<br/>(FIN will be sent)
+  Note over c: clientSocket's Writable has ended
+  s ->> c: ACK (sent automatically by OS)
+  Note over s: serverSocket.on("end")<br/>serverSocket's Readable has ended
 ```
+
+<!-- ![](../../static/tcp-server-client-socket-end.svg) -->
 
 ## TCP socket 生命週期 4-1：強制關閉連線
 
@@ -203,6 +203,8 @@ flowchart LR
   C["destroySoon"] --> A
   D["resetAndDestroy"] --> A
 ```
+
+<!-- ![](../../static/socket-destroy-methods.svg) -->
 
 具體差異是，`destroySoon` 會等 `writableFinished` 再呼叫 `destroy`
 
@@ -266,6 +268,12 @@ flowchart LR
   C --> D["_destroy"]
   D --> E["_handle.reset"]
 ```
+
+<!-- ![](../../static/socket-reset-and-destroy-flow.svg) -->
+
+:::info
+這裡的 `_handle` 是 JavaScript 跟底層 C/C++ 介接的橋樑
+:::
 
 ## `socket.end()` vs `socket.destroy()`
 
