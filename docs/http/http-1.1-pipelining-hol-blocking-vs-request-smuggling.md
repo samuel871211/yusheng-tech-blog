@@ -5,6 +5,8 @@ last_update:
   date: "2026-07-03T08:00:00+08:00"
 ---
 
+<!-- todo-yus mermaid -->
+
 ## 前言
 
 打完 [PortSwigger 的 HTTP Request Smuggling](https://portswigger.net/web-security/request-smuggling) 之後，我開始在真實世界研究這種技巧，結果卻不小心踩到 HTTP/1.1 pipelining 的坑，想說趁此機會來研究這個機制，於是這篇文章就誕生了
