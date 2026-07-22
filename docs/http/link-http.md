@@ -5,6 +5,10 @@ last_update:
   date: "2026-07-06T08:00:00+08:00"
 ---
 
+## 防雷
+
+由於 iThome 使用 cloudflare，發文若有一些 XSS 的關鍵字會被擋下，所以本文若有用到 `script` 標籤，都會改成 `<xscript>`
+
 ## Browser compatibility
 
 翻開 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Link#browser_compatibility) 的話，會發現其實各瀏覽器大約都在 2022 ~ 2023 年才開始支援在 HTTP response header 設定 `<Link>`，其實算是蠻新的功能。我自己也只有在 [hackerone](https://www.hackerone.com/) 看到有設定
@@ -126,13 +130,10 @@ httpServer5000.listen(5000);
 2. preload.html
 
 ```html
-<html>
-  <head>
-    <!-- 為了驗證 HTTP Link 的執行時機早於 HTML link，在 preload.html 也載入同樣資源，用 `?from=head` 來區分 -->
-    <script src="http://localhost:5001/preload.js?from=head"></script>
-  </head>
-  <body></body>
-</html>
+<head>
+  <!-- 為了驗證 HTTP Link 的執行時機早於 HTML link，在 preload.html 也載入同樣資源，用 `?from=head` 來區分 -->
+  <xcript src="http://localhost:5001/preload.js?from=head"></xcript>
+</head>
 ```
 
 3. localhost:5001
