@@ -60,6 +60,8 @@ sequenceDiagram
   s ->> c: HTTP/1.1 200 OK<br/>Connection: keep-alive<br/>Keep-Alive: timeout=5<br/>Content-Length: 9<br/><br/>/request3
 ```
 
+<!-- ![](../../static/http-3-requests-round-trip.svg) -->
+
 ## "Response Misbinding" 圖解
 
 **如果 server 在第一包 HTTP request 送出以前，就 "偷塞" 了一包 HTTP response，那 request / response 的 binding 會亂掉嗎？**
@@ -79,6 +81,8 @@ sequenceDiagram
 
   Note over c: Will client treat the "poisoned" HTTP response<br/>as the response of /request1 ?
 ```
+
+<!-- ![](../../static/poison-tcp-socket-early-response.svg) -->
 
 ## 現實難點
 
@@ -110,6 +114,8 @@ sequenceDiagram
   c ->> s: GET /request1 HTTP/1.1<br/>Host: 127.0.0.1:5000
   s ->> c: HTTP/1.1 302 Found<br/>Location: http://evil.com<br/>Content-Length: 0
 ```
+
+<!-- ![](../../static/poison-did-not-came-before-1st-request.svg) -->
 
 如果要達成我的目標
 
@@ -161,6 +167,8 @@ sequenceDiagram
 
   Note over b: Will browser treat the "poisoned" HTTP response<br/>as the response of /script1.js ?
 ```
+
+<!-- ![](../../static/browser-html-server-preconnected-server.svg) -->
 
 ## PoC
 
