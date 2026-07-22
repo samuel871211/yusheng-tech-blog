@@ -22,6 +22,8 @@ writable._write(chunk); // chunk: <Buffer 31 32 33>
 若希望 `writable._write(chunk)` 可以保留原始編碼，可以在 create instance 的階段傳入 `decodeStrings: false`
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   _write(
     chunk: any,
@@ -40,6 +42,8 @@ myWritable.write("123");
 若希望 `readable.read()` 讀出來的 chunk 可以轉換成 utf8，可以在 create instance 的階段傳入 `encoding: "utf8"`
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   _read(size: number): void {
     this.push("123");
@@ -58,7 +62,7 @@ myReadable.on("readable", () => {
 
 若想要針對 `string`、`Buffer`、`TypedArray` 或 `DataView` 以外的資料讀寫，則需要用到 `objectMode`
 
-假設我有一個 10GB 的 json 檔
+假設我有一個 10GB 的 JSON 檔
 
 ```json
 [
@@ -70,6 +74,8 @@ myReadable.on("readable", () => {
 若希望 `writable._write(chunk)` 的 chunk 都是一筆完整的資料，這個情況就很適合用 `objectMode`
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   _write(
     chunk: any,
@@ -94,6 +100,8 @@ myWritable.write({ name: "alex", age: 30 });
 若希望 `readable.read()` 讀出來的 chunk 都是一筆完整的資料，這個情況就很適合用 `objectMode`
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   _read(size: number): void {
     this.push({ name: "kelly", age: 24 });
@@ -115,6 +123,8 @@ myReadable.on("readable", () => {
 以 `Writable` 為例
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   _write(
     chunk: any,
@@ -135,6 +145,8 @@ console.log(canContinue2); // false
 以 `Readable` 為例
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   _read(size: number): void {
     const canContinue1 = this.push({ name: "kelly", age: 24 });
@@ -157,6 +169,8 @@ myReadable.on("readable", () => {
 `Writable` 若在 `objectMode: true` 的情境，則 `decodeStrings` 跟 `defaultEncoding` 基本上就無效
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   _write(
     chunk: any,
@@ -220,6 +234,8 @@ sequenceDiagram
 我們用 Node.js 實作一個簡單的 HTTP 中間層 + server 架構
 
 ```ts
+import { createServer, request } from "http";
+
 const httpProxyServer = createServer().listen(5000);
 const httpServer = createServer().listen(5001);
 
@@ -261,7 +277,7 @@ httpServer.on("request", (req, res) => {
 });
 ```
 
-用 Postman 發個 POST 請求到 http://localhost:5000/ ，就可以成功收到 http://localhost:5001/ 回傳的 HTTP response 了
+用 Postman 發個 `POST` 請求到 http://localhost:5000/ ，就可以成功收到 http://localhost:5001/ 回傳的 HTTP response 了
 ![postman-post-5000-proxy](../../static/img/postman-post-5000-proxy.jpg)
 
 不過以上只是簡單的 PoC，實際上 HTTP 中間層需要處理很多細節，包含且不限於以下：

@@ -25,6 +25,8 @@ myReadable.read(); // 16384 bytes
 我們將 `highWaterMark` 設為 10，並且在 `_read` 使用 while 迴圈每次 `push` 6 bytes
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   private maxCount = 5;
   private curCount = 0;
@@ -90,6 +92,9 @@ class MyReadable extends Readable {
 ### `_construct` 階段正確拋出錯誤
 
 ```ts
+import { Readable } from "stream";
+import assert from "assert";
+
 class MyReadable extends Readable {
   _construct(callback: (error?: Error | null) => void): void {
     // 模擬非同步操作拋出錯誤
@@ -139,6 +144,9 @@ flowchart LR
 ### `_read` 階段正確呼叫 `destroy`
 
 ```ts
+import { Readable } from "stream";
+import assert from "assert";
+
 class MyReadable extends Readable {
   _read(size: number): void {
     // 模擬非同步操作拋出錯誤
@@ -200,6 +208,8 @@ _read(size: number): void {
 在 `stream.Writable`，結束的訊號 `writable.end()` 是由使用者主動呼叫的
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   _final(callback: (error?: Error | null) => void): void {
     // 實作者可以在這邊處理 async 操作
