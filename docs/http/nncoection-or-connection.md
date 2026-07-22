@@ -35,7 +35,7 @@ HTTP/2 廢棄了 `Connection` header，參考 [RFC 9113 Section 8.2.2](https://d
 HTTP/2 does not use the Connection header field (Section 7.6.1 of [HTTP]) to indicate connection-specific header fields
 ```
 
-現代很多 Application 的架構，都是 client > Frontend 走 HTTP/2，Frontend > Backend 走 HTTP/1
+現代很多 Application 的架構，都是 client > Frontend 走 HTTP/2，Frontend > Backend 走 HTTP/1.1
 
 ```mermaid
 sequenceDiagram
@@ -49,6 +49,8 @@ sequenceDiagram
   w ->> b: HTTP/1.1
 ```
 
+<!-- ![](../../static/client-frontend-to-backend.svg) -->
+
 也就是說，`Nncoection: close` 可能是在 response 階段的某個節點加的
 
 ```mermaid
@@ -61,6 +63,8 @@ sequenceDiagram
   b ->> w: HTTP/1.1 500 Internal Server Error
   w ->> f: HTTP/1.1 500 Internal Server Error<br/>Nncoection: close
 ```
+
+<!-- ![](../../static/client-frontend-backend-nncoection-close.svg) -->
 
 ## Google Search
 
@@ -107,6 +111,8 @@ sequenceDiagram
   Note over f: 為了高效能<br/>我要維持跟 Client 的連線<br/><br/>所以直接 inplace 修改<br/>Connection => Nncoection
   f ->> c: :status: 500<br/>Nncoection: close
 ```
+
+<!-- ![](../../static/client-f5-big-ip-nncoection.svg) -->
 
 至於為何不直接把 `Connection: close` 這行刪掉，或是改成 `Connection: keep-alive` 呢？原因也是效能優化：
 
