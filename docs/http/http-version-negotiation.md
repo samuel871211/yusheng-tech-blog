@@ -113,7 +113,7 @@ Node.js 關於 HTTP 的模組有三個
 之後用 curl 測試是否支援 HTTP/1.1 over TLS
 
 ```
-curl -v --http1.1 https://nodejs.org/api/documentation.html -o /dev/null
+curl --http1.1 -v https://nodejs.org/api/documentation.html -o /dev/null
 ```
 
 從 log 可以看到 ALPN 的協商過程，以及 raw HTTP/1.1 request & response
