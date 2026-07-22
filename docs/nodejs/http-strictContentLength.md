@@ -65,7 +65,6 @@ client 用 `curl http://localhost:5000/ -v` 測試，發現 curl 會把超過的
 ```
 < HTTP/1.1 200 OK
 < Content-Length: 3
-< Date: Mon, 23 Feb 2026 06:32:44 GMT
 < Connection: keep-alive
 < Keep-Alive: timeout=5
 <

@@ -77,7 +77,6 @@ response
   <div className="blue">Expires: Mon, 15 Dec 2025 07:13:09 GMT</div>
   <div className="blue">Cache-Control: max-age=0, no-cache, no-store</div>
   <div className="blue">Pragma: no-cache</div>
-  <div className="blue">Date: Mon, 15 Dec 2025 07:13:09 GMT</div>
   <div className="blue">Connection: keep-alive</div>
   <div className="blue"></div>
   <div className="blue">HTML 渲染結果如下圖</div>

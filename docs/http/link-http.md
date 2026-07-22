@@ -40,7 +40,6 @@ last_update:
 ```
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-Date: Tue, 18 Nov 2025 11:09:52 GMT
 Transfer-Encoding: chunked
 Link: </assets/static/main_css-ClkKLtaZ.css>; rel=preload; as=style
 
