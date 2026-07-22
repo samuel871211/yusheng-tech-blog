@@ -1,0 +1,10 @@
+<svg width="500" height="150" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="10" width="150" height="30" fill="#4CAF50" />
+  <text x="10" y="30">request A: 1.5s</text>
+  
+  <rect x="0" y="50" width="480" height="30" fill="#2196F3" />
+  <text x="10" y="70">request B: 4.8s</text>
+  
+  <rect x="0" y="90" width="220" height="30" fill="#FF9800" />
+  <text x="10" y="110">request C: 2.2s</text>
+</svg>

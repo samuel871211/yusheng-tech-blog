@@ -5,8 +5,6 @@ last_update:
   date: "2026-07-03T08:00:00+08:00"
 ---
 
-<!-- todo-yus mermaid -->
-
 ## 前言
 
 打完 [PortSwigger 的 HTTP Request Smuggling](https://portswigger.net/web-security/request-smuggling) 之後，我開始在真實世界研究這種技巧，結果卻不小心踩到 HTTP/1.1 pipelining 的坑，想說趁此機會來研究這個機制，於是這篇文章就誕生了
@@ -27,6 +25,8 @@ sequenceDiagram
   b ->> s: GET /translate.json
   b ->> s: GET /user/me
 ```
+
+<!-- ![](../../static/browser-max-tcp-connection-per-host-6.svg) -->
 
 雖然有 [Keep-Alive](./keep-alive-and-connection.md) 的機制可以讓 TCP connection 複用，但每條 TCP connection 同時只能發送一個 HTTP request，現代前端網站架構複雜，框架 bundle 完，動輒十幾個 js, css, img 要載入，從第 7 個 HTTP request 開始就要等待，導致效能不佳
 
@@ -95,16 +95,7 @@ it MUST send the corresponding responses in the same order that the requests wer
 
 假設某個 HTTP request 花了比較久
 
-<svg width="500" height="150" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="10" width="150" height="30" fill="#4CAF50" />
-  <text x="10" y="30">request A: 1.5s</text>
-  
-  <rect x="0" y="50" width="480" height="30" fill="#2196F3" />
-  <text x="10" y="70">request B: 4.8s</text>
-  
-  <rect x="0" y="90" width="220" height="30" fill="#FF9800" />
-  <text x="10" y="110">request C: 2.2s</text>
-</svg>
+![3-reqeusts-time](../../static/img/3-reqeusts-time.svg)
 
 最終
 <span style={{"color": "#FF9800"}}>request C</span>
