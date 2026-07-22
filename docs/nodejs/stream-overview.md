@@ -412,6 +412,8 @@ httpServer.on("request", function requestListener(req, res) {
 ❌ 錯誤作法
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   _read(size: number): void {
     this.push("123");
@@ -428,6 +430,8 @@ myReadable._read(); // ❌ instance 直接呼叫 internal methods
 ✅ 正確做法
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   _read(size: number): void {
     this.push("123");

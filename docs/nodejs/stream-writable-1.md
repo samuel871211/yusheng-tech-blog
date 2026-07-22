@@ -262,7 +262,7 @@ flowchart LR
 
 面向使用者（使用 Writable）的 methods
 
-| method    | description                         | will triggers         |
+| method    | description                         | will trigger          |
 | --------- | ----------------------------------- | --------------------- |
 | `write`   | write a chunk of data               | `_write` or `_writev` |
 | `end`     | signal no more data will be written | `_final`              |

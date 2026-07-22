@@ -51,6 +51,8 @@ flowchart LR
 ### 自動讀取：`on('data')`
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   private maxCount = 5;
   private curCount = 0;
@@ -92,7 +94,7 @@ myReadable.readableFlowing; // true
 - [readableFlowing](https://nodejs.org/api/stream.html#readablereadableflowing) 有 `null`、`true` 跟 `false` 三種狀態，初始值是 `null`
 - 當 `on('data')` 開始監聽後，`readableFlowing` 會轉成 `true`
 - 自動讀取的設計哲學是 **"有多少讀多少"**，所以 Node.js 會直接在背後呼叫 `_read(highWaterMark)`
-- 承上，根據 [Node.js 原始碼](https://github.com/nodejs/node/blob/main/lib/internal/streams/state.js)，Windows 11 的預設 `highWaterMark` 16KiB 符合預期
+- 承上，根據 [Node.js 原始碼](https://github.com/nodejs/node/blob/main/lib/internal/streams/state.js)，Windows 的預設 `highWaterMark` 16KiB 符合預期
 
 <!-- prettier-ignore -->
 ```js
@@ -103,6 +105,8 @@ let defaultHighWaterMarkBytes = process.platform === "win32" ? 16 * 1024 : 64 * 
 ### 自動讀取：用 `pause` 跟 `resume` 控制開關
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   private maxCount = 5;
   private curCount = 0;
@@ -151,6 +155,8 @@ flowchart LR
 ### 手動讀取：`on('readable')` 搭配 `read`
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   private maxCount = 2;
   private curCount = 0;
@@ -212,6 +218,8 @@ myReadable.on("readable", () => {
 寫個 PoC 來觀察 `on("end")`、`_destroy` 跟 `on("close")` 的觸發順序
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   _read(size: number): void {
     console.log(performance.now(), "_read");

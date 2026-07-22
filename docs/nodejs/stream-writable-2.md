@@ -153,10 +153,10 @@ cork 的中文是軟木塞，它 **"塞住"** 了 `_write` 的執行，目的是
 
 ```ts
 const httpRequestWritable = getWritableSomehow();
-myWritable.write("GET / HTTP/1.1");
-myWritable.write("\r\n");
-myWritable.write("Host: example.com");
-myWritable.write("\r\n\r\n");
+httpRequestWritable.write("GET / HTTP/1.1");
+httpRequestWritable.write("\r\n");
+httpRequestWritable.write("Host: example.com");
+httpRequestWritable.write("\r\n\r\n");
 
 // ❌ 可能會傳送多個 TCP 封包，若有 HOL Blocking 則會拖慢傳輸時間
 ```
@@ -264,6 +264,7 @@ _destroy(error: Error | null, callback: (error?: Error | null) => void): void
 
 ```ts
 import { Writable } from "stream";
+import assert from "assert";
 
 class MyWritable extends Writable {
   _construct(callback: (error?: Error | null) => void): void {
@@ -327,6 +328,7 @@ _write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) =>
 
 ```ts
 import { Writable } from "stream";
+import assert from "assert";
 
 class MyWritable extends Writable {
   _write(
