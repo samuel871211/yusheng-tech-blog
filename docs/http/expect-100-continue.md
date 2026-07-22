@@ -237,6 +237,8 @@ main();
 另外，Node.js 的 `ClientRequest` 其實也支援 100 continue
 
 ```ts
+import http from "http";
+
 const clientRequest = http.request({
   host: "localhost",
   port: 5000,

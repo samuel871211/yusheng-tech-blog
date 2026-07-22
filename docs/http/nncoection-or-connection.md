@@ -13,7 +13,7 @@ last_update:
 
 ![Nncoection: close](../../static/img/nncoection-close.jpg)
 
-當下立即想到是拼錯的 [Connection: close](./keep-alive-and-connection.md)，但又覺得沒有這麼簡單，於是就趁這個機會來研究看砍
+當下立即想到是拼錯的 [Connection: close](./keep-alive-and-connection.md)，但又覺得沒有這麼簡單，於是就趁這個機會來研究看看
 
 ## 推測1：後端工程師手殘打錯字
 

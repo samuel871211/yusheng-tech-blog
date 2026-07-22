@@ -57,12 +57,16 @@ Node.js Built-in Proxy Support 的角色定位是：
 簡單來說，如果你有先設定
 
 ```js
+import http from "http";
+
 http.setGlobalProxyFromEnv({ http_proxy: "http://localhost:8080" });
 ```
 
 當你想要在 Node.js 發起 HTTP request
 
 ```js
+import http from "http";
+
 http.get("http://example.com");
 fetch("http://example.com");
 ```
@@ -100,6 +104,8 @@ targetServer.on("request", function (req, res) {
 2. 設定一個有 `proxyEnv` 的 `http.Agent`，並且發起 HTTP request 到 target server
 
 ```ts
+import http from "http";
+
 const agent = new http.Agent({
   proxyEnv: { http_proxy: "http://localhost:8080" },
   keepAlive: true,
@@ -296,6 +302,8 @@ sequenceDiagram
 如果某些 domain, IP 不想經過 Forward Proxy，可以在 `NO_PROXY` 指定
 
 ```ts
+import http from "http";
+
 const fakeProxy = http.createServer();
 fakeProxy.listen(5000);
 fakeProxy.on("request", function (req, res) {

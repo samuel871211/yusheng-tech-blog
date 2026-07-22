@@ -183,7 +183,7 @@ import http from "http";
 const httpServer = http.createServer(async (req, res) => {
   const url = new URL(req.url || "", "http://localhost:5000");
   const sleepMs = parseInt(url.searchParams.get("sleepMs") || "0");
-  await sleep(sleepMs);
+  await new Promise((resolve) => setTimeout(resolve, sleepMs));
   if (!res.writableEnded) res.end(`sleepMs = ${sleepMs}`);
 });
 httpServer.listen(5000);
@@ -260,6 +260,8 @@ HTTP Parser 看到 `Content-Length: 11`，就會往後讀取 11 bytes，剛好�
 PoC
 
 ```ts
+import net from "net";
+
 const rawHttpRequests = `GET / HTTP/1.1
 Host: localhost
 

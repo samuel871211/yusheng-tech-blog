@@ -38,6 +38,8 @@ graph
 client side code
 
 ```ts
+import http from "http";
+
 const clientRequest = http.get({
   host: "example.com",
   port: 80,
@@ -51,6 +53,8 @@ clientRequest.on("response", (response: http.IncomingMessage) =>
 server side code
 
 ```ts
+import http from "http";
+
 const server = http.createServer();
 server.on("request", (req: http.IncomingMessage, res: http.ServerResponse) =>
   res.end(),
@@ -164,6 +168,9 @@ sequenceDiagram
 使用者呼叫 `writeHead` 之後，`kOutHeaders` 會被清空，且後續的寫入會拋出同步錯誤
 
 ```ts
+import http from "http";
+import assert from "assert";
+
 const server = http.createServer();
 server.listen(5000);
 server.on("request", (req, res) => {
@@ -314,7 +321,7 @@ The presence of a message body in a request is signaled by a Content-Length or T
 ```ts
 httpServer.on("request", (req, res) => {
   // ✅ Node.js 會自動設定 Content-Length = 寫入的 body byteLength
-  res.end(readFileSync(join(__dirname, "index.html")));
+  res.end(readFileSync(join(import.meta.dirname, "index.html")));
 });
 ```
 
@@ -334,7 +341,7 @@ httpServer.on("request", (req, res) => {
 
 ```ts
 httpServer.on("request", (req, res) => {
-  const fileBuffer = readFileSync(join(__dirname, "index.html"));
+  const fileBuffer = readFileSync(join(import.meta.dirname, "index.html"));
   res.setHeader("Content-Length", fileBuffer.byteLength);
   res.end(fileBuffer);
 });
@@ -356,7 +363,7 @@ httpServer.on("request", (req, res) => {
 
 ```ts
 httpServer.on("request", (req, res) => {
-  const path = join(__dirname, "demo-very-large-video.mp4");
+  const path = join(import.meta.dirname, "demo-very-large-video.mp4");
   // ✅ 先把 file size 設定到 Content-Length
   const filestat = statSync(path);
   res.setHeader("Content-Length", filestat.size);

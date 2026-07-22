@@ -84,6 +84,7 @@ server 先在 `IncomingMessage` 設定看看：
 
 ```ts
 import http from "http";
+import net from "net";
 
 const httpServer = http.createServer();
 httpServer.listen(5000);
@@ -148,6 +149,7 @@ function socketOnTimeout() {
 
 ```ts
 import http from "http";
+import net from "net";
 
 const httpServer = http.createServer();
 httpServer.listen(5000);
@@ -172,6 +174,7 @@ clientRequest.end("12");
 
 ```ts
 import http from "http";
+import net from "net";
 
 const httpServer = http.createServer();
 httpServer.listen(5000);
@@ -201,6 +204,7 @@ clientRequest.end("12");
 
 ```ts
 import http from "http";
+import net from "net";
 
 const httpServer = http.createServer();
 httpServer.timeout = 1000;
@@ -233,6 +237,8 @@ clientRequest.end("12");
 若三者設定不同的 timeout，則後者的設定會覆蓋前者的設定
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.timeout = 2000; // ✅ 第 1 個被設定
 httpServer.on("timeout", (socket) => console.log(performance.now(), "server"));
@@ -429,6 +435,8 @@ clientRequest.on("response", (response) => {
 若設定不同的 timeout，則後者的設定會覆蓋前者的設定
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.listen(5000);
 httpServer.on("request", (req, res) => {

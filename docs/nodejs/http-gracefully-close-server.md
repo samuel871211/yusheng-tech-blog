@@ -96,6 +96,8 @@ Server.prototype.closeAllConnections = function closeAllConnections() {
 實務上在寫 production HTTP server 時，通常都會處理優雅關閉 server 的邏輯：
 
 ```ts
+import http from "http";
+
 // server
 const httpServer = http.createServer();
 httpServer.listen(5000);

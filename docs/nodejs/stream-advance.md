@@ -193,6 +193,8 @@ myWritable.write({ name: "kelly", age: 24 });
 `Readable` 若在 `objectMode: true` 的情境，同時設定 `encoding` 會導致 `read()` 噴錯
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   _read(size: number): void {
     this.push({ name: "kelly", age: 24 });

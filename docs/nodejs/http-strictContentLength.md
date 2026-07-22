@@ -16,6 +16,8 @@ Node.js `http.Server` 預設 **"不會"** 檢查 response header 的 `Content-Le
 server 若宣告 `Content-Length: 3`，實際只送 2 bytes，就會造成 HTTP client 的錯誤
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.listen(5000);
 httpServer.on("request", (req, res) => {
@@ -52,6 +54,8 @@ curl: (18) transfer closed with 1 bytes remaining to read
 server 若宣告 `Content-Length: 3`，實際送了 4 bytes，也會造成 HTTP client 的錯誤
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.listen(5000);
 httpServer.on("request", (req, res) => {
@@ -76,6 +80,8 @@ client 用 `curl http://localhost:5000/ -v` 測試，發現 curl 會把超過的
 client 改用 Node.js `http.request` 測試
 
 ```ts
+import http from "http";
+
 const clientRequest = http.request({
   host: "localhost",
   port: 5000,
@@ -109,6 +115,8 @@ clientRequest.on("response", (res) => {
 server 為了預防上述情境，可以設定 `response.strictContentLength`
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.listen(5000);
 httpServer.on("request", (req, res) => {

@@ -35,6 +35,8 @@ flowchart LR
 server 設定 `maxRequestsPerSocket = 3`
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.maxRequestsPerSocket = 3;
 httpServer.listen(5000);
@@ -116,6 +118,8 @@ httpServer.on("dropRequest", (req, socket) => {
 server 設定 `maxRequestsPerSocket = 3`
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.maxRequestsPerSocket = 3;
 httpServer.listen(5000);
@@ -128,6 +132,8 @@ httpServer.on("request", (req, res) => {
 client 用 `http.request` 依序發送 4 個 request
 
 ```ts
+import http from "http";
+
 const req1 = http.request({ host: "localhost", port: 5000 }).end();
 await new Promise((resolve) => req1.on("close", resolve));
 const req2 = http.request({ host: "localhost", port: 5000 }).end();

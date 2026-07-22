@@ -7,7 +7,7 @@ last_update:
 
 ## 防雷
 
-由於 iThome 使用 cloudflare，發文若有一些 XSS 的關鍵字會被擋下，所以本文若有用到 `script` 標籤，都會改成 `<xscript>`
+由於 iThome 使用 cloudflare，發文若有一些 XSS 的關鍵字會被擋下，所以本文若有用到 `script` 標籤，都會改成 `<xcript>`
 
 ## 前言
 
@@ -74,7 +74,6 @@ canonical = 典範，在這邊代表的是 "preferred URL"
 ```ts
 import { readFileSync } from "fs";
 import http from "http";
-import httpServer from "../httpServer";
 import { join } from "path";
 
 const httpServer = http.createServer((req, res) => {
@@ -87,12 +86,12 @@ const httpServer = http.createServer((req, res) => {
   }
   if (url.pathname === "/") {
     res.setHeader("Content-Type", "text/html");
-    res.end(readFileSync(join(__dirname, "index.html")));
+    res.end(readFileSync(join(import.meta.dirname, "index.html")));
     return;
   }
   if (url.pathname === "/page2") {
     res.setHeader("Content-Type", "text/html");
-    res.end(readFileSync(join(__dirname, "page2.html")));
+    res.end(readFileSync(join(import.meta.dirname, "page2.html")));
     return;
   }
 });
@@ -230,6 +229,8 @@ httpServer5000.listen(5000);
 3. localhost:5001
 
 ```ts
+import http from "http";
+
 const httpServer5001 = http.createServer((req, res) => {
   const url = new URL(req.url || "", "http://localhost:5001");
   if (url.pathname === "/script.js") {

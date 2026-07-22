@@ -170,10 +170,12 @@ mkcert -key-file private-key.pem -cert-file cert.pem localhost
 
 ```ts
 import http2 from "http2";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const http2SecureServer = http2.createSecureServer({
-  key: readFileSync(join(__dirname, "private-key.pem")),
-  cert: readFileSync(join(__dirname, "cert.pem")),
+  key: readFileSync(join(import.meta.dirname, "private-key.pem")),
+  cert: readFileSync(join(import.meta.dirname, "cert.pem")),
   allowHTTP1: true,
 });
 http2SecureServer.on("request", (req, res) => {
@@ -228,8 +230,8 @@ Welcome to HTTP/2 Server
 
 ```ts
 const http2SecureServer = http2.createSecureServer({
-  key: readFileSync(join(__dirname, "private-key.pem")),
-  cert: readFileSync(join(__dirname, "cert.pem")),
+  key: readFileSync(join(import.meta.dirname, "private-key.pem")),
+  cert: readFileSync(join(import.meta.dirname, "cert.pem")),
   allowHTTP1: false,
 });
 ```

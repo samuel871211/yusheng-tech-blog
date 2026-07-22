@@ -208,6 +208,8 @@ curl: (52) Empty reply from server
 client
 
 ```ts
+import http from "http";
+
 const clientRequest = http.request({
   host: "example.com",
   port: 80,

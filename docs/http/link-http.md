@@ -91,6 +91,8 @@ httpServer5000.listen(5000);
 2. localhost:5001
 
 ```ts
+import http from "http";
+
 const httpServer5001 = http.createServer();
 httpServer5001.listen(5001);
 httpServer5001.on("connection", (socket) => console.log("connection"));
@@ -110,6 +112,8 @@ httpServer5001.on("connection", (socket) => console.log("connection"));
 
 ```ts
 import http from "http";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const httpServer5000 = http.createServer((req, res) => {
   const url = new URL(req.url || "", "http://localhost:5000");
@@ -119,7 +123,7 @@ const httpServer5000 = http.createServer((req, res) => {
       `<http://localhost:5001/preload.js>; rel="preload"; as="script"`,
     );
     res.setHeader("Content-Type", "text/html");
-    res.end(readFileSync(join(__dirname, "preload.html")));
+    res.end(readFileSync(join(import.meta.dirname, "preload.html")));
     return;
   }
 });
@@ -138,6 +142,8 @@ httpServer5000.listen(5000);
 3. localhost:5001
 
 ```ts
+import http from "http";
+
 const httpServer5001 = http.createServer((req, res) => {
   const url = new URL(req.url || "", "http://localhost:5001");
   if (url.pathname === "/preload.js") {

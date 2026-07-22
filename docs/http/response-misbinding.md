@@ -205,7 +205,7 @@ const { join } = require("path");
 
 const normalHtmlServer = http.createServer((req, res) => {
   if (req.url === "/") {
-    res.end(readFileSync(join(__dirname, "index.html")));
+    res.end(readFileSync(join(import.meta.dirname, "index.html")));
     return;
   }
   return res.end();

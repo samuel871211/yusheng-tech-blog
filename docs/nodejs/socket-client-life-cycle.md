@@ -10,6 +10,8 @@ last_update:
 ✅ 正確觸發（lookup event 會在 DNS lookup 之後觸發）
 
 ```ts
+import net from "net";
+
 // ✅ host 為 domain name，會觸發 DNS lookup
 const socket = net.connect({ host: "example.com", port: 80 });
 socket.on("lookup", (err, address, family, host) =>
@@ -24,6 +26,8 @@ socket.on("lookup", (err, address, family, host) =>
 ❌ 不會觸發（指定 IP 的情況就不會觸發）
 
 ```ts
+import net from "net";
+
 // ❌ host 為 IP，不會觸發 DNS lookup
 const socket = net.connect({ host: "104.18.26.120", port: 80 });
 socket.on("lookup", (err, address, family, host) =>
@@ -34,6 +38,8 @@ socket.on("lookup", (err, address, family, host) =>
 ❌ 不會觸發（TCP server socket 是被動等待連線）
 
 ```ts
+import net from "net";
+
 // TCP server
 const server = net.createServer();
 server.listen(5000, "localhost");
@@ -69,7 +75,7 @@ dns.lookup("localhost", { all: true }, (err, addresses) =>
 );
 
 // Prints
-// [({ address: "::1", family: 6 }, { address: "127.0.0.1", family: 4 })]
+// [{ address: "::1", family: 6 }, { address: "127.0.0.1", family: 4 }]
 ```
 
 每一個 address 的連線，都會觸發一個 `connectionAttempt`，並且可能會觸發以下三個其中一個
@@ -89,6 +95,8 @@ dns.lookup("localhost", { all: true }, (err, addresses) =>
 啟一個 TCP server 監聽 localhost:5000，並且開一個 TCP client 連過去
 
 ```ts
+import net from "net";
+
 const server = net.createServer();
 server.listen(5000, "localhost");
 
@@ -119,6 +127,8 @@ socket.on("connectionAttemptTimeout", (ip, port, family) => {
 將 TCP server 的 port 改成 5001
 
 ```ts
+import net from "net";
+
 const server = net.createServer();
 server.listen(5001, "localhost");
 
@@ -229,6 +239,8 @@ flowchart TD
 先測試 example.com 解出來的 addresses
 
 ```ts
+import dns from "dns";
+
 dns.lookup("example.com", { all: true }, (err, addresses) =>
   console.log(addresses),
 );
@@ -239,6 +251,8 @@ dns.lookup("example.com", { all: true }, (err, addresses) =>
 再來連到 example.com:81 試試看
 
 ```ts
+import net from "net";
+
 const socket = net.connect({
   host: "example.com",
   port: 81,
@@ -356,6 +370,8 @@ function internalConnectMultiple(context, canceled) {
 ### TCP server socket 不會觸發 connect events
 
 ```ts
+import net from "net";
+
 // TCP server
 const server = net.createServer();
 server.listen(5000, "localhost");

@@ -18,6 +18,8 @@ last_update:
 server
 
 ```ts
+import net from "net";
+
 const server = net.createServer((socket) =>
   socket.on("data", () => {
     socket.write("HTTP/1.1 199 WhatTheHack\r\nFoo: bar\r\n\r\n");
@@ -29,6 +31,8 @@ server.listen(5000);
 client
 
 ```ts
+import http from "http";
+
 const clientRequest = http.request({ host: "localhost", port: 5000 });
 clientRequest.end();
 clientRequest.on("information", console.log);
@@ -87,12 +91,14 @@ server
 
 ```ts
 import http from "http";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const httpServer = http.createServer();
 httpServer.listen(5000);
 httpServer.on("request", (req, res) => {
   if (req.url === "/") {
-    const indexHTML = readFileSync(join(__dirname, "index.html"));
+    const indexHTML = readFileSync(join(import.meta.dirname, "index.html"));
     res.writeEarlyHints({ link: "</style.css>; rel=preload; as=style" });
     setTimeout(() => res.end(indexHTML), 1000);
     return;
@@ -211,6 +217,8 @@ hello world
 client 改用 Node.js
 
 ```ts
+import http from "http";
+
 const clientRequest = http.request({ host: "localhost", port: 5000 });
 clientRequest.on("information", console.log);
 clientRequest.end();

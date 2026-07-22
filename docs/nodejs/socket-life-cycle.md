@@ -32,6 +32,8 @@ function Socket(options) {
 - [socket.bytesWritten](https://nodejs.org/api/net.html#socketbyteswritten)，用來得知總寫入的資料量
 
 ```ts
+import net from "net";
+
 // localhost:5000 架一個簡易的 TCP server
 const server = net.createServer();
 server.listen(5000, "localhost");
@@ -69,6 +71,9 @@ TCP 的 4-way-Handshake 用來關閉連線，client 跟 server 皆可以主動�
 
 <!-- prettier-ignore -->
 ```ts
+import net from "net";
+import assert from "assert";
+
 // TCP server
 const server = net.createServer({ allowHalfOpen: true });
 server.listen(5000, "localhost");
@@ -129,6 +134,9 @@ sequenceDiagram
 
 <!-- prettier-ignore -->
 ```ts
+import net from "net";
+import assert from "assert";
+
 // TCP server
 const server = net.createServer();
 server.listen(5000, "localhost");

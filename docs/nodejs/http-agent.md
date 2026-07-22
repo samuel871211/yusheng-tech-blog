@@ -31,6 +31,8 @@ last_update:
 如果沒有 [http.Agent](https://nodejs.org/docs/latest-v24.x/api/http.html#class-httpagent) 的話
 
 ```ts
+import http from "http";
+
 // server
 const server = http.createServer((req, res) => {
   console.log("req.headers", req.headers);
@@ -185,6 +187,10 @@ sequenceDiagram
 我們寫個 PoC 來測試
 
 ```ts
+import http from "http";
+import assert from "assert";
+import { nextTick } from "process";
+
 // HTTP server
 const httpServer = http.createServer((req, res) => res.end());
 httpServer.listen(5000);

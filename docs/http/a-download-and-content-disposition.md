@@ -95,7 +95,7 @@ import http from "http";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-const image = readFileSync(join(__dirname, "image.jpg"));
+const image = readFileSync(join(import.meta.dirname, "image.jpg"));
 
 const httpServer = http.createServer((req, res) => {
   if (req.url === "/image") {
@@ -132,7 +132,7 @@ import http from "http";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-const image = readFileSync(join(__dirname, "image.jpg"));
+const image = readFileSync(join(import.meta.dirname, "image.jpg"));
 
 // serve image
 const httpServer5000 = http.createServer((req, res) => {

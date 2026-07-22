@@ -109,6 +109,8 @@ myWritable.write("123"); // Error: The _write() method is not implemented
 ✅ 正確做法
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   // ✅ 實作 `_write` method
   _write(
@@ -252,6 +254,8 @@ myWritable._write("123"); // ❌ instance 直接呼叫 internal methods
 ✅ 正確做法
 
 ```ts
+import { Writable } from "stream";
+
 class MyWritable extends Writable {
   _write(
     chunk: any,
@@ -285,6 +289,8 @@ myReadable.read("123"); // Error: The _read() method is not implemented
 ✅ 正確做法
 
 ```ts
+import { Readable } from "stream";
+
 class MyReadable extends Readable {
   // ✅ 實作 `_read` method
   _read(size: number): void {

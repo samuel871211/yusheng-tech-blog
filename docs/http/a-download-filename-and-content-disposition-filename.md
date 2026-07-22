@@ -7,7 +7,7 @@ last_update:
 
 ## 前言
 
-承接上一篇，這篇來聊聊 `<a download>` 跟 `Content-Dispositon` 是如何處理下載的檔名
+承接上一篇，這篇來聊聊 `<a download>` 跟 `Content-Disposition` 是如何處理下載的檔名
 
 ## `<a download>` 範例
 

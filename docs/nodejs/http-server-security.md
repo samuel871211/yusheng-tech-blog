@@ -219,6 +219,8 @@ Node.js 提供以下 properties 可以限制 HTTP client, server 的 headers 大
 server 設定 100 bytes
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer({ maxHeaderSize: 100 });
 httpServer.listen(5000);
 httpServer.on("request", (req, res) => {
@@ -229,6 +231,8 @@ httpServer.on("request", (req, res) => {
 client 使用 `net.Socket` 精準計算 100 bytes
 
 ```ts
+import net from "net";
+
 const socket = net.createConnection({
   host: "localhost",
   port: 5000,
@@ -256,6 +260,8 @@ hello world
 接著增加 1 byte
 
 ```ts
+import net from "net";
+
 const socket = net.createConnection({
   host: "localhost",
   port: 5000,
@@ -286,6 +292,8 @@ Connection: close
 server 設定 `maxHeadersCount = 2`
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.maxHeadersCount = 2;
 httpServer.listen(5000);

@@ -52,6 +52,8 @@ socket.write("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
 正常要用 Node.js 創建一個 HTTP server
 
 ```ts
+import http from "http";
+
 const httpServer = http.createServer();
 httpServer.on("request", (req, res) => {
   res.end("ok");
@@ -87,6 +89,8 @@ ok%
 若以 `net` 模組來達成這件事情
 
 ```ts
+import net from "net";
+
 const server = net.createServer({ allowHalfOpen: true });
 server.on("connection", (socket) => {
   socket.on("data", (chunk) => {
@@ -125,6 +129,8 @@ ok%
 要創建一個 TCP server 的話，可以使用
 
 ```ts
+import net from "net";
+
 const server5000 = new net.Server();
 server5000.listen(5000);
 
@@ -147,12 +153,14 @@ function createServer(options, connectionListener) {
 要創建一個 TCP client 的話，可以使用
 
 ```ts
+import net from "net";
+
 const socket = net.connect({
   host: "localhost",
   port: 5000,
 });
 
-const socket = net.createConnection({
+const socket2 = net.createConnection({
   host: "localhost",
   port: 5000,
 });
@@ -216,6 +224,8 @@ HTTP 層級的 `keepAlive: timeout=5, max=200` 代表的是
 以 server 發出 keepAlive "heartbeat" 為例
 
 ```ts
+import net from "net";
+
 const server = net.createServer({
   keepAlive: true,
   keepAliveInitialDelay: 3000,
@@ -244,6 +254,8 @@ const socket = net.connect({
 使用方式也很簡單，先創建一個 `BlockList`
 
 ```ts
+import { BlockList } from "net";
+
 const blockList = new BlockList();
 blockList.addAddress("127.0.0.1", "ipv4");
 ```
@@ -251,6 +263,8 @@ blockList.addAddress("127.0.0.1", "ipv4");
 再來創建一個最小 TCP server
 
 ```ts
+import net from "net";
+
 const server = net.createServer({ blockList });
 server.listen(5000);
 server.on("connection", (serverSocket) => console.log("connection"));
@@ -260,6 +274,8 @@ server.on("connection", (serverSocket) => console.log("connection"));
 
 <!-- prettier-ignore -->
 ```ts
+import net from "net";
+
 const clientSocket = net.createConnection({
   host: "localhost",
   port: 5000,
@@ -297,6 +313,8 @@ Node.js 的 [net.Server](https://nodejs.org/api/net.html#class-netserver) 有個
 啟動 TCP server，將 `maxConnections` 設成 1
 
 ```ts
+import net from "net";
+
 const server = net.createServer();
 server.maxConnections = 1;
 server.listen(5000);
@@ -307,6 +325,8 @@ server.on("drop", console.log);
 建立 2 個 TCP client，依序連過去
 
 ```ts
+import net from "net";
+
 const clientSocket1 = net.createConnection({
   host: "localhost",
   port: 5000,
