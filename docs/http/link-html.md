@@ -5,6 +5,10 @@ last_update:
   date: "2026-07-05T08:00:00+08:00"
 ---
 
+## 防雷
+
+由於 iThome 使用 cloudflare，發文若有一些 XSS 的關鍵字會被擋下，所以本文若有用到 `script` 標籤，都會改成 `<xscript>`
+
 ## 前言
 
 在現代前端框架盛行的年代，很少會需要大量的手動設置 `<link>`，基本上 bundler 會處理好各種 JavaScript, CSS 的載入，只有少部分會需要在 `index.html` 設定；也因此顯少有機會深入研究 `<link>` 的各種 attribute。
@@ -98,29 +102,25 @@ httpServer.listen(5000);
 2. index.html，定義 prefetch 載入 `/page2.js`
 
 ```html
-<html>
-  <head>
-    <link rel="prefetch" href="/page2.js" as="script" />
-  </head>
-  <body>
-    <a href="/page2">Go to page2</a>
-  </body>
-</html>
+<head>
+  <link rel="prefetch" href="/page2.js" as="script" />
+</head>
+<body>
+  <a href="/page2">Go to page2</a>
+</body>
 ```
 
 3. page2.html，實際載入 `/page2.js`
 
 ```html
-<html>
-  <head>
-    <script src="/page2.js"></script>
-  </head>
-</html>
+<head>
+  <xcript src="/page2.js"></xcript>
+</head>
 ```
 
 - 瀏覽器先訪問 http://localhost:5000/
 - 之後透過超連結到 `/page2`
-- 就可以看到 /page2 的 `<script src="/page2.js">` 吃到 prefetch 的快取
+- 就可以看到 /page2 的 `<xcript src="/page2.js">` 吃到 prefetch 的快取
 - F12 > Network => Disable Cache 要取消勾選
 
 ![prefetch-cache](../../static/img/prefetch-cache.jpg)
@@ -178,7 +178,7 @@ The main difference is that preload just downloads the file and stores it in the
 <img crossorigin="" />
 <link crossorigin="anonymous" />
 <video crossorigin="use-credentials"></video>
-<script crossorigin="use-credentials"></script>
+<xcript crossorigin="use-credentials"></xcript>
 ```
 
 其中，以下三個設定是一樣的意思，都代表 "anonymous"
@@ -221,14 +221,10 @@ httpServer5000.listen(5000);
 2. index.html
 
 ```html
-<html>
-  <head>
-    <script>
-      addEventListener("error", console.log);
-    </script>
-    <script src="http://localhost:5001/script.js"></script>
-  </head>
-</html>
+<head>
+  <xcript> addEventListener("error", console.log); </xcript>
+  <xcript src="http://localhost:5001/script.js"></xcript>
+</head>
 ```
 
 3. localhost:5001
@@ -254,7 +250,7 @@ httpServer5001.listen(5001);
 2. index.html 加上 crossorigin
 
 ```html
-<script src="http://localhost:5001/script.js" crossorigin></script>
+<xcript src="http://localhost:5001/script.js" crossorigin></xcript>
 ```
 
 3. localhost:5001 新增以下這行
