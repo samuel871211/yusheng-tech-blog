@@ -29,7 +29,7 @@ httpServer.on("request", (req, res) => {
 
 都離不開 Event-driven architecture (EDA) 這個概念
 
-尤其是 **"有用過 Node.js 原生 http 模組寫 client/server"** 的人類們，應該都看過
+尤其是 **"有用過 Node.js 原生 `http` 模組寫 client / server"** 的人類們，應該都看過
 
 - `EventEmitter`
 - `stream.Readable`
@@ -74,7 +74,7 @@ fetch("https://your-api-server.com", {
   .then((res) => console.log(res));
 ```
 
-如果想搞懂 Node.js http 模組的話，你必須得知道這一整條路的關聯
+如果想搞懂 Node.js `http` 模組的話，你必須得知道這一整條路的關聯
 
 ```mermaid
 flowchart LR
@@ -92,7 +92,7 @@ flowchart LR
 
 所以，接下來我會規劃數篇文章，一路涵蓋 `EventEmitter`、`stream`、`net.Socket` 跟 `http`
 
-<!-- smtp-server 就是繼承 Event.Emitter -->
+<!-- smtp-server 就是繼承 EventEmitter -->
 
 ## EventEmitter
 
@@ -386,7 +386,7 @@ import events from "events";
 
 `EventEmitter` 是 Node.js Event-driven architecture 的基礎，但它只負責「註冊事件」和「觸發事件」
 
-當你看到 Node.js http 模組相關的程式碼：
+當你看到 Node.js `http` 模組相關的程式碼：
 
 ```ts
 req.on("data", (chunk) => {}); // ❓ data 事件什麼時候觸發？

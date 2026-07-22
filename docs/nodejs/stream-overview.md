@@ -85,7 +85,7 @@ graph
 
 <!-- ![](../../static/client-server-readable-writable.svg) -->
 
-Node.js http 模組的底層就是 `stream` 跟 `net.Socket`：
+Node.js `http` 模組的底層就是 `stream` 跟 `net.Socket`：
 
 - `stream` 是管理資料讀寫的抽象層
 - `net.Socket` 則是管理 TCP 連線的抽象層，繼承了 `stream.Duplex`，可讀寫資料
@@ -503,7 +503,7 @@ httpServer.listen(5000);
 
 這篇文章帶大家入門 [stream.Readable](#streamreadable), [stream.Writable](#streamwritable) 以及 [stream.Duplex](#streamduplex)
 
-並且也帶入 Node.js http 的概念，讓大家從 HTTP 的觀點來理解這些抽象層
+並且也帶入 Node.js `http` 模組的概念，讓大家從 HTTP 的觀點來理解這些抽象層
 
 下一篇文章，會帶大家深入 `stream` 的生命週期，以及主要 methods 跟 properties 的使用方法
 
