@@ -271,6 +271,7 @@ _destroy(error: Error | null, callback: (error?: Error | null) => void): void
 以 `_construct` 拋出的錯誤為例，會傳遞到 `_destroy` 跟 `on("error")`
 
 ```ts
+import assert from "assert";
 import { Writable } from "stream";
 
 class MyWritable extends Writable {
@@ -288,7 +289,10 @@ class MyWritable extends Writable {
 }
 
 const myWritable = new MyWritable();
-myWritable.on("error", (error) => console.log('on("error")'));
+myWritable.on("error", (error) => {
+  console.log('on("error")');
+  assert(error?.message === "_construct error"); // ✅
+});
 myWritable.on("close", () => console.log('on("close")'));
 
 // Prints
@@ -311,11 +315,10 @@ write(chunk: any, encoding: BufferEncoding, callback?: (error: Error | null | un
 _write(chunk: any, encoding: BufferEncoding, callback: (error?: Error | null) => void): void
 ```
 
-<!-- todo-yus -->
-
 寫個 PoC 來測試
 
 ```ts
+import assert from "assert";
 import { Writable } from "stream";
 
 class MyWritable extends Writable {
@@ -325,7 +328,8 @@ class MyWritable extends Writable {
     callback: (error?: Error | null) => void,
   ): void {
     console.log("_write");
-    callback(new Error(`_write ${chunk}`));
+    // ✅ _write 階段拋出的錯誤
+    callback(new Error("_write error"));
   }
   _destroy(
     error: Error | null,
@@ -337,28 +341,20 @@ class MyWritable extends Writable {
 }
 
 const myWritable = new MyWritable();
-myWritable.write("123", (error) =>
-  console.log("write callback", error?.message),
-);
+myWritable.write("123", (error) => {
+  console.log("write callback");
+  assert(error?.message === "_write error"); // ✅ 會傳遞給 write
+});
 myWritable.on("error", (error) => console.log('on("error")'));
 myWritable.on("close", () => console.log('on("close")'));
 
 // Prints
+// _write
+// write callback
+// _destroy
+// on("error")
+// on("close")
 ```
-
-執行順序如下：
-
-```mermaid
-flowchart LR
-    A["callback(err)<br/>of _write"] --> C["callback(err)<br/>of write"]
-    C --> D[_destroy]
-    D --> E["on('error')"]
-    E --> F["on('close')"]
-
-    style C fill:#fff5ad,stroke:#aaaa33
-```
-
-<!-- ![](../../static/stream-writable-write-error-to-close.svg) -->
 
 ## 小結
 
