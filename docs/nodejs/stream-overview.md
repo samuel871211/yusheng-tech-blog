@@ -2,7 +2,7 @@
 title: stream 入門：Readable、Writable、Duplex（附 HTTP 實例）
 description: 從 HTTP 視角探索 Node.js stream，了解 Readable、Writable、Duplex 的實作與應用，包含範例
 last_update:
-  date: "2026-07-07T08:00:00+08:00"
+  date: "2026-07-23T08:00:00+08:00"
 ---
 
 ## Types of streams
@@ -146,7 +146,9 @@ myWritable.write("123"); // <Buffer 31 32 33>
 - [writable.end](https://nodejs.org/api/stream.html#writableendchunk-encoding-callback)
 - [writable.setDefaultEncoding](https://nodejs.org/api/stream.html#writablesetdefaultencodingencoding)
 
-這些方法可以在 Node.js 的 [`http.ClientRequest`](https://nodejs.org/api/http.html#class-httpclientrequest) 或是 [`http.ServerResponse`](https://nodejs.org/api/http.html#class-httpserverresponse) 看到，因為其繼承鏈為
+### `http.OutgoingMessage` 繼承鏈
+
+以上方法可以在 Node.js 的 [`http.ClientRequest`](https://nodejs.org/api/http.html#class-httpclientrequest) 或是 [`http.ServerResponse`](https://nodejs.org/api/http.html#class-httpserverresponse) 看到，因為其繼承鏈為
 
 ```mermaid
 flowchart TD
@@ -177,7 +179,7 @@ flowchart TD
 ```ts
 import { request } from "http";
 const clientRequest = request("http://localhost:5000/");
-// These are all valid methods from stream.Writable
+// ✅ These are all valid methods from stream.Writable
 clientRequest.cork();
 clientRequest.uncork();
 clientRequest.destroy();
@@ -189,11 +191,11 @@ clientRequest.setDefaultEncoding();
 `http.ServerResponse`
 
 ```ts
-import { createServer } from "http";
-const httpServer = createServer().listen(5000);
-httpServer.on("request", function requestListener(req, res) {
-  // res: http.ServerResponse
-  // These are all valid methods from stream.Writable
+import http from "http";
+
+const httpServer = http.createServer().listen(5000);
+httpServer.on("request", (req, res: http.ServerResponse) => {
+  // ✅ These are all valid methods from stream.Writable
   res.cork();
   res.uncork();
   res.destroy();
@@ -350,6 +352,8 @@ char greeting[] = "Hello"; // Compiler automatically adds '\0'
 - [readable.compose](https://nodejs.org/api/stream.html#readablecomposestream-options)
 - [readable.iterator](https://nodejs.org/api/stream.html#readableiteratoroptions)
 
+### `http.IncomingMessage` 繼承鏈
+
 這些方法都可以在 Node.js 的 [http.IncomingMessage](https://nodejs.org/api/http.html#class-httpincomingmessage) 看到，因為其繼承鏈為
 
 ```mermaid
@@ -365,12 +369,14 @@ flowchart TD
 As an HTTP client (receive HTTP response)
 
 ```ts
-import { request } from "http";
-const clientRequest = request("http://localhost:5000/");
-clientRequest.on("response", (response) => {
-  // response: http.IncomingMessage
+import http from "http";
+
+const clientRequest = http.request("http://localhost:5000/");
+clientRequest.on("response", (response: http.IncomingMessage) => {
+  // ✅ These are all valid methods from stream.Readable
   response.destroy();
   response.isPaused();
+  response.pause();
   // ......
 });
 ```
@@ -378,12 +384,14 @@ clientRequest.on("response", (response) => {
 As an HTTP server (receive HTTP request)
 
 ```ts
-import { createServer } from "http";
-const httpServer = createServer().listen(5000);
-httpServer.on("request", function requestListener(req, res) {
-  // req: http.IncomingMessage
+import http from "http";
+
+const httpServer = http.createServer().listen(5000);
+httpServer.on("request", (req: http.IncomingMessage, res) => {
+  // ✅ These are all valid methods from stream.Readable
   req.destroy();
   req.isPaused();
+  req.pause();
   // ......
 });
 ```
@@ -500,10 +508,10 @@ httpServer.listen(5000);
 
 在校稿的時候，我發現瀏覽器跟 Node.js 都有實作一套 Readable, Writable，名稱分別為
 
-| Web API        | Node.js stream  |
-| -------------- | --------------- |
-| ReadableStream | stream.Readable |
-| WritableStream | stream.Writable |
+| Web API          | Node.js `stream`  |
+| ---------------- | ----------------- |
+| `ReadableStream` | `stream.Readable` |
+| `WritableStream` | `stream.Writable` |
 
 不過 Node.js 在 v16.5.0 也加入了 `ReadableStream` 跟 `WritableStream`，對 JavaScript 開發者來說是一大福音，減少學習成本
 
