@@ -1,6 +1,6 @@
 <svg width="1000" height="180" viewBox="0 0 1000 180" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
   <!-- title -->
-  <text x="500" y="22" text-anchor="middle" font-family="-apple-system, 'Segoe UI', 'Microsoft JhengHei', sans-serif" font-size="15" font-weight="700" fill="#1e293b">正常情境的時間軸（無 error、使用者沒有主動呼叫 destroy()）</text>
+  <text x="500" y="22" text-anchor="middle" font-family="-apple-system, 'Segoe UI', 'Microsoft JhengHei', sans-serif" font-size="15" font-weight="700" fill="#1e293b">正常情境的 boolean flags</text>
 
   <!-- baseline segments -->
   <line x1="65"  y1="105" x2="291" y2="105" stroke="#94a3b8" stroke-width="4"/>
@@ -15,8 +15,8 @@
 
   <!-- event labels (above) -->
   <text x="291" y="80" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">end()</text>
-  <text x="517" y="80" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on('finish')</text>
-  <text x="744" y="80" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on('close')</text>
+  <text x="517" y="80" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on("finish")</text>
+  <text x="744" y="80" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on("close")</text>
 
   <!-- dashed connectors -->
   <line x1="291" y1="90" x2="291" y2="105" stroke="#6366f1" stroke-width="2" stroke-dasharray="3,3"/>

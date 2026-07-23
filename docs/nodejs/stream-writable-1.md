@@ -5,9 +5,40 @@ last_update:
   date: "2026-07-20T08:00:00+08:00"
 ---
 
-## 生命週期 1：constructor 與初始化
+## 前言
 
-先來個範例，包含 `constructor`、`_construct` 跟 `_write`，各位覺得執行順序是什麼呢？
+這篇會把 `stream.Writable` 分多個生命週期階段來拆解
+
+- [生命週期 1：初始化](#生命週期-1初始化)
+- [生命週期 2：寫入資料](#生命週期-2寫入資料)
+- [生命週期 3：結束](#生命週期-3結束)
+- [生命週期 4：關閉](#生命週期-4關閉)
+
+## callback 架構
+
+Node.js `stream.Readable` 跟 `stream.Writable` 的 internal methods 大量使用 callback 架構
+
+- 呼叫 `callback()` 用來標記此方法順利完成，可以執行下一步
+
+  ```ts
+  _construct(callback: (error?: Error | null) => void): void {
+    // do something here
+    callback();
+  }
+  ```
+
+- 呼叫 `callback(new Error())` 代表遇到錯誤，進入錯誤處理流程
+
+  ```ts
+  _construct(callback: (error?: Error | null) => void): void {
+    // do something here
+    callback(new Error());
+  }
+  ```
+
+## 生命週期 1：初始化
+
+初始化階段，會依序執行 `constructor` 跟 `_construct`
 
 ```ts
 import { Writable, WritableOptions } from "stream";
@@ -20,18 +51,41 @@ class MyWritable extends Writable {
   _construct(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_construct");
     // 模擬 async 操作，例如：建立 TCP 連線
-    setTimeout(callback, 1000);
+    setTimeout(callback, 100);
+  }
+}
+
+const myWritable = new MyWritable();
+
+// Prints
+// 650.24275 constructor
+// 650.622958 _construct
+```
+
+## 生命週期 2：寫入資料
+
+### `_construct` 完成才會執行 `_write`
+
+`_construct` 代表的是非同步的初始化階段，需等到初始化完成，才能開始 `_write` 寫入資料
+
+```ts
+import { Writable } from "stream";
+
+class MyWritable extends Writable {
+  _construct(callback: (error?: Error | null) => void): void {
+    console.log(performance.now(), "_construct");
+    // 模擬 async 操作，例如：建立 TCP 連線
+    setTimeout(callback, 100);
   }
   _write(
     chunk: any,
     encoding: BufferEncoding,
     callback: (error?: Error | null) => void,
   ): void {
+    // ✅ 一秒後，等 _construct 完成才會觸發
+    console.log(performance.now(), chunk);
     // 模擬寫入延遲
-    setTimeout(() => {
-      console.log(performance.now(), chunk);
-      callback();
-    }, 100);
+    setTimeout(callback, 100);
   }
 }
 
@@ -39,96 +93,84 @@ const myWritable = new MyWritable();
 myWritable.write("123");
 
 // Prints
-// 650.24275 constructor
-// 650.622958 _construct
-// 1754.264416 <Buffer 31 32 33>
+// 56.28175 _construct
+// 162.584583 <Buffer 31 32 33>
 ```
 
-執行順序如下：
+### `_write` 完成才會執行 `write` 的 callback
 
-```mermaid
-flowchart LR
-    A[constructor] --> B[_construct]
-    B --> C[_write]
-```
-
-<!-- ![stream-writable-constructor](../../static/stream-writable-constructor.svg) -->
-
-## 生命週期 2：寫入資料
-
-我曾經以為寫入資料就是一直 `write` 下去就好
-
-```ts
-const myWritable = getWritableStreamSomehow();
-myWritable.write("123");
-myWritable.write("456");
-```
-
-但如果仔細查看 [`write`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [`_write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 `highWaterMark` 這兩個名詞一直被提到
-
-我們先來看看 `write` 的 `callback` 何時會被觸發
+使用者呼叫 `write`，Node.js 底層會幫忙呼叫 `_write`，完成後才會觸發 `write` 的 callback
 
 ```ts
 import { Writable, WritableOptions } from "stream";
 
 class MyWritable extends Writable {
-  constructor(opts?: WritableOptions) {
-    super(opts);
-    console.log(performance.now(), "constructor");
-  }
-  _construct(callback: (error?: Error | null) => void): void {
-    console.log(performance.now(), "_construct");
-    // 模擬 async 操作，例如：建立 TCP 連線
-    setTimeout(callback, 1000);
-  }
   _write(
     chunk: any,
     encoding: BufferEncoding,
     callback: (error?: Error | null) => void,
   ): void {
+    console.log(performance.now(), chunk);
     // 模擬寫入延遲
-    setTimeout(() => {
-      console.log(performance.now(), chunk);
-      callback();
-    }, 100);
+    setTimeout(callback, 100);
   }
 }
 
 const myWritable = new MyWritable();
 const callback = () => console.log(performance.now(), "data is flushed");
-const isSafeToWriteMore = myWritable.write("123", callback);
-console.log(performance.now(), { isSafeToWriteMore });
+// ✅ write 的第二個參數 callback
+myWritable.write("123", callback);
 
 // Prints
-// 750.2246 constructor
-// 750.8683 { isSafeToWriteMore: true }
-// 751.1718 _construct
-// 1875.7623 <Buffer 31 32 33>
-// 1876.2586 data is flushed
+// 65.875709 <Buffer 31 32 33>
+// 171.010709 data is flushed
 ```
 
-時間軸如下
+### `_writev` 優化多筆寫入
 
-```mermaid
-flowchart LR
-    A[constructor] --> B[write]
-    B --> C[_construct]
-    C --> D[_write]
-    D --> F[callback of write]
+實作 `_writev` 之後，可以讓使用者多次的 `write`，背後簡化成一個 `_writev` 的呼叫
+
+```ts
+class MyWritable extends Writable {
+  _writev(
+    chunks: Array<{ chunk: any; encoding: BufferEncoding }>,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), chunks);
+    // 模擬寫入延遲
+    setTimeout(callback, 100);
+  }
+}
+
+const myWritable = new MyWritable();
+myWritable.write("123");
+myWritable.write("456");
+myWritable.write("789");
+myWritable.write("abc");
+
+// Prints
+// 330.241084 [ { chunk: <Buffer 31 32 33>, encoding: 'buffer' } ]
+// 433.146375 [
+//   {
+//     chunk: <Buffer 34 35 36>,
+//     encoding: 'buffer',
+//     callback: [Function: nop]
+//   },
+//   {
+//     chunk: <Buffer 37 38 39>,
+//     encoding: 'buffer',
+//     callback: [Function: nop]
+//   },
+//   {
+//     chunk: <Buffer 61 62 63>,
+//     encoding: 'buffer',
+//     callback: [Function: nop]
+//   },
+//   allBuffers: true
+// ]
 ```
 
-<!-- ![](../../static/stream-writable-constructor-to-write.svg) -->
-
-- 根據 [`readable._construct`](https://nodejs.org/api/stream.html#readable_constructcallback) 的描述，`constructor` 執行完後，`process.nextTick` 才會執行 `_construct`
-- 雖然 `writable._construct` 的官方文件沒有描述到這個行為，但基本上兩者的概念是相通的
-- `_construct` 完成後（呼叫 `_construct` 的 `callback`），代表可以開始 `_write`
-- `_write` 完成後（呼叫 `_write` 的 `callback`），代表可以開始 `write` 的 `callback`
-
-只能讚嘆 Node.js 的 Event-driven architecture 設計真的很精妙，大量的利用 `callback` 把各種非同步事件串連起來
-
-但 Node.js 是怎麼判斷 `isSafeToWriteMore` 呢？這會在下一篇文章介紹到
-
-## 生命週期 3：結束、關閉
+## 生命週期 3：結束
 
 當使用者確定不會再寫入後，就可以使用 [writable.end](https://nodejs.org/api/stream.html#writableendchunk-encoding-callback)
 
@@ -137,7 +179,15 @@ const httpRequestWritable = getWritableSomehow();
 httpRequestWritable.end("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
 ```
 
-也因此 `end` 之後不能再 `write`，否則就會報錯
+`end` 不一定要再寫入資料，可以不帶任何參數，效果同上
+
+```ts
+const httpRequestWritable = getWritableSomehow();
+httpRequestWritable.write("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
+httpRequestWritable.end();
+```
+
+因為 `end` 是標記 `stream.Writable` 的結束，所以結束後不能再 `write`，否則就會報錯
 
 ```ts
 const httpRequestWritable = getWritableSomehow();
@@ -145,22 +195,57 @@ httpRequestWritable.end("GET / HTTP/1.1\r\nHost: example.com\r\n\r\n");
 httpRequestWritable.write("123"); // Error: write after end
 ```
 
-寫個 PoC 來觀察 `end`, `_final` 跟 `_destroy` 的觸發順序
+使用者呼叫 `end`，且最後一個 `_write` 完成後，會依序執行 `_final`、`end` 的 callback 跟 `on("finish")`
 
 ```ts
 import { Writable } from "stream";
-import assert from "assert";
 
 class MyWritable extends Writable {
-  _construct(callback: (error?: Error | null) => void): void {
-    console.log(performance.now(), "_construct");
-    // 模擬 async 操作，例如：建立 TCP 連線
-    setTimeout(callback, 1000);
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_write");
+    // 模擬寫入延遲
+    setTimeout(callback, 100);
   }
   _final(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_final");
     // 模擬 async 操作，例如：關閉 TCP 連線
-    setTimeout(callback, 1000);
+    setTimeout(callback, 100);
+  }
+}
+
+const myWritable = new MyWritable({ autoDestroy: false });
+myWritable.end("abcde", () => console.log(performance.now(), "end callback"));
+myWritable.on("finish", () => console.log(performance.now(), 'on("finish")'));
+
+// Prints
+// 256.522833 _write
+// 358.595833 _write
+// 459.939125 _write
+// 561.619333 _final
+// 661.852125 end callback
+// 661.963667 on("finish")
+```
+
+## 生命週期 4：關閉
+
+結束之後，若有設定 `autoDestroy: true`，則會依序觸發 `_destroy` 跟 `on("close")`
+
+```ts
+import { Writable } from "stream";
+
+class MyWritable extends Writable {
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    console.log(performance.now(), "_write");
+    // 模擬寫入延遲
+    setTimeout(callback, 100);
   }
   _destroy(
     error: Error | null,
@@ -168,7 +253,40 @@ class MyWritable extends Writable {
   ): void {
     console.log(performance.now(), "_destroy");
     // 模擬 async 操作，例如：關閉 TCP 連線
-    setTimeout(callback, 1000);
+    setTimeout(callback, 100);
+  }
+}
+
+const myWritable = new MyWritable({ autoDestroy: true });
+myWritable.write("12345");
+myWritable.write("67890");
+myWritable.end("abcde");
+myWritable.on("close", () => console.log(performance.now(), 'on("close")'));
+
+// Prints
+// 146.700916 _write
+// 246.782458 _write
+// 348.155833 _write
+// 449.130541 _destroy
+// 549.774875 on("close")
+```
+
+## 完整生命週期
+
+把所有生命週期的 internal methods 跟 events 都整合進來，來看看執行順序吧！
+
+```ts
+import { Writable, WritableOptions } from "stream";
+
+class MyWritable extends Writable {
+  constructor(opts?: WritableOptions) {
+    super(opts);
+    console.log(performance.now(), "constructor");
+  }
+  _construct(callback: (error?: Error | null) => void): void {
+    console.log(performance.now(), "_construct");
+    // 模擬 async 操作，例如：建立 TCP 連線
+    setTimeout(callback, 100);
   }
   _write(
     chunk: any,
@@ -179,77 +297,64 @@ class MyWritable extends Writable {
     // 模擬寫入延遲
     setTimeout(callback, 100);
   }
-  _writev(
-    chunks: Array<{ chunk: any; encoding: BufferEncoding }>,
+  _final(callback: (error?: Error | null) => void): void {
+    console.log(performance.now(), "_final");
+    // 模擬 async 操作，例如：關閉 TCP 連線
+    setTimeout(callback, 100);
+  }
+  _destroy(
+    error: Error | null,
     callback: (error?: Error | null) => void,
   ): void {
-    console.log(performance.now(), "_writev");
-    // 模擬寫入延遲
+    console.log(performance.now(), "_destroy");
+    // 模擬 async 操作，例如：關閉 TCP 連線
     setTimeout(callback, 100);
   }
 }
 
-const myWritable = new MyWritable();
-myWritable.write("12345");
-myWritable.write("67890");
+const myWritable = new MyWritable({ autoDestroy: true });
 myWritable.end("abcde", () => console.log(performance.now(), "end callback"));
-assert(myWritable.writable === false);
-assert(myWritable.writableEnded === true);
-myWritable.on("finish", () => {
-  assert(myWritable.writableFinished === true);
-  console.log(performance.now(), "on('finish')");
-});
-myWritable.on("close", () => {
-  assert(myWritable.destroyed === true);
-  assert(myWritable.closed === true);
-  console.log(performance.now(), "on('close')");
-});
+myWritable.on("finish", () => console.log(performance.now(), 'on("finish")'));
+myWritable.on("close", () => console.log(performance.now(), 'on("close")'));
 
 // Prints
-// 708.142667 _construct
-// 1709.220417 _writev
-// 1810.945917 _final
-// 2812.627 end callback
-// 2813.00425 on('finish')
-// 2813.522209 _destroy
-// 3815.098334 on('close')
+// 244.026208 constructor
+// 245.449083 _construct
+// 347.431958 _write
+// 449.094875 _final
+// 549.727958 end callback
+// 549.952583 on("finish")
+// 550.301458 _destroy
+// 651.657667 on("close")
 ```
 
-時間軸如下
+執行順序如下
 
 ```mermaid
-flowchart LR
-    A[end] --> B[_writev]
-    B --> C[_final]
-    C --> D[end callback]
-    D --> E["on('finish')"]
-    E --> F[_destroy]
-    F --> G["on('close')"]
+flowchart TD
+    A["constructor"] --> B["_construct"]
+    B --> C["_write or _writev"]
+    C --> D["_final"]
+    D --> E["end callback"]
+    E --> F["on('finish')"]
+    F --> G["_destroy"]
+    G --> H["on('close')"]
+
+    style A fill:#FFE0B2
+    style B fill:#FFE0B2
+    style C fill:#E1BEE7
+    style D fill:#C8E6C9
+    style E fill:#C8E6C9
+    style F fill:#C8E6C9
+    style G fill:#BBDEFB
+    style H fill:#BBDEFB
 ```
 
-<!-- ![](../../static/stream-writable-end-to-close.svg) -->
-
-- 由於我們的 `_construct` 延遲了 `_write`，加上我們有實作 `_writev`
-- 所以 Node.js 會幫我們把 internal buffer 用 `_writev` 一次處理
-
-若把 `_construct` 的實作註解，則會變成
-
-```ts
-// Prints
-// 642.668042 _write
-// 744.745125 _writev
-// 846.356167 _final
-// 1847.872209 end callback
-// 1848.167542 on('finish')
-// 1848.923875 _destroy
-// 2850.768459 on('close')
-```
-
-這個現象蠻有趣的，Node.js 會先用 `write` 盡快地送出第一個 chunk，後續的 chunks 則用 `_writev` 一次處理
+<!-- ![](../../static/stream-writable-life-cycle-normal-case.svg) -->
 
 ## 小結
 
-面向開發者（實作 custom Writable）的 methods
+面向開發者（實作 Writable）的 methods
 
 | method        | required to implement | description                                                      |
 | ------------- | --------------------- | ---------------------------------------------------------------- |
