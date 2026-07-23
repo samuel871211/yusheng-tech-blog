@@ -45,6 +45,8 @@ This website is built using [Docusaurus](https://docusaurus.io/), a modern stati
 - Reverse Proxy
 - target server
 - Cors preflight request
+- `on("event")` (雙引號)
+- `emit("event")` (雙引號)
 
 ## Installation
 

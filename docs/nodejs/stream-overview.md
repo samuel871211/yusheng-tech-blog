@@ -130,12 +130,12 @@ myWritable.write("123"); // <Buffer 31 32 33>
 
 從這邊就可以看到 `stream.Writable` 繼承 [EventEmitter](./events.md) 的影子
 
-- [writable.on('close')](https://nodejs.org/api/stream.html#event-close)
-- [writable.on('drain')](https://nodejs.org/api/stream.html#event-drain)
-- [writable.on('error')](https://nodejs.org/api/stream.html#event-error)
-- [writable.on('finish')](https://nodejs.org/api/stream.html#event-finish)
-- [writable.on('pipe')](https://nodejs.org/api/stream.html#event-pipe)
-- [writable.on('unpipe')](https://nodejs.org/api/stream.html#event-unpipe)
+- [writable.on("close")](https://nodejs.org/api/stream.html#event-close)
+- [writable.on("drain")](https://nodejs.org/api/stream.html#event-drain)
+- [writable.on("error")](https://nodejs.org/api/stream.html#event-error)
+- [writable.on("finish")](https://nodejs.org/api/stream.html#event-finish)
+- [writable.on("pipe")](https://nodejs.org/api/stream.html#event-pipe)
+- [writable.on("unpipe")](https://nodejs.org/api/stream.html#event-unpipe)
 
 ### methods
 
@@ -327,13 +327,13 @@ char greeting[] = "Hello"; // Compiler automatically adds '\0'
 
 從這邊就可以看到 `stream.Readable` 繼承 [EventEmitter](./events.md) 的影子
 
-- [readable.on('close')](https://nodejs.org/api/stream.html#event-close_1)
-- [readable.on('data')](https://nodejs.org/api/stream.html#event-data)
-- [readable.on('end')](https://nodejs.org/api/stream.html#event-end)
-- [readable.on('error')](https://nodejs.org/api/stream.html#event-error_1)
-- [readable.on('pause')](https://nodejs.org/api/stream.html#event-pause)
-- [readable.on('readable')](https://nodejs.org/api/stream.html#event-readable)
-- [readable.on('resume')](https://nodejs.org/api/stream.html#event-resume)
+- [readable.on("close")](https://nodejs.org/api/stream.html#event-close_1)
+- [readable.on("data")](https://nodejs.org/api/stream.html#event-data)
+- [readable.on("end")](https://nodejs.org/api/stream.html#event-end)
+- [readable.on("error")](https://nodejs.org/api/stream.html#event-error_1)
+- [readable.on("pause")](https://nodejs.org/api/stream.html#event-pause)
+- [readable.on("readable")](https://nodejs.org/api/stream.html#event-readable)
+- [readable.on("resume")](https://nodejs.org/api/stream.html#event-resume)
 
 ### methods
 

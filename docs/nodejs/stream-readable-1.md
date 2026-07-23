@@ -48,7 +48,7 @@ flowchart LR
 
 ## 生命週期 2：運作 - 兩種讀取模式的切換
 
-### 自動讀取：`on('data')`
+### 自動讀取：`on("data")`
 
 ```ts
 import { Readable } from "stream";
@@ -92,7 +92,7 @@ myReadable.readableFlowing; // true
 ```
 
 - [readableFlowing](https://nodejs.org/api/stream.html#readablereadableflowing) 有 `null`、`true` 跟 `false` 三種狀態，初始值是 `null`
-- 當 `on('data')` 開始監聽後，`readableFlowing` 會轉成 `true`
+- 當 `on("data")` 開始監聽後，`readableFlowing` 會轉成 `true`
 - 自動讀取的設計哲學是 **"有多少讀多少"**，所以 Node.js 會直接在背後呼叫 `_read(highWaterMark)`
 - 承上，根據 [Node.js 原始碼](https://github.com/nodejs/node/blob/main/lib/internal/streams/state.js)，Windows 的預設 `highWaterMark` 16KiB 符合預期
 
@@ -152,7 +152,7 @@ flowchart LR
 
 <!-- ![](../../static/stream-readable-pause-resume.svg) -->
 
-### 手動讀取：`on('readable')` 搭配 `read`
+### 手動讀取：`on("readable")` 搭配 `read`
 
 ```ts
 import { Readable } from "stream";

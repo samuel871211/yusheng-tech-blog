@@ -238,15 +238,15 @@ clientRequest1.on("close", () =>
 
 <!-- ## ClientRequest events
 
-- [request.on('close')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-close)
-- [message.on('close')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-close_3)
+- [request.on("close")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-close)
+- [message.on("close")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-close_3)
 - [message.complete](https://nodejs.org/docs/latest-v24.x/api/http.html#messagecomplete)
 
 |                     | Description |
 | ------------------- | ----------- |
-| request.on('close') |             |
-| message.on('close') |             |
-| message.on('end')   |             | -->
+| request.on("close") |             |
+| message.on("close") |             |
+| message.on("end")   |             | -->
 
 <!-- todo-yus 有點不確定到底主題是啥 -->
 
@@ -308,7 +308,7 @@ ClientRequest.prototype.setSocketKeepAlive = function setSocketKeepAlive(
 ```
 
 - [request.setTimeout(timeout[, callback])](https://nodejs.org/docs/latest-v24.x/api/http.html#requestsettimeouttimeout-callback)：Sets the socket to timeout after timeout milliseconds of inactivity on the socket.
-- [request.on('timeout')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-timeout)
+- [request.on("timeout")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-timeout)
 
 ```js
 ClientRequest.prototype.setTimeout = function setTimeout(msecs, callback) {

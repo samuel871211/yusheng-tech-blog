@@ -15,7 +15,7 @@ Node.js 的 client 跟 server 各自都可以設定 timeout，其背後也都是
   - `server.on("timeout")`：沒在官方文件列出，但實際上有這個 event
 - `ClientRequest`
   - [request.setTimeout(timeout[, callback])](https://nodejs.org/docs/latest-v24.x/api/http.html#requestsettimeouttimeout-callback)
-  - [request.on('timeout')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-timeout)
+  - [request.on("timeout")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-timeout)
 - `ServerResponse`
   - [response.setTimeout(msecs[, callback])](https://nodejs.org/docs/latest-v24.x/api/http.html#responsesettimeoutmsecs-callback)
   - `response.on("timeout")`：沒在官方文件列出，但實際上有這個 event

@@ -43,19 +43,19 @@ import { createServer } from "http";
 const httpServer = createServer().listen(5000);
 
 httpServer.on("request", (req, res) => {
-  res.write(); // write 跟 end 差在哪
+  res.write(); // write 跟 end 差在哪 ❓
   res.end();
 
-  res.destroy(); // 啥時要呼叫 destroy
+  res.destroy(); // 啥時要呼叫 destroy ❓
 
-  res.setHeader(); // 所以到底要用哪個方法添加 header 啦
+  res.setHeader(); // 所以到底要用哪個方法添加 header 啦 ❓
   res.appendHeader();
   res.flushHeaders();
   res.writeHead();
 
-  res.pipe(); // pipe 又是什麼鬼
+  res.pipe(); // pipe 又是什麼鬼 ❓
 
-  res.cork(); // 這又是什麼妖魔鬼怪
+  res.cork(); // 這又是什麼妖魔鬼怪 ❓
   res.uncork();
 });
 ```
@@ -129,6 +129,7 @@ class MyEmitter extends EventEmitter {}
 const myEmitter = new MyEmitter();
 myEmitter.on(
   "customEvent",
+  // ✅ 使用 function 而不是箭頭函數，才能正確綁定 this
   function (this: EventEmitter, a: string, b: string) {
     console.log(a, b, this === myEmitter); // a b true
   },
@@ -168,6 +169,7 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
+// ✅ 使用 once 讓事件只觸發一次
 myEmitter.once("customEvent", function () {
   console.log("customEvent triggered");
 });
@@ -179,7 +181,7 @@ myEmitter.emit("customEvent"); // 忽略
 
 https://nodejs.org/api/events.html#error-events
 
-若沒有註冊 `on('error')`，則 `emit('error')` 會讓 Node.js process exit
+若沒有註冊 `on("error")`，則 `emit("error")` 會讓 Node.js process exit
 
 ❌ 錯誤作法
 
@@ -189,7 +191,7 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
-myEmitter.emit("error", new Error("oops...")); // ❌ 沒有註冊 on('error')
+myEmitter.emit("error", new Error("oops...")); // ❌ 沒有註冊 on("error")
 ```
 
 ✅ 正確做法
@@ -200,7 +202,7 @@ import { EventEmitter } from "events";
 class MyEmitter extends EventEmitter {}
 
 const myEmitter = new MyEmitter();
-myEmitter.on("error", (err) => console.log(err)); // ✅ 正確註冊 on('error')
+myEmitter.on("error", (err) => console.log(err)); // ✅ 正確註冊 on("error")
 myEmitter.emit("error", new Error("oops..."));
 ```
 
@@ -208,9 +210,9 @@ myEmitter.emit("error", new Error("oops..."));
 
 https://nodejs.org/api/events.html#error-events
 
-- 會先觸發 `on(errorMonitor)`，再觸發 `on('error')`
+- 會先觸發 `on(errorMonitor)`，再觸發 `on("error")`
 - 好處：將 **"監控"** 跟 **"錯誤處理"** 分開，單一職責
-- ⚠️注意，還是需要監聽 `on('error')`，才不會讓 Node.js process exit
+- ⚠️ 注意，還是需要監聽 `on("error")`，才不會讓 Node.js process exit
 
 ```ts
 import EventEmitter, { errorMonitor } from "events";
@@ -229,7 +231,7 @@ myEmitter.emit("error", new Error("oops..."));
 
 https://nodejs.org/api/events.html#capture-rejections-of-promises
 
-在 `on('event')` 使用 async function as listener 的話，需要特別注意 unhandled promise rejection
+在 `on("event")` 使用 async function as listener 的話，需要特別注意 unhandled promise rejection
 
 ❌ 錯誤作法
 
@@ -300,7 +302,7 @@ graph LR
 
 <!-- ![](../../static/my-daily-events.svg) -->
 
-當你觸發 `myDailyEventsEmitter.emit('morning')`，就會先刷牙 (brushMyTeeth)，再吃早餐 (haveBreakfast)
+當你觸發 `myDailyEventsEmitter.emit("morning")`，就會先刷牙 (brushMyTeeth)，再吃早餐 (haveBreakfast)
 
 如果想要在刷牙前摺棉被呢？只要用 `prependListener` 這個方法就好
 
@@ -333,8 +335,8 @@ myDailyEventsEmitter.prependOnceListener(
 
 平常應該用不到，看看就好
 
-- [`.on('newListener')`](https://nodejs.org/api/events.html#event-newlistener)
-- [`.on('removeListener')`](https://nodejs.org/api/events.html#event-removelistener)
+- [`.on("newListener")`](https://nodejs.org/api/events.html#event-newlistener)
+- [`.on("removeListener")`](https://nodejs.org/api/events.html#event-removelistener)
 
 ### EventEmitter other methods
 
@@ -353,7 +355,7 @@ myDailyEventsEmitter.prependOnceListener(
 
 ## events 模組的其他 Class
 
-這些我覺得對於學習 http 沒有立即的幫助，且後面三者都是 Web API 移植到 Node.js，使用情境我覺得不高～
+這些我覺得對於學習 Node.js `http` 模組沒有立即的幫助，且後面三者都是 Web API 移植到 Node.js，使用情境我覺得不高～
 
 - [EventEmitterAsyncResource](https://nodejs.org/api/events.html#class-eventseventemitterasyncresource-extends-eventemitter)
 - [EventTarget](https://nodejs.org/api/events.html#class-eventtarget)
@@ -389,9 +391,9 @@ import events from "events";
 當你看到 Node.js `http` 模組相關的程式碼：
 
 ```ts
-req.on("data", (chunk) => {}); // ❓ data 事件什麼時候觸發？
-req.on("end", () => {}); // ❓ end 事件什麼時候觸發？
-req.pipe(res); // ❓ pipe 是什麼？
+req.on("data", (chunk) => {}); // data 事件什麼時候觸發 ❓
+req.on("end", () => {}); // end 事件什麼時候觸發 ❓
+req.pipe(res); // pipe 是什麼 ❓
 ```
 
 這些問題的答案都在 **`stream`** 裡

@@ -258,7 +258,7 @@ clientRequest.end();
 ## `server.on("checkExpectation")`
 
 <!-- Node.js `http.Server` 提供以下 event 來監聽 `Expect: 100-continue` 以外的 Expectation
-[server.on('checkExpectation')](https://nodejs.org/docs/latest-v24.x/api/http.html#event-checkexpectation) -->
+[server.on("checkExpectation")](https://nodejs.org/docs/latest-v24.x/api/http.html#event-checkexpectation) -->
 
 [RFC 9110 Section 10.1.1. Expect](https://datatracker.ietf.org/doc/html/rfc9110#section-10.1.1) 有提到
 
