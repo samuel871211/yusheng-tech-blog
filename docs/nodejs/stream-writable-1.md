@@ -45,8 +45,8 @@ import { Writable, WritableOptions } from "stream";
 
 class MyWritable extends Writable {
   constructor(opts?: WritableOptions) {
-    super(opts);
     console.log(performance.now(), "constructor");
+    super(opts);
   }
   _construct(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_construct");
@@ -280,8 +280,8 @@ import { Writable, WritableOptions } from "stream";
 
 class MyWritable extends Writable {
   constructor(opts?: WritableOptions) {
-    super(opts);
     console.log(performance.now(), "constructor");
+    super(opts);
   }
   _construct(callback: (error?: Error | null) => void): void {
     console.log(performance.now(), "_construct");
