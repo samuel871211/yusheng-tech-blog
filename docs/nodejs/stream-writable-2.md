@@ -2,7 +2,7 @@
 title: stream.Writable 記憶體管理、效能優化、錯誤處理
 description: 透過 PoC 說明 highWaterMark、drain 事件如何避免記憶體耗盡，並用 cork 搭配 _writev 優化效能
 last_update:
-  date: "2026-07-10T08:00:00+08:00"
+  date: "2026-07-23T08:00:00+08:00"
 ---
 
 ## 前言

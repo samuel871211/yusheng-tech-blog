@@ -2,7 +2,7 @@
 title: stream.Writable 生命週期
 description: 整理 Node.js Writable 面向開發者與使用者的方法、事件觸發順序，附時間軸圖解正常關閉流程
 last_update:
-  date: "2026-07-20T08:00:00+08:00"
+  date: "2026-07-23T08:00:00+08:00"
 ---
 
 ## 前言
