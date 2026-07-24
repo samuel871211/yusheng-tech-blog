@@ -25,6 +25,8 @@ Node.js 的 client 跟 server 各自都可以設定 timeout，其背後也都是
 - `http.Agent`
   - [options.timeout](https://nodejs.org/docs/latest-v24.x/api/http.html#new-agentoptions)
 
+timeout 的核心概念，是避免對方掛著 TCP 連線都不傳輸資料，加上 timeout 以後，就可以執行自定義函式，例如把 TCP 連線斷開
+
 ## 以 HTTP server 的角度來看
 
 以 `http.Server` 為例子，理論上可以在這三個地方設定 `setTimeout`

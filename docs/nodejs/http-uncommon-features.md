@@ -5,6 +5,10 @@ last_update:
   date: "2026-07-19T08:00:00+08:00"
 ---
 
+## 前言
+
+這是 2026 iThome 鐵人賽的第 20 篇文章，同時也是 Node.js `EventEmitter`、`stream`、`net.Socket` 一路到 `http` 模組，這系列文章的最後一篇。這篇文章會把 `http` 模組一些比較冷門的 methods 跟 events 統整起來
+
 ## `request.on("information")`
 
 <!-- https://nodejs.org/docs/latest-v24.x/api/http.html#event-information -->

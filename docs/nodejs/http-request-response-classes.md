@@ -40,11 +40,13 @@ client side code
 ```ts
 import http from "http";
 
+// ✅ ClientRequest
 const clientRequest = http.get({
   host: "example.com",
   port: 80,
   path: "/",
 });
+// ✅ IncomingMessage
 clientRequest.on("response", (response: http.IncomingMessage) =>
   response.resume(),
 );
@@ -56,6 +58,7 @@ server side code
 import http from "http";
 
 const server = http.createServer();
+// ✅ IncomingMessage & ServerResponse
 server.on("request", (req: http.IncomingMessage, res: http.ServerResponse) =>
   res.end(),
 );

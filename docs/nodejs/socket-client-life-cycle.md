@@ -5,6 +5,15 @@ last_update:
   date: "2026-07-13T08:00:00+08:00"
 ---
 
+## 前言
+
+TCP socket 分兩種
+
+- TCP client socket: 主動去連別人
+- TCP server socket: 開著 port 等別人連
+
+這篇文章會介紹 TCP client socket **主動去連別人** 對應的生命週期跟事件
+
 ## TCP client socket 生命週期 1：lookup
 
 ✅ 正確觸發（lookup event 會在 DNS lookup 之後觸發）

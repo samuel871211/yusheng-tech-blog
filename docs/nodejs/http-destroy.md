@@ -5,6 +5,10 @@ last_update:
   date: "2026-07-18T08:00:00+08:00"
 ---
 
+## 前言
+
+`destroy` 在 Node.js `http` 模組代表的是把 TCP 連線斷開，不過 request 跟 response 都有 `destroy`，呼叫 `request.destroy()` 跟 `response.destroy()` 代表同樣的概念嗎？這篇文章會來探討這個問題
+
 ## 非對稱的官方文件
 
 Node.js 官方文件在描述 `destroy([error])` 跟 `destroyed` 時，並沒有把所有情境都列出來
@@ -20,7 +24,7 @@ Node.js 官方文件在描述 `destroy([error])` 跟 `destroyed` 時，並沒有
   - `outgoingMessage.destroyed` => 官方文件沒列出，但實際上有這個 property
   - `incomingMessage.destroyed` => 官方文件沒列出，但實際上有這個 property
 
-我們複習一下 `stream`、`net.Socket` 跟 `http` 的繼承關係
+## `stream`、`net.Socket` 跟 `http` 的繼承關係
 
 ```mermaid
 %%{init: {"themeVariables": {"fontSize": "24px"}}}%%
