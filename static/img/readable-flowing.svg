@@ -15,7 +15,7 @@
   <circle cx="560" cy="90" r="7" fill="#f59e0b"/>
 
   <!-- event label (above) -->
-  <text x="560" y="65" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on('readable')</text>
+  <text x="560" y="65" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on("readable")</text>
 
   <!-- dashed connector -->
   <line x1="560" y1="75" x2="560" y2="90" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3,3"/>
@@ -40,7 +40,7 @@
   <circle cx="765" cy="230" r="7" fill="#22c55e"/>
 
   <!-- event labels (above) -->
-  <text x="355" y="205" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on('data')</text>
+  <text x="355" y="205" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">on("data")</text>
   <text x="560" y="205" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">pause()</text>
   <text x="765" y="205" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">resume()</text>
 

@@ -193,14 +193,14 @@ class MyWritable extends Writable {
     encoding: BufferEncoding,
     callback: (error?: Error | null) => void,
   ): void {
-    console.log("_write");
+    console.log("_write"); // ❌ 不會觸發
     setTimeout(callback, 100);
   }
   _writev(
     chunks: Array<{ chunk: any; encoding: BufferEncoding }>,
     callback: (error?: Error | null) => void,
   ): void {
-    console.log("_writev");
+    console.log("_writev"); // ✅ 會觸發
     setTimeout(callback, 100);
   }
 }
@@ -212,9 +212,6 @@ myWritable.write("\r\n");
 myWritable.write("Host: example.com");
 myWritable.write("\r\n\r\n");
 process.nextTick(() => myWritable.uncork());
-
-// Prints
-// _writev
 ```
 
 如果沒有實作 `_writev` 的話，就會變成呼叫 `_write`，對效能就會影響，參考 [writable.cork](https://nodejs.org/api/stream.html#writablecork) 的描述：
@@ -294,12 +291,15 @@ myWritable.on("error", (error) => {
   assert(error?.message === "_construct error"); // ✅
 });
 myWritable.on("close", () => console.log('on("close")'));
+```
 
-// Prints
-// _construct
-// _destroy
-// on("error")
-// on("close")
+執行順序
+
+```ts
+_construct;
+_destroy;
+on("error");
+on("close");
 ```
 
 ## `write` 跟 `_write` 的錯誤傳遞
@@ -347,13 +347,16 @@ myWritable.write("123", (error) => {
 });
 myWritable.on("error", (error) => console.log('on("error")'));
 myWritable.on("close", () => console.log('on("close")'));
+```
 
-// Prints
-// _write
-// write callback
-// _destroy
-// on("error")
-// on("close")
+執行順序
+
+```ts
+_write
+write callback
+_destroy
+on("error")
+on("close")
 ```
 
 ## 小結

@@ -2,7 +2,7 @@
 title: stream.Readable 生命週期
 description: 整理 Node.js Readable 面向開發者與使用者的方法、事件觸發順序，附時間軸圖解正常關閉流程
 last_update:
-  date: "2026-07-20T08:00:00+08:00"
+  date: "2026-07-24T08:00:00+08:00"
 ---
 
 ## 前言
@@ -34,10 +34,13 @@ class MyReadable extends Readable {
 }
 
 const myReadable = new MyReadable();
+```
 
-// Prints
-// 185.6451 constructor
-// 186.6653 _construct
+執行順序
+
+```ts
+185.6451 constructor
+186.6653 _construct
 ```
 
 ## 生命週期 2：運作 - 兩種讀取模式的切換
@@ -62,10 +65,13 @@ class MyReadable extends Readable {
 
 const myReadable = new MyReadable();
 myReadable.read();
+```
 
-// Prints
-// 161.7818 _construct
-// 269.6082 _read
+執行順序
+
+```ts
+161.7818 _construct
+269.6082 _read
 ```
 
 ### `push(chunk)` 或 `push(null)`
@@ -89,7 +95,7 @@ class MyReadable extends Readable {
     // 模擬讀取資料的延遲
     setTimeout(() => {
       if (this.curCount < this.maxCount) {
-        this.push(this.curCount.toString().repeat(size));
+        this.push("1".repeat(size));
         this.curCount++;
         return;
       }
@@ -102,21 +108,26 @@ class MyReadable extends Readable {
 const myReadable = new MyReadable();
 assert(myReadable.readableFlowing === null);
 // ✅ 使用 on("data") 自動讀取資料
-myReadable.on("data", ({ byteLength }: Buffer) => console.log({ byteLength }));
+myReadable.on("data", ({ byteLength }: Buffer) => {
+  console.log(performance.now(), 'on("data")', { byteLength });
+});
 assert(myReadable.readableFlowing === true);
+```
 
-// Prints
-// 790.7202 _read
-// { byteLength: 16384 }
-// 891.7516 _read
-// { byteLength: 16384 }
-// 998.5499 _read
-// { byteLength: 16384 }
-// 1101.6596 _read
-// { byteLength: 16384 }
-// 1204.8509 _read
-// { byteLength: 16384 }
-// 1307.456 _read
+執行順序
+
+```ts
+79.826625  _read
+181.514167 on("data") { byteLength: 16384 }
+181.921875 _read
+283.394417 on("data") { byteLength: 16384 }
+283.983792 _read
+385.229083 on("data") { byteLength: 16384 }
+385.627667 _read
+487.119792 on("data") { byteLength: 16384 }
+487.470292 _read
+589.229042 on("data") { byteLength: 16384 }
+589.918458 _read
 ```
 
 - [readableFlowing](https://nodejs.org/api/stream.html#readablereadableflowing) 有 `null`、`true` 跟 `false` 三種狀態，初始值是 `null`
@@ -129,14 +140,76 @@ assert(myReadable.readableFlowing === true);
   let defaultHighWaterMarkBytes = process.platform === "win32" ? 16 * 1024 : 64 * 1024;
   ```
 
-<!-- todo-yus -->
-
 ### 自動讀取：用 `pause` 跟 `resume` 控制開關
+
+- 註冊 `on("data")` 會讓 `readableFlowing` 變成 `true`
+- 若想要暫停，可以使用 `pause()`，會讓 `readableFlowing` 從 `true` 變成 `false`，並且觸發 `on("pause")`
+- 若想要繼續，可以使用 `resume()`，會讓 `readableFlowing` 從 `false` 變成 `true`，並且觸發 `on("resume")`
 
 ```ts
 import { Readable } from "stream";
+import assert from "assert";
 
 class MyReadable extends Readable {
+  // 設定計數器，最多觸發 5 次 push(chunk)
+  private maxCount = 5;
+  private curCount = 0;
+  _read(size: number): void {
+    // 模擬讀取資料的延遲
+    setTimeout(() => {
+      if (this.curCount < this.maxCount) {
+        this.push("1".repeat(size));
+        this.curCount++;
+        return;
+      }
+      // 第 6 次就會 push(null) 來結束 readable
+      this.push(null);
+    }, 100);
+  }
+}
+
+const myReadable = new MyReadable();
+// ✅ Step 1：第一次觸發 "data" event，呼叫 pause()
+myReadable.once("data", (chunk) => {
+  console.log('once("data")');
+  myReadable.pause();
+  assert(myReadable.isPaused() === true);
+  assert(myReadable.readableFlowing === false);
+});
+// ✅ Step 2：觸發 "pause" event，一秒後再呼叫 resume()
+myReadable.once("pause", () => {
+  console.log('once("pause")');
+  assert(myReadable.readableFlowing === false);
+  setTimeout(() => myReadable.resume(), 1000);
+  // ✅ Step 3：觸發 "resume" event，監聽 on("data") 把剩下的資料讀完
+  myReadable.once("resume", () => {
+    console.log('once("resume")');
+    assert(myReadable.readableFlowing === true);
+    myReadable.on("data", () => console.log('on("data")'));
+  });
+});
+```
+
+執行順序
+
+```ts
+once("data");
+once("pause");
+once("resume");
+on("data");
+on("data");
+on("data");
+on("data");
+```
+
+### 手動讀取：`on("readable")` 搭配 `read`
+
+```ts
+import { Readable } from "stream";
+import assert from "assert";
+
+class MyReadable extends Readable {
+  // 設定計數器，最多觸發 5 次 push(chunk)
   private maxCount = 5;
   private curCount = 0;
   _read(size: number): void {
@@ -144,62 +217,11 @@ class MyReadable extends Readable {
     // 模擬讀取資料的延遲
     setTimeout(() => {
       if (this.curCount < this.maxCount) {
-        this.push(this.curCount.toString().repeat(size));
+        this.push("1".repeat(size));
         this.curCount++;
         return;
       }
-      // https://nodejs.org/api/stream.html#readablepushchunk-encoding
-      // Passing chunk as null signals the end of the stream (EOF), after which no more data can be written.
-      this.push(null);
-    }, 100);
-  }
-}
-
-const myReadable = new MyReadable();
-myReadable.once("data", (chunk) => {
-  myReadable.readableFlowing; // true;
-  myReadable.pause();
-  myReadable.isPaused(); // true
-  myReadable.readableFlowing; // false
-  setTimeout(() => myReadable.resume(), 1000);
-});
-myReadable.on("resume", () => {
-  myReadable.readableFlowing; // true
-});
-myReadable.on("pause", () => {
-  myReadable.readableFlowing; // false
-});
-```
-
-執行順序如下：
-
-```mermaid
-flowchart LR
-    A["pause()"] --> B["on('pause')"]
-    C["resume()"] --> D["on('resume')"]
-```
-
-<!-- ![](../../static/stream-readable-pause-resume.svg) -->
-
-### 手動讀取：`on("readable")` 搭配 `read`
-
-```ts
-import { Readable } from "stream";
-
-class MyReadable extends Readable {
-  private maxCount = 2;
-  private curCount = 0;
-  _read(size: number): void {
-    console.log(performance.now(), "_read");
-    // 模擬讀取資料的延遲
-    setTimeout(() => {
-      if (this.curCount < this.maxCount) {
-        this.push(this.curCount.toString().repeat(size));
-        this.curCount++;
-        return;
-      }
-      // https://nodejs.org/api/stream.html#readablepushchunk-encoding
-      // Passing chunk as null signals the end of the stream (EOF), after which no more data can be written.
+      // 第 6 次就會 push(null) 來結束 readable
       this.push(null);
     }, 100);
   }
@@ -207,36 +229,33 @@ class MyReadable extends Readable {
 
 // 統一使用 16KiB，避免跨作業系統的預設值不一樣
 const myReadable = new MyReadable({ highWaterMark: 16384 });
-myReadable.readableFlowing; // null
-myReadable.readableDidRead; // false
+assert(myReadable.readableFlowing === null);
 myReadable.on("readable", () => {
-  console.log(performance.now(), "readable");
+  assert(myReadable.readableFlowing === false);
   const data = myReadable.read();
-  console.log(performance.now(), data?.byteLength);
-  myReadable.readableFlowing; // false
-  myReadable.readableDidRead; // true
+  console.log(performance.now(), 'on("readable")', data?.byteLength);
 });
-
-// Prints
-// 772.669 _read
-// 880.1044 readable
-// 880.4422 _read
-// 880.761 16384
-// 983.6141 readable
-// 984.0102 _read
-// 984.2194 16384
-// 1089.2055 readable
-// 1089.7458 undefined
 ```
 
-- `_read` 的調用是由 Node.js 控制的
-- `read` 若無指定 `size` 參數，則預設會把 internal buffer 的資料讀完，參考 Node.js [readable.read()](https://nodejs.org/api/stream.html#readablereadsize) 官方文件：
+執行順序
+
+```ts
+180.767333 on("readable") 16384
+281.010791 on("readable") 16384
+381.541625 on("readable") 16384
+483.318708 on("readable") 16384
+585.326958 on("readable") 16384
+687.046375 on("readable") undefined
+```
+
+- 當 `on("readable")` 開始監聽後，`readableFlowing` 會從 `null` 轉成 `false`
+- `read` 若無指定 `size` 參數，則預設會把 internal buffer 的資料讀完，參考 Node.js [readable.read([size])](https://nodejs.org/api/stream.html#readablereadsize) 官方文件：
 
   ```
   If the size argument is not specified, all of the data contained in the internal buffer will be returned.
   ```
 
-- 最後一次的 `readable`，讀到的資料是 `null`，故 `data?.byteLength` 等於 `undefined`，參考 Node.js [on("readable")](https://nodejs.org/api/stream.html#event-readable) 官方文件：
+- 最後一次的 `read` 讀到的資料是 `null`，故 `data?.byteLength` 等於 `undefined`，參考 Node.js [on("readable")](https://nodejs.org/api/stream.html#event-readable) 官方文件：
 
   ```
   If the end of the stream has been reached, calling stream.read() will return null and trigger the 'end' event.
@@ -244,72 +263,73 @@ myReadable.on("readable", () => {
 
 ## 生命週期 3：結束
 
-寫個 PoC 來觀察 `on("end")`、`_destroy` 跟 `on("close")` 的觸發順序
+- `stream.Writable` 的結束訊號，是由 **使用者** 呼叫 `writable.end`
+- `stream.Readable` 的結束訊號，是由 **開發者** 呼叫 `readable.push(null)`
+
+寫個 PoC 來觀察 `on("end")` 的觸發
 
 ```ts
 import { Readable } from "stream";
 
 class MyReadable extends Readable {
+  // 設定計數器，最多觸發 5 次 push(chunk)
+  private maxCount = 5;
+  private curCount = 0;
   _read(size: number): void {
-    console.log(performance.now(), "_read");
-    this.push("1".repeat(size));
-    this.push(null);
-  }
-  _destroy(
-    error: Error | null,
-    callback: (error?: Error | null) => void,
-  ): void {
-    console.log(performance.now(), "_destroy");
-    setTimeout(callback, 100);
+    // 模擬讀取資料的延遲
+    setTimeout(() => {
+      if (this.curCount < this.maxCount) {
+        this.push("1".repeat(size));
+        this.curCount++;
+        return;
+      }
+      // 第 6 次就會 push(null) 來結束 readable
+      this.push(null);
+    }, 100);
   }
 }
 
-const myReadable = new MyReadable({ highWaterMark: 10 });
-myReadable.on("readable", () => {
-  const data = myReadable.read();
-  console.log(performance.now(), data?.byteLength, "bytes");
-});
-myReadable.on("end", () => {
-  assert(myReadable.readable === false);
-  assert(myReadable.readableEnded === true);
-  console.log(performance.now(), "end");
-});
-myReadable.on("close", () => {
-  assert(myReadable.destroyed === true);
-  assert(myReadable.closed === true);
-  console.log(performance.now(), "close");
-});
-
-// Prints
-// 917.4708 _read
-// 918.5436 10 bytes
-// 918.7669 end
-// 919.0596 _destroy
-// 1021.6917 close
+const myReadable = new MyReadable({ autoDestroy: false });
+myReadable.on("data", () => console.log('on("data")'));
+// ✅ 監聽 on("end")
+myReadable.on("end", () => console.log('on("end")'));
 ```
 
-執行順序如下：
+執行順序
 
-```mermaid
-flowchart LR
-    A["push(null)"] --> B["on('end')"]
-    B --> D[_destroy]
-    D --> E["on('close')"]
+```ts
+on("data");
+on("data");
+on("data");
+on("data");
+on("data");
+on("end");
 ```
-
-<!-- ![](../../static/stream-readable-end-to-close.svg) -->
 
 ## 生命週期 4：關閉
 
+結束之後，若有設定 `autoDestroy: true`，則會依序觸發 `_destroy` 跟 `on("close")`
+
 ```ts
 import { Readable } from "stream";
 
 class MyReadable extends Readable {
+  // 設定計數器，最多觸發 5 次 push(chunk)
+  private maxCount = 5;
+  private curCount = 0;
   _read(size: number): void {
-    console.log(performance.now(), "_read");
-    this.push("1".repeat(size));
-    this.push(null);
+    // 模擬讀取資料的延遲
+    setTimeout(() => {
+      if (this.curCount < this.maxCount) {
+        this.push("1".repeat(size));
+        this.curCount++;
+        return;
+      }
+      // 第 6 次就會 push(null) 來結束 readable
+      this.push(null);
+    }, 100);
   }
+  // ✅ 實作 _destroy
   _destroy(
     error: Error | null,
     callback: (error?: Error | null) => void,
@@ -319,33 +339,27 @@ class MyReadable extends Readable {
   }
 }
 
-const myReadable = new MyReadable({ highWaterMark: 10 });
-myReadable.on("readable", () => {
-  const data = myReadable.read();
-  console.log(performance.now(), data?.byteLength, "bytes");
-});
-myReadable.on("end", () => {
-  assert(myReadable.readable === false);
-  assert(myReadable.readableEnded === true);
-  console.log(performance.now(), "end");
-});
-myReadable.on("close", () => {
-  assert(myReadable.destroyed === true);
-  assert(myReadable.closed === true);
-  console.log(performance.now(), "close");
-});
+const myReadable = new MyReadable();
+myReadable.on("data", () => console.log(performance.now(), 'on("data")'));
+// ✅ _destroy 完成後，會觸發 on("close")
+myReadable.on("close", () => console.log(performance.now(), 'on("close")'));
+```
 
-// Prints
-// 917.4708 _read
-// 918.5436 10 bytes
-// 918.7669 end
-// 919.0596 _destroy
-// 1021.6917 close
+執行順序
+
+```ts
+225.960292 on("data")
+327.929167 on("data")
+428.927167 on("data")
+529.897292 on("data")
+631.481875 on("data")
+733.411125 _destroy
+834.911792 on("close")
 ```
 
 ## 小結
 
-面向開發者（實作 custom Readable）的 methods
+面向開發者（實作 Readable）的 methods
 
 | method        | required to implement | description                                    |
 | ------------- | --------------------- | ---------------------------------------------- |

@@ -2,19 +2,19 @@
 title: stream.Readable 錯誤處理與比較解析
 description: 從 backpressure、錯誤處理到終止訊號，深入比較 stream.Readable 與 stream.Writable 的設計哲學差異
 last_update:
-  date: "2026-07-11T08:00:00+08:00"
+  date: "2026-07-24T08:00:00+08:00"
 ---
 
 ## 記憶體管理：backpressure 與 `highWaterMark`
 
-當讀取 `read` 跟寫入 `push` 的速度都是一致的
+當讀取 `read()` 跟寫入 `push(chunk)` 的速度都是一致的
 
 ```ts
 this.push("1".repeat(16384)); // 16384 bytes
 myReadable.read(); // 16384 bytes
 ```
 
-每次 `push` 都會把 internal buffer 填滿，之後再用 `read` 一次把 internal buffer 清空
+每次 `push(chunk)` 都會把 internal buffer 填滿，之後再用 `read()` 一次把 internal buffer 清空
 
 但實務上讀取 `read` 跟寫入 `push` 的速度會不一樣，此時就需要記憶體管理機制，避免 OOM
 
@@ -28,26 +28,28 @@ myReadable.read(); // 16384 bytes
 import { Readable } from "stream";
 
 class MyReadable extends Readable {
+  // 設定計數器，最多觸發 5 次 push(chunk)
   private maxCount = 5;
   private curCount = 0;
   _read(size: number): void {
+    // 第 6 次就會 push(null) 來結束 readable
+    if (this.curCount === this.maxCount) {
+      this.push(null);
+      return;
+    }
+
     // 模擬讀取資料的延遲
     setTimeout(() => {
-      if (this.curCount < this.maxCount) {
-        let isSafeToPushMore = true;
-        while (isSafeToPushMore) {
-          isSafeToPushMore = this.push(this.curCount.toString().repeat(6));
-          console.log({
-            readableLength: this.readableLength,
-            isSafeToPushMore,
-          });
-        }
+      let isSafeToPushMore = true;
+      while (isSafeToPushMore) {
+        isSafeToPushMore = this.push("1".repeat(6));
+        console.log({
+          readableLength: this.readableLength,
+          isSafeToPushMore: isSafeToPushMore,
+        });
         this.curCount++;
-        return;
+        if (this.curCount === this.maxCount) break;
       }
-      // https://nodejs.org/api/stream.html#readablepushchunk-encoding
-      // Passing chunk as null signals the end of the stream (EOF), after which no more data can be written.
-      this.push(null);
     }, 100);
   }
 }
@@ -61,25 +63,16 @@ myReadable.on("readable", myReadable.read);
 // { readableLength: 6, isSafeToPushMore: true }
 // { readableLength: 12, isSafeToPushMore: false }
 // { readableLength: 6, isSafeToPushMore: true }
-// { readableLength: 12, isSafeToPushMore: false }
-// { readableLength: 6, isSafeToPushMore: true }
-// { readableLength: 12, isSafeToPushMore: false }
-// { readableLength: 6, isSafeToPushMore: true }
-// { readableLength: 12, isSafeToPushMore: false }
 ```
 
 - `readableLength` 代表目前 internal buffer 有多少 bytes 的資料等著被 `read` 讀取
-- 第一次 `push` 6 bytes，`readableLength` 總共 6 bytes，沒有頂到 `highWaterMark`，印出 `{ isSafeToPushMore: true }`
-- 第二次 `push` 6 bytes，`readableLength` 總共 12 bytes，頂到 `highWaterMark`，印出 `{ isSafeToPushMore: false }`
+- 第一次 `readableLength` 總共 6 bytes，沒有頂到 `highWaterMark`，印出 `{ isSafeToPushMore: true }`
+- 第二次 `readableLength` 總共 12 bytes，頂到 `highWaterMark`，印出 `{ isSafeToPushMore: false }`
 - 我們遵循 backpressure，當 `{ isSafeToPushMore: false }` 就不繼續寫入 internal buffer
-- 當 [readable.read()](https://nodejs.org/api/stream.html#readablereadsize) 不指定 `size` 的情況，會一次把 internal buffer 的資料讀出來
-  ```
-  If the size argument is not specified, all of the data contained in the internal buffer will be returned.
-  ```
 
 ## handle error
 
-`Readable` 只有三個 internal method 要實作，其中 `_read` 跟 `_construct` 的錯誤，最後都會傳遞到 `_destroy`
+`stream.Readable` 只有三個 internal method，其中 `_read` 跟 `_construct` 的錯誤，最後都會傳遞到 `_destroy`
 
 ```ts
 class MyReadable extends Readable {
@@ -89,16 +82,15 @@ class MyReadable extends Readable {
 }
 ```
 
-### `_construct` 階段正確拋出錯誤
+### `_construct` 階段呼叫 `callback(err)`
 
 ```ts
 import { Readable } from "stream";
-import assert from "assert";
 
 class MyReadable extends Readable {
   _construct(callback: (error?: Error | null) => void): void {
-    // 模擬非同步操作拋出錯誤
-    setTimeout(() => callback(new Error("_construct failed")), 1000);
+    console.log("_construct");
+    callback(new Error("_construct failed"));
   }
   _destroy(
     error: Error | null,
@@ -111,37 +103,23 @@ class MyReadable extends Readable {
 }
 
 const myReadable = new MyReadable();
-// ✅ 使用者請記得用 on('error') 捕捉錯誤
-myReadable.on("error", (err) => {
-  assert(myReadable.readable === false);
-  assert(myReadable.readableAborted === true);
-  assert(myReadable.destroyed === true);
-  assert(err === myReadable.errored);
-  console.log("on('error')", err.message);
-});
-myReadable.on("close", () => {
-  assert(myReadable.closed === true);
-  console.log("on('close')");
-});
-
-// Prints
-// _destroy
-// on('error') _construct failed
-// on('close')
+// ❌ on("end") 不會觸發
+myReadable.on("end", () => console.log('on("end")'));
+// ✅ 使用者請記得用 on("error") 捕捉錯誤
+myReadable.on("error", (err) => console.log('on("error")'));
+myReadable.on("close", () => console.log('on("close")'));
 ```
 
-執行順序如下：
+執行順序
 
-```mermaid
-flowchart LR
-    A[_construct] --> B[_destroy]
-    B --> C["on('error')"]
-    C --> D["on('close')"]
+```ts
+_construct;
+_destroy;
+on("error");
+on("close");
 ```
 
-<!-- ![](../../static/stream-readable-construct-to-close.svg) -->
-
-### `_read` 階段正確呼叫 `destroy`
+### `_read` 階段呼叫 `destroy(err)`
 
 ```ts
 import { Readable } from "stream";
@@ -149,8 +127,8 @@ import assert from "assert";
 
 class MyReadable extends Readable {
   _read(size: number): void {
-    // 模擬非同步操作拋出錯誤
-    setTimeout(() => this.destroy(new Error("_read failed")), 1000);
+    console.log("_read");
+    this.destroy(new Error("_read failed"));
   }
   _destroy(
     error: Error | null,
@@ -164,35 +142,21 @@ class MyReadable extends Readable {
 
 const myReadable = new MyReadable();
 myReadable.on("readable", myReadable.read);
-// ✅ 使用者請記得用 on('error') 捕捉錯誤
-myReadable.on("error", (err) => {
-  assert(myReadable.readable === false);
-  assert(myReadable.readableAborted === true);
-  assert(myReadable.destroyed === true);
-  assert(err === myReadable.errored);
-  console.log("on('error')", err.message);
-});
-myReadable.on("close", () => {
-  assert(myReadable.closed === true);
-  console.log("on('close')");
-});
-
-// Prints
-// _destroy
-// on('error') _read failed
-// on('close')
+// ❌ on("end") 不會觸發
+myReadable.on("end", () => console.log('on("end")'));
+// ✅ 使用者請記得用 on("error") 捕捉錯誤
+myReadable.on("error", (err) => console.log('on("error")'));
+myReadable.on("close", () => console.log('on("close")'));
 ```
 
-執行順序如下：
+執行順序
 
-```mermaid
-flowchart LR
-    A[_read] --> B[_destroy]
-    B --> C["on('error')"]
-    C --> D["on('close')"]
+```ts
+_read;
+_destroy;
+on("error");
+on("close");
 ```
-
-<!-- ![](../../static/stream-readable-read-to-close.svg) -->
 
 ## `writable._final` vs `readable.push`
 

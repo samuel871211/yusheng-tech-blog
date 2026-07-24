@@ -2,7 +2,7 @@
 title: stream objectMode 與 pipe 實戰教學
 description: 說明 Node.js stream 的 encode/decode、objectMode 用法，並以 HTTP proxy 實例解析 readable.pipe
 last_update:
-  date: "2026-07-12T08:00:00+08:00"
+  date: "2026-07-24T08:00:00+08:00"
 ---
 
 ## encode & decode
@@ -30,11 +30,12 @@ class MyWritable extends Writable {
     encoding: BufferEncoding,
     callback: (error?: Error | null) => void,
   ): void {
-    console.log(chunk); // 123
+    console.log(chunk); // ✅ 123
     callback();
   }
 }
 
+// ✅ 傳入 `decodeStrings: false`
 const myWritable = new MyWritable({ decodeStrings: false });
 myWritable.write("123");
 ```
@@ -51,10 +52,11 @@ class MyReadable extends Readable {
   }
 }
 
+// ✅ 傳入 `encoding: "utf8"`
 const myReadable = new MyReadable({ encoding: "utf8" });
 myReadable.on("readable", () => {
   const chunk = myReadable.read();
-  console.log(chunk); // 123
+  console.log(chunk); // ✅ 123
 });
 ```
 
@@ -62,7 +64,7 @@ myReadable.on("readable", () => {
 
 若想要針對 `string`、`Buffer`、`TypedArray` 或 `DataView` 以外的資料讀寫，則需要用到 `objectMode`
 
-假設我有一個 10GB 的 JSON 檔
+假設我有一個 JSON 檔
 
 ```json
 [
@@ -87,6 +89,7 @@ class MyWritable extends Writable {
   }
 }
 
+// ✅ 設定 `objectMode: true`
 const myWritable = new MyWritable({ objectMode: true });
 myWritable.writableObjectMode; // true
 myWritable.write({ name: "kelly", age: 24 });
@@ -110,15 +113,18 @@ class MyReadable extends Readable {
   }
 }
 
+// ✅ 設定 `objectMode: true`
 const myReadable = new MyReadable({ objectMode: true });
 myReadable.readableObjectMode; // true
 myReadable.on("readable", () => {
-  const kelly = myReadable.read();
-  const alex = myReadable.read();
+  const kelly = myReadable.read(); // { name: 'kelly', age: 24 }
+  const alex = myReadable.read(); // { name: 'alex', age: 30 }
 });
 ```
 
-在 `objectMode` 的情況，`highWaterMark` 的單位就會從 bytes 變成 Object 的數量
+### `objectMode` 改變 `highWaterMark` 單位
+
+在 `objectMode` 的情況，`highWaterMark` 的單位就會從 bytes 變成 object 的數量
 
 以 `Writable` 為例
 
@@ -164,6 +170,8 @@ myReadable.on("readable", () => {
 });
 ```
 
+## `objectMode` 跟 encode & decode 互斥
+
 另外，`objectMode` 跟上面介紹的 [encode / decode](#encode--decode) 是互斥的參數，基本上只能擇一使用
 
 `Writable` 若在 `objectMode: true` 的情境，則 `decodeStrings` 跟 `defaultEncoding` 基本上就無效
@@ -182,6 +190,7 @@ class MyWritable extends Writable {
   }
 }
 
+// ❌ 設定 `objectMode: true`，則 `decodeStrings` 跟 `defaultEncoding` 基本上就無效
 const myWritable = new MyWritable({
   objectMode: true,
   decodeStrings: true,
@@ -202,12 +211,15 @@ class MyReadable extends Readable {
   }
 }
 
+// ❌ 設定 `objectMode: true`，同時設定 `encoding` 會導致 `read()` 噴錯
 const myReadable = new MyReadable({ objectMode: true, encoding: "utf8" });
 myReadable.readableObjectMode;
 myReadable.on("readable", () => {
   myReadable.read(); // TypeError: The "buf" argument must be an instance of Buffer, TypedArray, or DataView. Received an instance of Object
 });
 ```
+
+<!-- todo-yus -->
 
 ## `readable.pipe`
 

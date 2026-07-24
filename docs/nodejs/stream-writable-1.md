@@ -45,21 +45,24 @@ import { Writable, WritableOptions } from "stream";
 
 class MyWritable extends Writable {
   constructor(opts?: WritableOptions) {
-    console.log(performance.now(), "constructor");
+    console.log("constructor");
     super(opts);
   }
   _construct(callback: (error?: Error | null) => void): void {
-    console.log(performance.now(), "_construct");
+    console.log("_construct");
     // 模擬 async 操作，例如：建立 TCP 連線
     setTimeout(callback, 100);
   }
 }
 
 const myWritable = new MyWritable();
+```
 
-// Prints
-// 650.24275 constructor
-// 650.622958 _construct
+執行順序
+
+```ts
+constructor;
+_construct;
 ```
 
 ## 生命週期 2：寫入資料
@@ -83,7 +86,7 @@ class MyWritable extends Writable {
     callback: (error?: Error | null) => void,
   ): void {
     // ✅ 一秒後，等 _construct 完成才會觸發
-    console.log(performance.now(), chunk);
+    console.log(performance.now(), "_write");
     // 模擬寫入延遲
     setTimeout(callback, 100);
   }
@@ -91,10 +94,13 @@ class MyWritable extends Writable {
 
 const myWritable = new MyWritable();
 myWritable.write("123");
+```
 
-// Prints
-// 56.28175 _construct
-// 162.584583 <Buffer 31 32 33>
+執行順序
+
+```ts
+77.954083  _construct
+179.716875 _write
 ```
 
 ### `_write` 完成才會執行 `write` 的 callback
@@ -102,7 +108,7 @@ myWritable.write("123");
 使用者呼叫 `write`，Node.js 底層會幫忙呼叫 `_write`，完成後才會觸發 `write` 的 callback
 
 ```ts
-import { Writable, WritableOptions } from "stream";
+import { Writable } from "stream";
 
 class MyWritable extends Writable {
   _write(
@@ -110,20 +116,23 @@ class MyWritable extends Writable {
     encoding: BufferEncoding,
     callback: (error?: Error | null) => void,
   ): void {
-    console.log(performance.now(), chunk);
+    console.log(performance.now(), "_write");
     // 模擬寫入延遲
     setTimeout(callback, 100);
   }
 }
 
 const myWritable = new MyWritable();
-const callback = () => console.log(performance.now(), "data is flushed");
+const callback = () => console.log(performance.now(), "write callback");
 // ✅ write 的第二個參數 callback
 myWritable.write("123", callback);
+```
 
-// Prints
-// 65.875709 <Buffer 31 32 33>
-// 171.010709 data is flushed
+執行順序
+
+```ts
+96.618917 _write
+197.47175 write callback
 ```
 
 ### `_writev` 優化多筆寫入
@@ -220,14 +229,17 @@ class MyWritable extends Writable {
 const myWritable = new MyWritable({ autoDestroy: false });
 myWritable.end("abcde", () => console.log(performance.now(), "end callback"));
 myWritable.on("finish", () => console.log(performance.now(), 'on("finish")'));
+```
 
-// Prints
-// 256.522833 _write
-// 358.595833 _write
-// 459.939125 _write
-// 561.619333 _final
-// 661.852125 end callback
-// 661.963667 on("finish")
+執行順序
+
+```ts
+256.522833 _write
+358.595833 _write
+459.939125 _write
+561.619333 _final
+661.852125 end callback
+661.963667 on("finish")
 ```
 
 ## 生命週期 4：關閉
@@ -262,13 +274,16 @@ myWritable.write("12345");
 myWritable.write("67890");
 myWritable.end("abcde");
 myWritable.on("close", () => console.log(performance.now(), 'on("close")'));
+```
 
-// Prints
-// 146.700916 _write
-// 246.782458 _write
-// 348.155833 _write
-// 449.130541 _destroy
-// 549.774875 on("close")
+執行順序
+
+```ts
+146.700916 _write
+246.782458 _write
+348.155833 _write
+449.130541 _destroy
+549.774875 on("close")
 ```
 
 ## 完整生命週期
@@ -316,19 +331,20 @@ const myWritable = new MyWritable({ autoDestroy: true });
 myWritable.end("abcde", () => console.log(performance.now(), "end callback"));
 myWritable.on("finish", () => console.log(performance.now(), 'on("finish")'));
 myWritable.on("close", () => console.log(performance.now(), 'on("close")'));
-
-// Prints
-// 244.026208 constructor
-// 245.449083 _construct
-// 347.431958 _write
-// 449.094875 _final
-// 549.727958 end callback
-// 549.952583 on("finish")
-// 550.301458 _destroy
-// 651.657667 on("close")
 ```
 
-執行順序如下
+執行順序
+
+```ts
+244.026208 constructor
+245.449083 _construct
+347.431958 _write
+449.094875 _final
+549.727958 end callback
+549.952583 on("finish")
+550.301458 _destroy
+651.657667 on("close")
+```
 
 ```mermaid
 flowchart TD
