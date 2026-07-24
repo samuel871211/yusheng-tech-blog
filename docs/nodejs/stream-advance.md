@@ -219,8 +219,6 @@ myReadable.on("readable", () => {
 });
 ```
 
-<!-- todo-yus -->
-
 ## `readable.pipe`
 
 pipe 的中文是管子，在這邊的意思是把 `Readable` 資料源 (source) "透過水管接到" `Writable` 目的地 (destination)
@@ -264,10 +262,12 @@ httpProxyServer.on("request", (req, res) => {
   proxyToSeverRequest.on("response", (serverToProxyResponse) => {
     const { statusCode, headers } = serverToProxyResponse;
     res.writeHead(statusCode as number, headers);
-    // server ->> proxy 的 response body (Readable) 透過 pipe 水管接到 proxy ->> client 的 response body (Writable)
+    // server ->> proxy 的 response body (Readable)
+    // 透過 pipe 水管接到 proxy ->> client 的 response body (Writable)
     serverToProxyResponse.pipe(res);
   });
-  // client ->> proxy 的 request body (Readable) 透過 pipe 水管接到 proxy ->> server 的 request body (Writable)
+  // client ->> proxy 的 request body (Readable)
+  // 透過 pipe 水管接到 proxy ->> server 的 request body (Writable)
   req.pipe(proxyToSeverRequest);
 });
 
@@ -316,5 +316,3 @@ httpServer.on("request", (req, res) => {
 ## 參考資料
 
 - https://nodejs.org/api/stream.html
-- https://nodejs.org/api/stream.html#new-streamreadableoptions
-- https://nodejs.org/api/stream.html#new-streamwritableoptions
