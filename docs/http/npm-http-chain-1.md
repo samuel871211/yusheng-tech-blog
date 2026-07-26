@@ -611,7 +611,7 @@ console.log(path); // {:user}
 
 ### 解決什麼問題？
 
-在 Node.js http.Server 要自行收集 request body（包含長度驗證、encode/decode）很麻煩
+在 Node.js `http.Server` 要自行收集 request body（包含長度驗證、encode/decode）很麻煩
 
 ```js
 import http from "http";

@@ -1,6 +1,6 @@
 ---
-title: 深入理解 HTTP/1.1 pipelining：HOL Blocking 成因與 Request Smuggling 的界線
-description: 透過 Node.js 實測驗證 RFC 9112 規範，釐清與 HTTP Request Smuggling 的差異
+title: 深入理解 HTTP/1.1 pipelining 與 HOL Blocking
+description: 透過 Node.js 實測，解析 HTTP/1.1 pipelining 如何造成 HOL Blocking
 last_update:
   date: "2026-07-03T08:00:00+08:00"
 ---

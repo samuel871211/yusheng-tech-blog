@@ -260,9 +260,9 @@ Browsers may apply transformations to conform to the file system requirements, s
 
 - `<a download>` 跟 `Content-Disposition` 同時設定 filename 時的優先順序
 - `Content-Disposition` 的 filename 跟 `filename*` 參數的差異
-- `Content-Disposition` 的 filename 參數遇到中文會怎麼處理
-- `Content-Disposition` 的 filename 參數遇到空白會怎麼處理
-- `Content-Disposition` 的 filename 參數遇到特殊字元會怎麼處理
+- `Content-Disposition` 的 filename 參數遇到 **中文** 會怎麼處理
+- `Content-Disposition` 的 filename 參數遇到 **空白** 會怎麼處理
+- `Content-Disposition` 的 filename 參數遇到 **特殊字元** 會怎麼處理
 
 ## 參考資料
 

@@ -5,15 +5,19 @@ last_update:
   date: "2026-07-06T08:00:00+08:00"
 ---
 
-## 防雷
+## 前言
 
-由於 iThome 使用 cloudflare，發文若有一些 XSS 的關鍵字會被擋下，所以本文若有用到 `script` 標籤，都會改成 `<xscript>`
+承接上一篇在 HTML 宣告 `<link>`，這篇要來介紹一個更快的做法：在 HTTP response header 宣告 `Link`
 
 ## Browser compatibility
 
 翻開 [MDN 文件](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Link#browser_compatibility) 的話，會發現其實各瀏覽器大約都在 2022 ~ 2023 年才開始支援在 HTTP response header 設定 `<Link>`，其實算是蠻新的功能。我自己也只有在 [hackerone](https://www.hackerone.com/) 看到有設定
 
 ![hackerone-link](../../static/img/hackerone-link.jpg)
+
+## 防雷
+
+由於 iThome 使用 cloudflare，發文若有一些 XSS 的關鍵字會被擋下，所以本文若有用到 `script` 標籤，都會改成 `<xcript>`
 
 ## Basic Syntax
 
@@ -70,7 +74,7 @@ Link: </style.css>; rel=preload; as=style; fetchpriority="high"
 
 ## preconnect via HTTP Link
 
-使用 Node.js http 模組，測試是否真的有建立 TCP 連線
+使用 Node.js `http` 模組，測試是否真的有建立 TCP 連線
 
 1. localhost:5000
 
@@ -106,7 +110,7 @@ httpServer5001.on("connection", (socket) => console.log("connection"));
 
 ## preload via HTTP Link
 
-使用 Node.js http 模組測試
+使用 Node.js `http` 模組測試
 
 1. localhost:5000
 

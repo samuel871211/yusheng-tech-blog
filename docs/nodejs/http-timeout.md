@@ -471,7 +471,7 @@ clientRequest.on("response", (response: http.IncomingMessage) => {
 
 ## 小結
 
-Node.js http 模組層的各種 `setTimeout` 或是 `timeout`，底層都是綁定到 `net.Socket.setTimeout`
+Node.js `http` 模組層的各種 `setTimeout` 或是 `timeout`，底層都是綁定到 `net.Socket.setTimeout`
 
 ![http-timeout](../../static/img/http-timeout.svg)
 

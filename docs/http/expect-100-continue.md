@@ -285,7 +285,7 @@ A client that sends a 100-continue expectation is not required to wait for any s
 
 - `Expect: 100-continue` 的使用情境
 - HTTP server 收到 Expect other than 100-continue 要如何處理
-- Node.js http 模組的 client / server 怎麼處理 100 continue 的 request / response
+- Node.js `http` 模組的 client / server 怎麼處理 100 continue 的 request / response
 - curl 針對大檔案上傳的優化
 
 ## 參考資料

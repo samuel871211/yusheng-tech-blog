@@ -5,15 +5,15 @@ last_update:
   date: "2026-07-05T08:00:00+08:00"
 ---
 
-## 防雷
-
-由於 iThome 使用 cloudflare，發文若有一些 XSS 的關鍵字會被擋下，所以本文若有用到 `script` 標籤，都會改成 `<xcript>`
-
 ## 前言
 
 在現代前端框架盛行的年代，很少會需要大量的手動設置 `<link>`，基本上 bundler 會處理好各種 JavaScript, CSS 的載入，只有少部分會需要在 `index.html` 設定；也因此顯少有機會深入研究 `<link>` 的各種 attribute。
 
 為何會在 HTTP 的系列文章提到 `<link>` 呢？因為 HTTP response header 也可以設定 [Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Link)！所以就趁這篇文章，也順便把 HTML 的 `<link>` 也介紹一遍吧～
+
+## 防雷
+
+由於 iThome 使用 cloudflare，發文若有一些 XSS 的關鍵字會被擋下，所以本文若有用到 `script` 標籤，都會改成 `<xcript>`
 
 ## 瀏覽器載入資源的 Priority
 
@@ -67,7 +67,7 @@ canonical = 典範，在這邊代表的是 "preferred URL"
 - 承上，response header 需要設定正確的 `Cache-Control`，prefetch 的資源才可以存到 HTTP 快取
 - 透過 prefetch 載入的資源，request header 會有 `Sec-Purpose: prefetch`, `Sec-Fetch-Dest: empty`
 
-使用 Node.js http 模組實作：
+使用 Node.js `http` 模組實作：
 
 1. index.ts，定義 `/`、`/page2`、`/page2.js` 三個路由
 

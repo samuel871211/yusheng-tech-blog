@@ -145,7 +145,7 @@ curl --http1.1 https://REDACTED/ecapp/Index.do -v
 
 這次的研究過程，其實是一個典型的技術偵探故事：從一個看似手殘打字的 header 開始，透過觀察 HTTP/2 廢棄 Connection header 的規範、Google 搜尋歷史文章、以及用 curl --http1.1 重現驗證，最終拼湊出 F5 BIG-IP 為了效能而 inplace 修改 header 的完整故事。這也提醒了我們，任何「看起來像 bug」的現象，背後都可能藏著值得深挖的架構知識。
 
-## 參考文章
+## 參考資料
 
 - https://github.com/jofpin/compaXSS/blob/master/wafw00f.py
 - https://stackoverflow.com/questions/4798461/cneonction-and-nncoection-http-headers

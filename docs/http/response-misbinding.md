@@ -5,16 +5,6 @@ last_update:
   date: "2026-07-07T08:00:00+08:00"
 ---
 
-## 先備知識
-
-- [HTTP/1.1 Message](./anatomy-of-an-http-message.md)
-
-  ![HTTP/1.1-Message](../../static/img/HTTP-1.1-Message.svg)
-
-- [HTTP/1.1 Keep-Alive, Connection](./keep-alive-and-connection.md)
-
-  ![HTTP/1.1-Keep-Alive-Connection](../../static/img/HTTP-1.1-Keep-Alive-Connection.svg)
-
 ## 前言
 
 在 HTTP/1.1 的世界，client 在一條 TCP connection 發送多個 HTTP request，server 會依照 client 發送的順序來依序回應
@@ -61,6 +51,16 @@ sequenceDiagram
 ```
 
 <!-- ![](../../static/http-3-requests-round-trip.svg) -->
+
+## 先備知識
+
+- [HTTP/1.1 Message](./anatomy-of-an-http-message.md)
+
+  ![HTTP/1.1-Message](../../static/img/HTTP-1.1-Message.svg)
+
+- [HTTP/1.1 Keep-Alive, Connection](./keep-alive-and-connection.md)
+
+  ![HTTP/1.1-Keep-Alive-Connection](../../static/img/HTTP-1.1-Keep-Alive-Connection.svg)
 
 ## "Response Misbinding" 圖解
 
@@ -279,3 +279,7 @@ If a client receives data on a connection that doesn't have outstanding requests
 - HTTP client 的 finding 要被視為 vulnerability，通常不能只靠 spec violation
 - 真正關鍵的是：attacker 能否因為這個 BUG **獲得新的能力**
 - 這個 **新的能力** 有沒有辦法造成資安漏洞（DoS, Response Queue Poisoning ...）
+
+## 參考資料
+
+- https://datatracker.ietf.org/doc/html/rfc9112
