@@ -5,8 +5,8 @@ import type * as Preset from "@docusaurus/preset-classic";
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: "Yusheng's Tech Blog",
-  tagline: "This is Yusheng's Tech Blog",
+  title: "陳昱昇 | Yusheng's Tech Blog",
+  tagline: "HTTP, Web Security, Node.js, PortSwigger Labs, Layer 7 Protocols",
   favicon: "favicon/favicon.ico",
 
   // Set the production url of your site here
