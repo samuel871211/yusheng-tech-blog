@@ -22,6 +22,29 @@ const config: Config = {
 
   onBrokenLinks: "throw",
 
+  headTags: [
+    {
+      tagName: "script",
+      attributes: {
+        type: "application/ld+json",
+      },
+      innerHTML: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Person",
+        name: "陳昱昇",
+        alternateName: "痛不昱昇",
+        url: "https://yusheng.dev",
+        sameAs: [
+          "https://github.com/samuel871211",
+          "https://www.linkedin.com/in/%E6%98%B1%E6%98%87-%E9%99%B3-997185291/",
+          "https://ithelp.ithome.com.tw/users/20155705/ironman/8162",
+          "https://zeroday.hitcon.org/user/cat1528985/vulnerability",
+          "https://hackerone.com/yushengchen",
+        ],
+      }),
+    },
+  ],
+
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
