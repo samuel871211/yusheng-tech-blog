@@ -491,46 +491,6 @@ Error: read ECONNRESET
 }
 ```
 
-<!-- ## @types/node not perfect
-
-P.S. [@types/node](https://www.npmjs.com/package/@types/node) 雖然有在 `Http2Session` 定義
-
-```ts
-export interface Http2Session extends EventEmitter {
-  on(event: "error", listener: (err: Error) => void): this;
-}
-```
-
-但是在 `ClientHttp2Session` 這層就沒有定義 onError
-
-```ts
-export interface ClientHttp2Session extends Http2Session {
-  on(
-    event: "altsvc",
-    listener: (alt: string, origin: string, stream: number) => void,
-  ): this;
-  on(event: "origin", listener: (origins: string[]) => void): this;
-  on(
-    event: "connect",
-    listener: (
-      session: ClientHttp2Session,
-      socket: net.Socket | tls.TLSSocket,
-    ) => void,
-  ): this;
-  on(
-    event: "stream",
-    listener: (
-      stream: ClientHttp2Stream,
-      headers: IncomingHttpHeaders & IncomingHttpStatusHeader,
-      flags: number,
-      rawHeaders: string[],
-    ) => void,
-  ): this;
-}
-```
-
-導致型別推導不完全，這問題其實我每次在寫 Node.js 的時候都覺得很不方便，但畢竟 [@types/node](https://www.npmjs.com/package/@types/node) 跟 Node.js 本身是分開維護的，建議還是看 [Node.js 官方文件](https://nodejs.org/docs/latest/api/)，查詢對應 Node.js Major Version 會比較準確 -->
-
 <!-- ## Http2Stream
 
 了解 [Http2Session](#http2session) 的概念之後，接下來要來談 [Http2Stream](https://nodejs.org/docs/latest-v24.x/api/http2.html#class-http2stream)，對應到 [RFC 9113 #section-5](https://datatracker.ietf.org/doc/html/rfc9113#section-5)
