@@ -372,12 +372,6 @@ if (req.url === "/case6") {
 | 可否與 Content-Length 並用 | 當使用 chunked 時，❌ |        ✅        |
 | 是否為 End-to-end headers  |          ❌           |        ✅        |
 
-<!-- todo-yusheng -->
-<!-- ## request smuggling -->
-
-<!-- todo-yusheng -->
-<!-- ## response splitting -->
-
 ## 參考資料
 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Transfer-Encoding

@@ -312,5 +312,3 @@ httpServer.on("request", function requestListener(req, res) {
 - https://www.rfc-editor.org/rfc/rfc9110.html
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/406
 - https://www.npmjs.com/package/negotiator
-<!-- todo 不一定要讀 -->
-- https://httpd.apache.org/docs/current/en/content-negotiation.html#algorithm

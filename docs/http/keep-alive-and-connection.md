@@ -226,6 +226,3 @@ The maximum number of HTTP requests which can be pipelined until the connection 
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive
 - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection
 - https://datatracker.ietf.org/doc/html/rfc7230#appendix-A.1.2
-
-<!-- todo 可以用小學桶餐解釋概念 -->
-<!-- todo 可以加上 closed 一些截圖 -->

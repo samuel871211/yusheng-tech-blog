@@ -273,14 +273,6 @@ async function fetchAndCompressToGzip() {
 
 ![post-gzipped-400](../../static/img/post-gzipped-400.jpg)
 
-<!-- todo-yusheng 在想這個要不要講 -->
-<!-- ## Compression
-
-資料的壓縮通常分為兩種
-
-1. Loss-less compression（無損壓縮）
-2. Lossy compression (破壞性資料壓縮) -->
-
 ## 插曲
 
 在寫這篇文章的時候，其實我還順便發現了 `node` 跟 `@types/node` 的兩個錯誤，並且順便發 PR 修正了

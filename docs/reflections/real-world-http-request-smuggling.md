@@ -13,7 +13,7 @@ last_update:
 
 ## HTTP Request Smuggling or HTTP/1.1 pipelining ?
 
-<!-- todo-yus --> 這是我第一個踩到的坑
+參考 [深入理解 HTTP/1.1 pipelining 與 HOL Blocking](../http/http-1.1-pipelining-hol-blocking-vs-request-smuggling.md)
 
 ## Frontend Prevent CL.0 By Closing the TCP Connection
 
