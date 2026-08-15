@@ -57,7 +57,7 @@ const sidebars: SidebarsConfig = {
         "http/articles-30-end",
         // === 2025 iThome 鐵人賽 ===
 
-        // === 2026 iThome 鐵人賽，前 10 篇 ===
+        // === 2026 iThome 鐵人賽，第 21 ~ 30 篇 ===
         "http/http-1.1-pipelining-hol-blocking-vs-request-smuggling",
         "http/a-download-and-content-disposition",
         "http/a-download-filename-and-content-disposition-filename",
@@ -68,7 +68,7 @@ const sidebars: SidebarsConfig = {
         "http/http-version-negotiation",
         "http/m3u8",
         "http/response-misbinding",
-        // === 2026 iThome 鐵人賽，前 10 篇 ===
+        // === 2026 iThome 鐵人賽，第 21 ~ 30 篇 ===
 
         "http/npm-http-chain-1", // todo-yus
         // "http/from-http-to-vite-preview",
@@ -218,7 +218,7 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Node.js",
       items: [
-        // === 2026 iThome 鐵人賽，第 11 - 30 篇 ===
+        // === 2026 iThome 鐵人賽，第 01 ~ 20 篇 ===
         "nodejs/events",
         "nodejs/stream-overview",
         "nodejs/stream-writable-1",
@@ -239,7 +239,7 @@ const sidebars: SidebarsConfig = {
         "nodejs/http-destroy",
         "nodejs/http_proxy",
         "nodejs/http-uncommon-features",
-        // === 2026 iThome 鐵人賽，第 11 - 30 篇 ===
+        // === 2026 iThome 鐵人賽，第 01 ~ 20 篇 ===
 
         // "nodejs/https_proxy", // 進行中
         "nodejs/undici",
