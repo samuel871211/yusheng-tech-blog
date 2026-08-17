@@ -17,7 +17,7 @@ myWritable.write("456");
 
 但如果仔細查看 [`write`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback) 跟 [`_write`](https://nodejs.org/api/stream.html#writable_writechunk-encoding-callback) 的描述的話，會發現 backpressure 跟 `highWaterMark` 這兩個名詞一直被提到
 
-這篇文章，就是要帶大家深入 `write` 跟 ``
+這篇文章，就是要帶大家深入 `write` 跟 `_write`
 
 ## 記憶體管理：backpressure 與 `highWaterMark`
 
