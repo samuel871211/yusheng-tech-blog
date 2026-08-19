@@ -58,16 +58,16 @@ const sidebars: SidebarsConfig = {
         // === 2025 iThome 鐵人賽 ===
 
         // === 2026 iThome 鐵人賽，第 21 ~ 30 篇 ===
-        "http/http-1.1-pipelining-hol-blocking-vs-request-smuggling",
-        "http/a-download-and-content-disposition",
-        "http/a-download-filename-and-content-disposition-filename",
-        "http/link-html",
-        "http/link-http",
-        "http/expect-100-continue",
-        "http/nncoection-or-connection",
-        "http/http-version-negotiation",
-        "http/m3u8",
-        "http/response-misbinding",
+        "http/http-1.1-pipelining-hol-blocking-vs-request-smuggling", // 9/03
+        "http/a-download-and-content-disposition", // 9/04
+        "http/a-download-filename-and-content-disposition-filename", // 9/05
+        "http/link-html", // 9/06
+        "http/link-http", // 9/07
+        "http/expect-100-continue", // 9/08
+        "http/nncoection-or-connection", // 9/09
+        "http/http-version-negotiation", // 9/10
+        "http/m3u8", // 9/11
+        "http/response-misbinding", // 9/12
         // === 2026 iThome 鐵人賽，第 21 ~ 30 篇 ===
 
         "http/npm-http-chain-1", // todo-yus
@@ -219,26 +219,26 @@ const sidebars: SidebarsConfig = {
       label: "Node.js",
       items: [
         // === 2026 iThome 鐵人賽，第 01 ~ 20 篇 ===
-        "nodejs/events",
-        "nodejs/stream-overview",
-        "nodejs/stream-writable-1",
-        "nodejs/stream-writable-2",
-        "nodejs/stream-readable-1",
-        "nodejs/stream-readable-2",
-        "nodejs/stream-advance",
-        "nodejs/socket-overview",
-        "nodejs/socket-client-life-cycle",
-        "nodejs/socket-life-cycle",
-        "nodejs/http-agent",
-        "nodejs/http-request-response-classes",
-        "nodejs/http-gracefully-close-server",
-        "nodejs/http-server-security",
-        "nodejs/http-strictContentLength",
-        "nodejs/http-maxRequestsPerSocket",
-        "nodejs/http-timeout",
-        "nodejs/http-destroy",
-        "nodejs/http_proxy",
-        "nodejs/http-uncommon-features",
+        "nodejs/events", // 8/14
+        "nodejs/stream-overview", // 8/15
+        "nodejs/stream-writable-1", // 8/16
+        "nodejs/stream-writable-2", // 8/17
+        "nodejs/stream-readable-1", // 8/18
+        "nodejs/stream-readable-2", // 8/19
+        "nodejs/stream-advance", // 8/20
+        "nodejs/socket-overview", // 8/21
+        "nodejs/socket-client-life-cycle", // 8/22
+        "nodejs/socket-life-cycle", // 8/23
+        "nodejs/http-agent", // 8/24
+        "nodejs/http-request-response-classes", // 8/25
+        "nodejs/http-gracefully-close-server", // 8/26
+        "nodejs/http-server-security", // 8/27
+        "nodejs/http-strictContentLength", // 8/28
+        "nodejs/http-maxRequestsPerSocket", // 8/29
+        "nodejs/http-timeout", // 8/30
+        "nodejs/http-destroy", // 8/31
+        "nodejs/http_proxy", // 9/01
+        "nodejs/http-uncommon-features", // 9/02
         // === 2026 iThome 鐵人賽，第 01 ~ 20 篇 ===
 
         // "nodejs/https_proxy", // 進行中
