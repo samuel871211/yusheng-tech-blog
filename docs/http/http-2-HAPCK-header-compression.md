@@ -101,6 +101,24 @@ last_update:
 +-------+-----------------------------+---------------+
 ```
 
+## Integer Representation
+
+[RFC 7541](https://datatracker.ietf.org/doc/html/rfc7541#section-5.1) 原文
+
+```
+Integers are used to represent name indexes, header field indexes, or string lengths
+```
+
+### Example 1: prefix "0"，編碼 200
+
+```
+  0 111,1111     0 100,1001
+  - --------     - --------
+  |      |       |        |
+prefix  127    flag = 0   73
+             (last octet)
+```
+
 ## Binary Format
 
 ### Indexed Header Field
