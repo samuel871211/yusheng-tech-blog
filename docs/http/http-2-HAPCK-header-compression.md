@@ -19,14 +19,16 @@ last_update:
 
 ## Terminology
 
-| term                          | description                                 |
-| ----------------------------- | ------------------------------------------- |
-| Header Field                  | :authority: localhost:5000                  |
-| Dynamic Table                 | -                                           |
-| [Static Table](#static-table) | -                                           |
-| Header List                   | Multiple "Header Field"                     |
-| Header Field Representation   | "Header Field" converted to HPACK raw bytes |
-| Header Block                  | "Header List" converted to HPACK raw bytes  |
+| term                              | description                                     |
+| --------------------------------- | ----------------------------------------------- |
+| [**Static Table**](#static-table) | -                                               |
+| **Dynamic Table**                 | -                                               |
+| **Header Field**                  | Example：`:authority: localhost:5000`           |
+| **Header List**                   | Multiple **"Header Field"**                     |
+| **Header Field Representation**   | **"Header Field"** converted to HPACK raw bytes |
+| **Header Block**                  | **"Header List"** converted to HPACK raw bytes  |
+
+![RFC7541-terms-1](../../static/img/RFC7541-terms-1.jpg)
 
 ## Static Table
 
@@ -101,6 +103,13 @@ last_update:
 +-------+-----------------------------+---------------+
 ```
 
+## Dynamic Table
+
+- https://datatracker.ietf.org/doc/html/rfc7541#section-2.3.2
+- index 從 62 開始
+- 跟 [Static Table](#static-table) 一樣是存 header name, value
+- first-in, first-out
+
 ## Integer Representation
 
 [RFC 7541](https://datatracker.ietf.org/doc/html/rfc7541#section-5.1) 原文
@@ -121,7 +130,7 @@ prefix  127    flag = 0   73
 
 ## Binary Format
 
-### Indexed Header Field
+### Indexed Header Field Representation
 
 https://datatracker.ietf.org/doc/html/rfc7541#section-6.1
 
@@ -154,7 +163,7 @@ https://datatracker.ietf.org/doc/html/rfc7541#section-6.1
 +---+---------------------------+
 ```
 
-### Literal Header Field with Incremental Indexing
+### Literal Header Field Representation with Incremental Indexing
 
 - https://datatracker.ietf.org/doc/html/rfc7541#section-6.2.1
 - with Incremental Indexing = 這個 header field 要被存到 dynamic table
@@ -236,7 +245,7 @@ https://datatracker.ietf.org/doc/html/rfc7541#section-6.1
 +-------------------------------+
 ```
 
-### Literal Header Field without Indexing
+### Literal Header Field Representation without Indexing
 
 - https://datatracker.ietf.org/doc/html/rfc7541#section-6.2.2
 - without Indexing = 這個 header field 不需要存到 dynamic table
@@ -375,6 +384,11 @@ https://datatracker.ietf.org/doc/html/rfc7541#section-6.1
 |             world             |
 +-------------------------------+
 ```
+
+### Dynamic Table Size Update
+
+- https://datatracker.ietf.org/doc/html/rfc7541#section-6.3
+<!-- - todo-yus -->
 
 ## 參考資料
 
