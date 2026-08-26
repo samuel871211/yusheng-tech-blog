@@ -1,5 +1,5 @@
 ---
-title: Node.js http.Server Graceful Shutdown 完整教學
+title: Node.js http.Server Graceful Shutdown 教學
 description: "close、closeAllConnections、closeIdleConnections 差異，並實作 SIGINT/SIGTERM 與 timeout 強制退出"
 last_update:
   date: "2026-07-15T08:00:00+08:00"

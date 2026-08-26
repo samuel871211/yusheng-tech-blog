@@ -750,7 +750,7 @@ https://datatracker.ietf.org/doc/html/rfc7541#section-6.1
 ### Dynamic Table Size Update
 
 - https://datatracker.ietf.org/doc/html/rfc7541#section-6.3
-- 新的 Max size 必須 <= [SETTINGS_HEADER_TABLE_SIZE](./http-2-raw-bytes.md#section-652-defined-settings)
+- 新的 Max size 必須 `<=` [SETTINGS_HEADER_TABLE_SIZE](./http-2-raw-bytes.md#section-652-defined-settings)
 - 必須出現在 [Header Block](#terminology) 的最前面
 
 ```
