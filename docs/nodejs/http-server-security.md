@@ -52,7 +52,7 @@ socket.write(httpMessage);
 // { host: 'localhost:5000', 'content-length': '20' }
 ```
 
-[RFC 9110#section-5.3](https://datatracker.ietf.org/doc/html/rfc9110#section-5.3) 也有提到，HTTP server 需要收到完整的 request headers section，才可以發送回應。所以 Node.js 選擇在 request headers 完整以後，才觸發 `'reuqest'` 事件，這邊是合理的（不需要等到 body 送完才觸發）
+[RFC 9110#section-5.3](https://datatracker.ietf.org/doc/html/rfc9110#section-5.3) 也有提到，HTTP server 需要收到完整的 request headers section，才可以發送回應。所以 Node.js 選擇在 request headers 完整以後，才觸發 `"request"` 事件，這邊是合理的（不需要等到 body 送完才觸發）
 
 ```
 A server MUST NOT apply a request to the target resource until it receives the entire request header section
