@@ -178,6 +178,38 @@ prefix  31    flag = 1    1    flag = 0    31*2**7
 
 `31 + 1 + 31 * 2**7 = 4000`
 
+### Overlong Encoding
+
+這在 RFC7541 並沒有一個專門的名詞，而是用一段話來描述
+
+```
+It
+is also possible for an encoder to send a large number of zero
+values, which can waste octets and could be used to overflow integer
+values.  Integer encodings that exceed implementation limits -- in
+value or octet length -- MUST be treated as decoding errors.
+```
+
+沿用 [Example 5：prefix "???"，編碼 4000](#example-5prefix-編碼-4000) 的結果
+
+| 1st octet | 2nd octet | 3rd octet |
+| --------- | --------- | --------- |
+| ???1,1111 | 1000,0001 | 0001,1111 |
+
+我們其實可以把它 encode 成
+
+| 1st octet | 2nd octet | 3rd octet | 4th octet | 5th octet |
+| --------- | --------- | --------- | --------- | --------- |
+| ???1,1111 | 1000,0001 | 1001,1111 | 1000,0000 | 0000,0000 |
+
+甚至更極端，可以瘋狂塞 1000,0000 這種 "不貢獻任何數字的 continuation byte"
+
+| 1st octet | 2nd octet | 3rd octet | 4th octet | 5th octet | 6th octet |
+| --------- | --------- | --------- | --------- | --------- | --------- |
+| ???1,1111 | 1000,0001 | 1001,1111 | 1000,0000 | 1000,0000 | 0000,0000 |
+
+為了避免這種問題，實作上通常會限制 continuation byte 的數量
+
 ## String Literal Representation
 
 ```
