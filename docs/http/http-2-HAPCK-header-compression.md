@@ -801,6 +801,20 @@ https://datatracker.ietf.org/doc/html/rfc7541#section-6.1
 +---+---------------------------+
 ```
 
+## Cross-Client HPACK State Leakage via Shared Dynamic Table
+
+假設有以下架構
+
+```mermaid
+flowchart LR
+  A["client 1"] --> B["proxy"]
+  C["client 2"] --> B
+  D["client 3"] --> B
+  B --> E["upstream"]
+```
+
+假設 proxy 到 upstream 這邊是共用一條 HTTP/2 connection，就會造成 Dynamic Table 的互相汙染。解法也很簡單，針對跨租戶的情境，應該要把 HTTP/2 connection 隔開，而不是共用一條
+
 ## 參考資料
 
 - https://datatracker.ietf.org/doc/html/rfc7541
