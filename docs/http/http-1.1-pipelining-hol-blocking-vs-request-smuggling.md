@@ -317,8 +317,6 @@ request 1
   <div className="blue"></div>
   <div className="orange">GET /?sleepMs=1000 HTTP/1.1</div>
   <div className="orange">Foo: bar</div>
-  <div className="orange"></div>
-  <div className="orange"></div>
 </div>
 
 request 2
