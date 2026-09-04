@@ -1,5 +1,5 @@
 ---
-title: 深入解析 <a download> 與 Content-Disposition：從失敗案例到 Edge Case 實測
+title: 深入解析 <a download> 與 Content-Disposition：各種 Edge Case 實測
 description: 實測 <a download> 與 Content-Disposition 交互時，在 same-origin/cross-origin 下的行為差異
 last_update:
   date: "2026-07-04T08:00:00+08:00"
