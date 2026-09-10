@@ -140,12 +140,14 @@ ALPN 協商過程：
 
 ```mermaid
 sequenceDiagram
-  participant c as Client (curl)
-  participant s as Server (nodejs.org)
+  participant c as client (curl)
+  participant s as server (nodejs.org)
 
   c ->> s: Client Hello (我支援 HTTP/1.1)
   s ->> c: Server Hello (那我們用 HTTP/1.1 通訊吧！)
 ```
+
+<!-- ![](../../static/alpn-h1.svg) -->
 
 :::info
 為何上述情境，不用瀏覽器測試 HTTP/1.1 over TLS ?
