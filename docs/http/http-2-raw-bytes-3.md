@@ -2,26 +2,26 @@
 title: 深入瞭解 HTTP/2 ORIGIN frame, ALTSVC frame
 description: 深入瞭解 HTTP/2 ORIGIN frame, ALTSVC frame
 last_update:
-  date: "2026-06-09T08:00:00+08:00"
+  date: "2026-09-22T08:00:00+08:00"
 ---
 
 ## HTTP/2 frame types overview
 
-| Frame Type             | Description                                                          |
-| ---------------------- | -------------------------------------------------------------------- |
-| DATA (0x00)            | carry request / response body                                        |
-| HEADERS (0x01)         | carry request / response headers & trailers                          |
-| PRIORITY (0x02)        | deprecated (todo-yus)                                                |
-| RST_STREAM (0x03)      | immediate termination of a stream                                    |
-| SETTINGS (0x04)        | conveys configuration parameters                                     |
-| PUSH_PROMISE (0x05)    | carry request headers that the server predicts the client might need |
-| PING (0x06)            | measuring a minimal round-trip time from the sender                  |
-| GOAWAY(0x07)           | initiate shutdown of a connection                                    |
-| WINDOW_UPDATE (0x08)   | flow control                                                         |
-| CONTINUATION (0x09)    | continuation of HEADERS or PUSH_PROMISE                              |
-| PRIORITY_UPDATE (0x10) | todo-yus                                                             |
-| ALTSVC (0x0a)          | Alternative Services                                                 |
-| ORIGIN (0x0b)          | indicate what origins are available on a given connection            |
+| Frame Type             | Description                                                          | Frame Payload Length (bytes) |
+| ---------------------- | -------------------------------------------------------------------- | ---------------------------- |
+| DATA (0x00)            | carry request / response body                                        | 0 ~ MAX                      |
+| HEADERS (0x01)         | carry request / response headers & trailers                          | 0 ~ MAX                      |
+| PRIORITY (0x02)        | deprecated (todo-yus)                                                | -                            |
+| RST_STREAM (0x03)      | immediate termination of a stream                                    | 4                            |
+| SETTINGS (0x04)        | conveys configuration parameters                                     | 0, 6, 12...                  |
+| PUSH_PROMISE (0x05)    | carry request headers that the server predicts the client might need | 0 ~ MAX                      |
+| PING (0x06)            | measuring a minimal round-trip time from the sender                  | 8                            |
+| GOAWAY(0x07)           | initiate shutdown of a connection                                    | 8 ~ MAX                      |
+| WINDOW_UPDATE (0x08)   | flow control                                                         | 4                            |
+| CONTINUATION (0x09)    | continuation of HEADERS or PUSH_PROMISE                              | 0 ~ MAX                      |
+| PRIORITY_UPDATE (0x10) | todo-yus                                                             | -                            |
+| ALTSVC (0x0a)          | Alternative Services                                                 | 2 ~ MAX                      |
+| ORIGIN (0x0c)          | indicate what origins are available on a given connection            | 0 ~ MAX                      |
 
 ## ORIGIN frame
 
