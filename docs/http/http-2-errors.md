@@ -26,7 +26,7 @@ https://datatracker.ietf.org/doc/html/rfc9113#section-7
 | `SETTINGS_TIMEOUT`    | `0x04` | SETTINGS ACK timeout                    |
 | `STREAM_CLOSED`       | `0x05` | frame received after stream half-closed |
 | `FRAME_SIZE_ERROR`    | `0x06` | frame size invalid                      |
-| `FLOW_CONTROL_ERROR`  | `0x07` | stream refused before processing        |
+| `REFUSED_STREAM`      | `0x07` | stream refused before processing        |
 | `CANCEL`              | `0x08` | stream no longer needed                 |
 | `COMPRESSION_ERROR`   | `0x09` | HPACK compression state failure         |
 | `CONNECT_ERROR`       | `0x0a` | CONNECT tunnel failure                  |
