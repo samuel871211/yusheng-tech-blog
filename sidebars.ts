@@ -211,7 +211,7 @@ const sidebars: SidebarsConfig = {
         // "protocols/imap",
         // "protocols/sip",
         // "protocols/pop"
-        // "protocols/websocket"
+        "protocols/websocket",
       ],
     },
     {
