@@ -101,9 +101,14 @@ Payload length 欄位一開始只有 7 bits。Receiver 先讀這 7 bits，再決
 
 ## Data Frames
 
-- 概念類似 HTTP/2 的 [DATA frame](../http/http-2-raw-bytes.md#step-8-data-frame)
-- 分成 [Text frame](#text-frame) 跟 [Binary frame](#binary-frame)
-- HTTP 是透過 headers 的 `Content-Type` 來標記 body 的編碼
+概念類似 HTTP/2 的 [DATA frame](../http/http-2-raw-bytes.md#step-8-data-frame)，列出差異部分：
+
+|                     | WebSocket Data frame                                                                                     | HTTP/2 DATA frame                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| frame 種類          | Text frame (`0x01`)、Binary frame (`0x02`)                                                               | 只有一種 DATA frame (`0x00`)                                       |
+| 資料編碼的標記      | 由 [opcode](#opcode) 標記：<br/>Text 必須是 UTF-8<br/>Binary 是任意 bytes                                | 由 HTTP headers 的 `Content-Type` 標記                             |
+| 分片 (拆多個 frame) | 第一個 frame 用 Text / Binary opcode<br/>後續用 Continuation frame (`0x0`)<br/>最後一個 frame 的 FIN = 1 | 多個 DATA frame 屬於同一個 stream<br/>最後一個帶 `END_STREAM` flag |
+| 多工                | 無，同一條連線的 message 依序傳送                                                                        | 有，用 Stream Identifier 區分多個 stream                           |
 
 ## Sec-WebSocket-Protocol
 
