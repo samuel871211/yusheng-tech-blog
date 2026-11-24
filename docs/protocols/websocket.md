@@ -7,7 +7,7 @@ description: WebSocket
 
 [HTTP Upgrade Header](../http/upgrade.md)
 
-## RFC 6455 Base Framing Protocol
+## Base Framing Protocol
 
 **1st byte**
 
@@ -51,8 +51,8 @@ description: WebSocket
 | Opcode      | description                             |
 | ----------- | --------------------------------------- |
 | 0x00        | continuation frame                      |
-| 0x01        | text frame                              |
-| 0x02        | binary frame                            |
+| 0x01        | See [Text frame](#data-frames)          |
+| 0x02        | See [Binary frame](#data-frames)        |
 | 0x03 ~ 0x07 | reserved for further non-control frames |
 | 0x08        | See [Close frame](#close-frame)         |
 | 0x09        | See [Ping frame](#ping-pong-frame)      |
@@ -79,7 +79,7 @@ Payload length 欄位一開始只有 7 bits。Receiver 先讀這 7 bits，再決
 | 300            | 126         | 01 2C                       |
 | 70000          | 127         | 00 00 00 00<br/>00 01 11 70 |
 
-### Close frame
+## Close frame
 
 概念類似 HTTP/2 的 [GOAWAY frame](../http/http-2-raw-bytes-2.md#goaway-frame)
 
@@ -88,7 +88,7 @@ Payload length 欄位一開始只有 7 bits。Receiver 先讀這 7 bits，再決
 | 狀態碼 | Status Codes (optional, 2 bytes)              | Error Code (required, 4 bytes)            |
 | 原因   | reason,UTF-8-encoded data (optional, n bytes) | Additional Debug Data (optional, n bytes) |
 
-### Ping, Pong frame
+## Ping, Pong frame
 
 概念類似 HTTP/2 的 [PING frame](../http/http-2-raw-bytes-2.md#ping-frame)，列出差異部分：
 
@@ -99,11 +99,16 @@ Payload length 欄位一開始只有 7 bits。Receiver 先讀這 7 bits，再決
 | response 的用途    | Pong 可回應 Ping，也可單獨送（unidirectional heartbeat） | 只用於回應 PING                      |
 | 回應多個 request   | 若尚未回應前一個 Ping，可只回應最近處理的那一個 Ping     | 每個 PING 都要回應                   |
 
+## Data Frames
+
+- 概念類似 HTTP/2 的 [DATA frame](../http/http-2-raw-bytes.md#step-8-data-frame)
+- 分成 [Text frame](#text-frame) 跟 [Binary frame](#binary-frame)
+- HTTP 是透過 headers 的 `Content-Type` 來標記 body 的編碼
+
 ## Sec-WebSocket-Protocol
 
 ## Sec-WebSocket-Extensions
 
 ## 參考資料
 
-- https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
-- https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
+- https://datatracker.ietf.org/doc/html/rfc6455
